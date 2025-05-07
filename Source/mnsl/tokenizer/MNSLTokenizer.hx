@@ -218,12 +218,19 @@ class MNSLTokenizer {
                         position++;
                         column++;
                     }
+
+                    position++;
+                    column++;
+
                     if (position < length) {
-                        tokens.push(MNSLToken.String(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
-                        position++;
-                        column++;
+                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
-                        throw "Unterminated string literal at line " + line + ", column " + column;
+                        context.emitError(TokenizerUnterminatedString({
+                            line: line,
+                            column: column,
+                            length: position - start,
+                            position: initialPosition
+                        }));
                     }
 
                 case '\'':
@@ -238,12 +245,19 @@ class MNSLTokenizer {
                         position++;
                         column++;
                     }
+
+                    position++;
+                    column++;
+
                     if (position < length) {
-                        tokens.push(MNSLToken.String(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
-                        position++;
-                        column++;
+                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
-                        throw "Unterminated string literal at line " + line + ", column " + column;
+                        context.emitError(TokenizerUnterminatedString({
+                            line: line,
+                            column: column,
+                            length: position - start,
+                            position: initialPosition
+                        }));
                     }
 
                 case '.':
@@ -271,9 +285,9 @@ class MNSLTokenizer {
                         }
                         var value = source.substr(start, position - start);
                         if (hasDot) {
-                            tokens.push(MNSLToken.Float(value, { line: line, column: column, length: position - start, position: initialPosition }));
+                            tokens.push(MNSLToken.FloatLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
                         } else {
-                            tokens.push(MNSLToken.Integer(value, { line: line, column: column, length: position - start, position: initialPosition }));
+                            tokens.push(MNSLToken.IntegerLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
                         }
                     } else if (charCode >= 65 && charCode <= 90 || charCode >= 97 && charCode <= 122 || charCode == 95) { // A-Z, a-z, _
                         var start = position;
@@ -284,12 +298,19 @@ class MNSLTokenizer {
                         var value = source.substr(start, position - start);
                         tokens.push(MNSLToken.Identifier(value, { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
+                        position++;
+                        column++;
+
                         if (charCode == null) {
-                            position++;
-                            column++;
                             continue;
                         }
-                        throw "Invalid character at line " + line + ", column " + column + ": " + char + " (code: " + charCode + ")";
+
+                        context.emitError(TokenizerInvalidChar(charCode, {
+                            line: line,
+                            column: column,
+                            length: 1,
+                            position: initialPosition
+                        }));
                     }
 
             }

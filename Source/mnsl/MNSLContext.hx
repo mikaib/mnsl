@@ -13,12 +13,37 @@ class MNSLContext {
         var tokenizer: MNSLTokenizer = new MNSLTokenizer(this, source);
         var tokens: Array<MNSLToken> = tokenizer.run();
 
-        for (token in tokens) {
-            trace(token);
-        }
-
         var parser = new MNSLParser(this, tokens);
-        //var ast = parser.run();
+        var ast = parser.run();
+
+        trace(ast);
+    }
+
+    /**
+     * Emits an error in the context of the MNSLContext.
+     * @param error The error to be emitted.
+     */
+    public function emitError(error: MNSLError): Void {
+        throw errorToString(error);
+    }
+
+    /**
+     * Convert an error to a human-readable string.
+     * @param error The error to be converted.
+     */
+    public function errorToString(error: MNSLError): String {
+        switch (error) {
+            case ParserInvalidToken(token):
+                return "Invalid token: " + token;
+            case ParserInvalidKeyword(value, pos):
+                return "Invalid keyword: " + value + " at position " + pos;
+            case ParserUnexpectedToken (token, pos):
+                return "Unexpected token: " + token + " at position " + pos;
+            case TokenizerInvalidChar(char, pos):
+                return "Invalid character: " + char + " at position " + pos;
+            case TokenizerUnterminatedString(pos):
+                return "Unterminated string at position " + pos;
+        }
     }
 
 }

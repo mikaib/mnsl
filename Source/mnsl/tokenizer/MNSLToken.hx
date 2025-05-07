@@ -3,9 +3,9 @@ import mnsl.tokenizer.MNSLTokenInfo;
 
 enum MNSLToken {
     Identifier(value: String, info: MNSLTokenInfo);
-    Integer(value: String, info: MNSLTokenInfo);
-    Float(value: String, info: MNSLTokenInfo);
-    String(value: String, info: MNSLTokenInfo);
+    IntegerLiteral(value: String, info: MNSLTokenInfo);
+    FloatLiteral(value: String, info: MNSLTokenInfo);
+    StringLiteral(value: String, info: MNSLTokenInfo);
     LeftParen(info: MNSLTokenInfo);
     RightParen(info: MNSLTokenInfo);
     LeftBracket(info: MNSLTokenInfo);

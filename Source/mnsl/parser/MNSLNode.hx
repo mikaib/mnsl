@@ -13,6 +13,7 @@ enum MNSLNode {
     // variables
     VariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
     VariableAssign(name: String, value: MNSLNode, info: MNSLNodeInfo);
+    Identifier(name: String, info: MNSLNodeInfo);
 
     // if statements
     IfStatement(condition: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo);
@@ -31,4 +32,9 @@ enum MNSLNode {
 
     // other lang features
     SubExpression(node: MNSLNode, info: MNSLNodeInfo);
+
+    // literals
+    IntLiteralNode(value: String, info: MNSLNodeInfo);
+    FloatLiteralNode(value: String, info: MNSLNodeInfo);
+    StringLiteralNode(value: String, info: MNSLNodeInfo);
 }

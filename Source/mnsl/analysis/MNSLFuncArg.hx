@@ -5,4 +5,10 @@ import mnsl.analysis.MNSLType;
 class MNSLFuncArg {
     public var name: String;
     public var type: MNSLType;
+
+    @:to
+    public function toString(): String {
+        return name + "(" + type + ")";
+    }
+
 }
