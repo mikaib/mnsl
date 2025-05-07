@@ -1,10 +1,16 @@
 import mnsl.MNSL;
+import mnsl.MNSLContext;
+import mnsl.glsl.MNSLGLSLVersion;
 
 class Test {
 
     public static function main() {
-        trace("------");
-        var shader = MNSL.fromFile("test.mns");
+        var shader: MNSLContext = MNSL.fromFile("test.mns");
+        var glsl: String = shader.emitGLSL({
+            version: GLSL_VER_100_ES
+        });
+
+        trace(glsl);
     }
 
 }

@@ -2,6 +2,8 @@ package mnsl.tokenizer;
 import mnsl.tokenizer.MNSLTokenInfo;
 
 enum MNSLToken {
+    None;
+    At(info: MNSLTokenInfo);
     Identifier(value: String, info: MNSLTokenInfo);
     IntegerLiteral(value: String, info: MNSLTokenInfo);
     FloatLiteral(value: String, info: MNSLTokenInfo);

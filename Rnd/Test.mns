@@ -1,7 +1,10 @@
-func main(a, b, c){
-    return 3 + 5 * 3.144341 * "abc" / test.xyz;
-}
+@input(aPosition: Vec2)
+@input(aColour: Vec4)
+@output(Colour: Vec4)
 
-func test() {
-    return 0;
+func main(): Void {
+    gl_Position = aPosition;
+    Colour = aColour;
+
+    test[3] = aColour;
 }

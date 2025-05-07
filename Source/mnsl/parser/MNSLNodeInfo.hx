@@ -25,8 +25,30 @@ class MNSLNodeInfo {
      * @param tokenInfos The list of token infos.
      */
     public static function fromTokenInfos(tokenInfos: Array<MNSLTokenInfo>): MNSLNodeInfo {
-        var first = tokenInfos[0];
-        var last = tokenInfos[tokenInfos.length - 1];
+        var first: MNSLTokenInfo = {
+            line: 0xFF,
+            column: 0xFF,
+            length: 0
+        };
+
+        var last: MNSLTokenInfo = tokenInfos[0] ?? {
+            line: 0,
+            column: 0,
+            length: 0
+        };
+
+        for (tokenInfo in tokenInfos) {
+            if (tokenInfo == null) {
+                continue;
+            }
+
+            if (tokenInfo.line < first.line || (tokenInfo.line == first.line && tokenInfo.column < first.column)) {
+                first = tokenInfo;
+            }
+            if (tokenInfo.line > last.line || (tokenInfo.line == last.line && tokenInfo.column + tokenInfo.length > last.column + last.length)) {
+                last = tokenInfo;
+            }
+        }
 
         return {
             fromLine: first.line,
@@ -36,4 +58,11 @@ class MNSLNodeInfo {
         };
     }
 
+    /**
+     * Converts MNSLNodeInfo into a string.
+     */
+    @:to
+    public function toString(): String {
+        return fromLine + ":" + fromColumn + " - " + toLine + ":" + toColumn;
+    }
 }

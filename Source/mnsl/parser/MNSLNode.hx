@@ -11,8 +11,8 @@ enum MNSLNode {
     Return(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo);
 
     // variables
-    VariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
-    VariableAssign(name: String, value: MNSLNode, info: MNSLNodeInfo);
+    VariableDecl(name: MNSLNode, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
+    VariableAssign(name: MNSLNode, value: MNSLNode, info: MNSLNodeInfo);
     Identifier(name: String, info: MNSLNodeInfo);
 
     // if statements
@@ -32,9 +32,11 @@ enum MNSLNode {
 
     // other lang features
     SubExpression(node: MNSLNode, info: MNSLNodeInfo);
+    StructAccess(on: MNSLNode, field: String, info: MNSLNodeInfo);
+    ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
 
     // literals
-    IntLiteralNode(value: String, info: MNSLNodeInfo);
+    IntegerLiteralNode(value: String, info: MNSLNodeInfo);
     FloatLiteralNode(value: String, info: MNSLNodeInfo);
     StringLiteralNode(value: String, info: MNSLNodeInfo);
 }

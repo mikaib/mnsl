@@ -49,6 +49,11 @@ class MNSLTokenizer {
                     column++;
                     position++;
 
+                case '@':
+                    tokens.push(MNSLToken.At({ line: line, column: column, length: 1, position: initialPosition }));
+                    position++;
+                    column++;
+
                 case '(':
                     tokens.push(MNSLToken.LeftParen({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
@@ -63,6 +68,7 @@ class MNSLTokenizer {
                     tokens.push(MNSLToken.LeftBracket({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
+
 
                 case ']':
                     tokens.push(MNSLToken.RightBracket({ line: line, column: column, length: 1, position: initialPosition }));
