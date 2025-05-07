@@ -1,0 +1,5 @@
+-L mnsl
+
+--main Test
+--hl output.hl
+--cmd hl output.hl

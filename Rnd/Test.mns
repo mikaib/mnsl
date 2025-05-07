@@ -1,0 +1,3 @@
+func main() {
+    return 3 + 5 * 3.144341 * "abc" / test.xyz;
+}
