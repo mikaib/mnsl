@@ -1,0 +1,14 @@
+// inputs
+@input(Colour: Vec4)
+@input(TexCoord: Vec2)
+
+// outputs
+@output(FragColour: Vec4)
+
+// uniforms
+@uniform(Texture: Sampler)
+
+// functions
+func main() {
+    output.FragColour = texture(input.Texture, input.TexCoord) * input.Colour;
+}

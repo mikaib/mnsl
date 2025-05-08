@@ -7,4 +7,5 @@ class MNSLShaderData {
     public var kind: MNSLShaderDataKind;
     public var type: MNSLType;
     public var name: String;
+    public var arraySize: Int = -1;
 }

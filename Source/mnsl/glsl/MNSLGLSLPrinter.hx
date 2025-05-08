@@ -4,10 +4,12 @@ import mnsl.parser.MNSLNode;
 import mnsl.parser.MNSLNodeChildren;
 import mnsl.tokenizer.MNSLToken;
 import mnsl.parser.MNSLShaderDataKind;
+import mnsl.parser.MNSLParser;
 
 class MNSLGLSLPrinter extends MNSLPrinter {
 
     private var _config: MNSLGLSLConfig;
+
     private var _types: Map<String, String> = [
         "Void" => "void",
         "Int32" => "int",
@@ -21,6 +23,23 @@ class MNSLGLSLPrinter extends MNSLPrinter {
         "Mat3" => "mat3",
         "Mat4" => "mat4",
         "Bool" => "bool",
+        "Sampler" => "sampler2D",
+        "CubeSampler" => "samplerCube",
+    ];
+
+    private var _internalOutputStruct: Map<String, String> = [
+        "Position" => "gl_Position",
+        "PointSize" => "gl_PointSize",
+    ];
+
+    private var _internalInputStruct: Map<String, String> = [
+        "VertexID" => "gl_VertexID",
+        "InstanceID" => "gl_InstanceID",
+        "BaseVertex" => "gl_BaseVertex",
+        "BaseInstance" => "gl_BaseInstance",
+        "FragCoord" => "gl_FragCoord",
+        "FrontFacing" => "gl_FrontFacing",
+        "FragDepth" => "gl_FragDepth",
     ];
 
     /**
@@ -75,16 +94,22 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                 for (arg in args) {
                     printNode(arg);
+                    if (arg != args[args.length - 1]) {
+                        print(", ");
+                    }
                 }
 
-                println(");");
+                println(")" + (_inline ? "" : ";"));
 
             case VariableDecl(name, type, value, info):
                 if (value == null) {
                     printlnIndented("{0} {1};", _types.get(type.toString()), name);
                 } else {
                     printIndented("{0} {1} = ", _types.get(type.toString()), name);
+                    enableInline();
                     printNode(value);
+                    disableInline();
+                    removeLastSemicolon();
                     println(";");
                 }
 
@@ -116,8 +141,13 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printlnIndented("}");
 
             case VariableAssign(name, value, info):
-                printIndented("{0} = ", name);
+                printIndented("");
+                printNode(name);
+                print(" = ");
+                enableInline();
                 printNode(value);
+                disableInline();
+                removeLastSemicolon();
                 println(";");
 
             case Return(node, type, info):
@@ -198,6 +228,39 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printNode(index);
                 print("]");
 
+            case StructAccess(on, field, info):
+                if (on.match(Identifier("output", _))) {
+                    if (_internalOutputStruct.exists(field)) {
+                        print(_internalOutputStruct.get(field));
+                        return;
+                    }
+
+                    for (data in _context.getShaderData()) {
+                        if (data.name == field) {
+                            print(data.name);
+                            return;
+                        }
+                    }
+                }
+
+                if (on.match(Identifier("input", _))) {
+                    if (_internalInputStruct.exists(field)) {
+                        print(_internalInputStruct.get(field));
+                        return;
+                    }
+
+                    for (data in _context.getShaderData()) {
+                        if (data.name == field) {
+                            print(data.name);
+                            return;
+                        }
+                    }
+                }
+
+                printNode(on);
+                print(".");
+                print(field);
+
             default:
                 throw "Unknown node type: " + node;
         }
@@ -267,7 +330,11 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                 case MNSLShaderDataKind.Uniform:
-                    println("uniform {0} {1};", _types.get(data.type.toString()), data.name);
+                    if (data.arraySize != -1) {
+                        println("uniform {0} {1}[{2}];", _types.get(data.type.toString()), data.name, data.arraySize);
+                    } else {
+                        println("uniform {0} {1};", _types.get(data.type.toString()), data.name);
+                    }
             }
         }
 

@@ -1,0 +1,15 @@
+// inputs
+@input(aPosition: Vec3)
+@input(aColour: Vec4)
+@input(aTexCoord: Vec2)
+
+// outputs
+@output(Colour: Vec4)
+@output(TexCoord: Vec2)
+
+// functions
+func main() {
+    output.Position = input.aPosition;
+    output.Colour = input.aColour;
+    output.TexCoord = input.aTexCoord;
+}

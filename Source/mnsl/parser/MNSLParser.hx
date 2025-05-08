@@ -93,8 +93,14 @@ class MNSLParser {
                 case LeftBracket(_):
                     parseArrayAccess(token);
 
+                case Dot(_):
+                    parseStructAccess(token);
+
                 case At(_):
                     parseMeta(token);
+
+                case Assign(_):
+                    parseVarAssign(getCurrentTokenValue(), getTokenInfo(token));
 
                 case IntegerLiteral(value, info):
                     append(IntegerLiteralNode(value, MNSLNodeInfo.fromTokenInfo(info)));
@@ -119,6 +125,30 @@ class MNSLParser {
         }
 
         return ast;
+    }
+
+    /**
+     * This function will parse a struct access.
+     * @param token The token to parse.
+     */
+    public function parseStructAccess(token: MNSLToken): Void {
+        var accessOn = pop();
+        if (accessOn == null) {
+            context.emitError(ParserUnexpectedExpression(accessOn, null));
+            return;
+        }
+
+        var accessName = getCurrentTokenValue();
+        if (accessName == null) {
+            context.emitError(ParserUnexpectedToken(tokens[currentIndex], null));
+            return;
+        }
+
+        append(StructAccess(
+            accessOn,
+            accessName,
+            MNSLNodeInfo.fromTokenInfos([getTokenInfo(token), getTokenInfo(tokens[currentIndex - 1])])
+        ));
     }
 
     /**
@@ -178,6 +208,8 @@ class MNSLParser {
                 parseShaderDataMeta(block, MNSLShaderDataKind.Output);
             case "uniform":
                 parseShaderDataMeta(block, MNSLShaderDataKind.Uniform);
+            case "define":
+                parseDefineMeta(block);
         }
     }
 
@@ -205,13 +237,84 @@ class MNSLParser {
             return;
         }
 
+        var bracketOpenToken = block[3];
+        var arraySize = block[4];
+        var arraySizeInt: Int = -1;
+        var bracketCloseToken = block[5];
+
+        if (bracketOpenToken != null) {
+            if (!bracketOpenToken.match(LeftBracket(_))) {
+                context.emitError(ParserUnexpectedToken(bracketOpenToken, null));
+                return;
+            }
+
+            if (arraySize == null) {
+                context.emitError(ParserUnexpectedToken(arraySize, null));
+                return;
+            }
+
+            if (bracketCloseToken == null || !bracketCloseToken.match(RightBracket(_))) {
+                context.emitError(ParserUnexpectedToken(bracketCloseToken, null));
+                return;
+            }
+
+            if (!arraySize.match(IntegerLiteral(_, _))) {
+                if (!arraySize.match(Identifier(_, _))) {
+                    context.emitError(ParserUnexpectedToken(arraySize, null));
+                    return;
+                }
+
+                var defineValue = context.getDefine(getTokenValue(arraySize));
+                if (defineValue == null) {
+                    context.emitError(ParserUnexpectedToken(arraySize, null));
+                    return;
+                }
+
+                if (!defineValue.match(IntegerLiteral(_, _))) {
+                    context.emitError(ParserUnexpectedToken(arraySize, null));
+                    return;
+                }
+
+                arraySizeInt = Std.parseInt(getTokenValue(defineValue));
+            } else {
+                arraySizeInt = Std.parseInt(getTokenValue(arraySize));
+            }
+        }
+
         var shData: MNSLShaderData = {
             name: name,
             type: MNSLType.fromString(type),
+            arraySize: arraySizeInt,
             kind: kind
         };
 
         dataList.push(shData);
+    }
+
+    /**
+     * Parses a define meta token
+     */
+    public function parseDefineMeta(block: Array<MNSLToken>): Void {
+        var nameToken = block[0];
+        var name = getTokenValue(nameToken);
+        if (name == null) {
+            context.emitError(ParserUnexpectedToken(nameToken, null));
+            return;
+        }
+
+        var commaToken = block[1];
+        if (commaToken == null || !commaToken.match(Comma(_))) {
+            context.emitError(ParserUnexpectedToken(commaToken, null));
+            return;
+        }
+
+        var valueToken = block[2];
+        if (valueToken == null) {
+            context.emitError(ParserUnexpectedToken(valueToken, null));
+            return;
+        }
+
+        context.setDefine(name, valueToken);
     }
 
     /**
@@ -246,6 +349,11 @@ class MNSLParser {
      * @param info The token info.
      */
     public function parseIdentifier(value: String, info: MNSLTokenInfo): Void {
+        if (context.getDefine(value) != null) {
+            tokens[currentIndex - 1] = context.getDefine(value);
+            value = getTokenValue(tokens[currentIndex - 1]);
+        }
+
         if (keywords.contains(value)) {
             parseKeyword(value, info);
             return;
@@ -255,11 +363,6 @@ class MNSLParser {
 
         if (nextToken == "LeftParen") {
             parseFunctionCall(value, info);
-            return;
-        }
-
-        if (nextToken == "Assign") {
-            parseVarAssign(value, info);
             return;
         }
 
@@ -592,9 +695,9 @@ class MNSLParser {
      * @param info The token info.
      */
     public function parseVarAssign(value: String, info: MNSLTokenInfo): Void {
-        var name = value;
+        var name = pop();
 
-        currentIndex++;
+        currentIndex--;
         var assignBlock = getBlock(None, Semicolon(null), 1);
 
         var c = new MNSLParser(context, assignBlock);

@@ -7,17 +7,21 @@ import mnsl.parser.MNSLShaderData;
 import mnsl.parser.MNSLParser;
 import mnsl.glsl.MNSLGLSLConfig;
 import mnsl.glsl.MNSLGLSLPrinter;
+import mnsl.analysis.MNSLAnalyser;
 
 class MNSLContext {
 
     private var _finalAst: MNSLNodeChildren;
     private var _finalData: Array<MNSLShaderData>;
+    private var _defines: Map<String, MNSLToken>;
 
     /**
      * Creates a new MNSLContext instance.
      * @param source The source code to be parsed.
      */
     public function new(source: String) {
+        _defines = [];
+
         var tokenizer: MNSLTokenizer = new MNSLTokenizer(this, source);
         var tokens: Array<MNSLToken> = tokenizer.run();
 
@@ -26,6 +30,53 @@ class MNSLContext {
 
         _finalAst = res.ast;
         _finalData = res.dataList;
+
+        var analyser = new MNSLAnalyser(this, res.ast);
+        analyser.run();
+    }
+
+    /**
+     * Get the defines.
+     * @return The defines.
+     */
+    public function getDefines(): Map<String, MNSLToken> {
+        return _defines;
+    }
+
+    /**
+     * Set an integer define.
+     * @param key The key of the define.
+     * @param value The value of the define.
+     */
+    public function setDefineInt(key: String, value: Int): Void {
+        _defines.set(key, IntegerLiteral('$value', null));
+    }
+
+    /**
+     * Set a float define.
+     * @param key The key of the define.
+     * @param value The value of the define.
+     */
+    public function setDefineFloat(key: String, value: Float): Void {
+        _defines.set(key, FloatLiteral('$value', null));
+    }
+
+    /**
+     * Set a direct define.
+     * @param key The key of the define.
+     * @param value The value of the define.
+     */
+    public function setDefine(key: String, value: MNSLToken): Void {
+        _defines.set(key, value);
+    }
+
+    /**
+     * Get a define.
+     * @param key The key of the define.
+     * @return The value of the define.
+     */
+    public function getDefine(key: String): MNSLToken {
+        return _defines.get(key);
     }
 
     /**

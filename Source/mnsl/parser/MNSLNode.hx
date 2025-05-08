@@ -11,7 +11,7 @@ enum MNSLNode {
     Return(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo);
 
     // variables
-    VariableDecl(name: MNSLNode, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
+    VariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
     VariableAssign(name: MNSLNode, value: MNSLNode, info: MNSLNodeInfo);
     Identifier(name: String, info: MNSLNodeInfo);
 
