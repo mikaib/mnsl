@@ -1,14 +1,15 @@
 // inputs
-@input(Colour: Vec4)
-@input(TexCoord: Vec2)
+@input(aPosition: Vec3)
+@input(aColour: Vec4)
+@input(aTexCoord: Vec2)
 
 // outputs
-@output(FragColour: Vec4)
-
-// uniforms
-@uniform(Texture: Sampler)
+@output(Colour: Vec4)
+@output(TexCoord: Vec2)
 
 // functions
 func main() {
-    output.FragColour = texture(input.Texture, input.TexCoord) * input.Colour;
+    output.Position = vec4(input.aPosition);
+    output.Colour = input.aColour;
+    output.TexCoord = input.aTexCoord;
 }

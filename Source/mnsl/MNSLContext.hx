@@ -100,6 +100,8 @@ class MNSLContext {
                     Sys.println(indentStr + name + '[$structName.$field]');
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
+                case Identifier(identifierName, info):
+                    Sys.println(indentStr + name + '[$identifierName]');
                 default:
                     Sys.println(indentStr + name);
             }
