@@ -2,7 +2,8 @@ package mnsl.analysis;
 
 import mnsl.parser.MNSLNodeChildren;
 import mnsl.parser.MNSLNode;
-import mnsl.parser.MNSLNodeInfo;
+import haxe.EnumTools.EnumValueTools;
+import haxe.EnumTools;
 
 class MNSLAnalyser {
 
@@ -21,95 +22,92 @@ class MNSLAnalyser {
      * Run on a given node.
      * @param node The node to run on.
      */
-    public function execAtNode(node) {
-        switch (node) {
-            case FunctionDecl(name, returnType, arguments, body, info):
-                // TODO: impl
-                execAtBody(body);
+    public function execAtNode(node: MNSLNode): MNSLNode {
+        var eNode = Type.getEnum(node);
+        var name = EnumValueTools.getName(node);
+        var params: Array<Dynamic> = EnumValueTools.getParameters(node);
 
-            case FunctionCall(name, args, info):
-                // TODO: impl
+        var changeTo = (node: MNSLNode) -> {
+            name = EnumValueTools.getName(node);
+            params = EnumValueTools.getParameters(node);
+        };
 
-            case Return(value, type, info):
-                // TODO: impl
-
-            case VariableDecl(name, type, value, info):
-                // TODO: impl
-
-            case VariableAssign(name, value, info):
-                // TODO: impl
-
-            case Identifier(name, info):
-                // TODO: impl
-
-            case IfStatement(condition, body, info):
-                // TODO: impl
-                execAtBody(body);
-
-            case ElseIfStatement(condition, body, info):
-                // TODO: impl
-                execAtBody(body);
-
-            case ElseStatement(body, info):
-                // TODO: impl
-                execAtBody(body);
-
-            case BinaryOp(left, op, right, info):
-                // TODO: impl
-
-            case UnaryOp(op, right, info):
-                // TODO: impl
-
-            case WhileLoop(condition, body, info):
-                // TODO: impl
-                execAtBody(body);
-
-            case ForLoop(init, condition, increment, body, info):
-                // TODO: impl
-                execAtBody(body);
-
-            case Break(info):
-                // TODO: impl
-
-            case Continue(info):
-                // TODO: impl
-
-            case SubExpression(node, info):
-                // TODO: impl
-
-            case StructAccess(on, field, info):
-                // TODO: impl
-
-            case ArrayAccess(on, index, info):
-                // TODO: impl
-
-            case IntegerLiteralNode(value, info):
-                // TODO: impl
-
-            case FloatLiteralNode(value, info):
-                // TODO: impl
-
-            case StringLiteralNode(value, info):
-                // TODO: impl
-
+        var resPre = this.execAtNodePre(node);
+        if (resPre != null) {
+            changeTo(resPre);
         }
+
+        for (pi in 0...params.length) {
+            var p: Dynamic = params[pi];
+
+            if (Std.isOfType(p, MNSLNode)) {
+                params[pi] = execAtNode(p);
+                continue;
+            }
+
+            if (Std.isOfType(p, MNSLNodeChildren)) {
+                params[pi] = execAtBody(p);
+                continue;
+            }
+        }
+
+        var resPost = this.execAtNodePost(node);
+        if (resPost != null) {
+            changeTo(resPost);
+        }
+
+        return EnumTools.createByName(eNode, name, params);
+    }
+
+    /**
+     * Run on the given node before the children are processed.
+     * @param node The node to run on.
+     * @param changeTo A function to change the node.
+     */
+    public function execAtNodePre(node: MNSLNode): Null<MNSLNode> {
+        switch (node) {
+            case FunctionCall(name, params, info):
+                return FunctionCall(
+                    'testing',
+                    params.concat([
+                        Identifier("ExtraArg", null)
+                    ]),
+                    info
+                );
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Run on the given node after the children are processed.
+     * @param node The node to run on.
+     * @param changeTo A function to change the node.
+     */
+    public function execAtNodePost(node: MNSLNode): Null<MNSLNode> {
+        return null;
     }
 
     /**
      * Run on the given body.
      * @param body The body to run on.
      */
-    public function execAtBody(body: MNSLNodeChildren): Void {
+    public function execAtBody(body: MNSLNodeChildren): MNSLNodeChildren {
+        var newBody: MNSLNodeChildren = [];
+
         for (node in body) {
-            this.execAtNode(node);
+            newBody.push(this.execAtNode(node));
         }
+
+        return newBody;
     }
 
     /**
      * Run the analysis.
      */
-    public function run(): Void {
-        execAtBody(this._ast);
+    public function run(): MNSLNodeChildren {
+        return execAtBody(this._ast);
     }
 
 }

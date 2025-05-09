@@ -8,6 +8,7 @@ import mnsl.parser.MNSLParser;
 import mnsl.glsl.MNSLGLSLConfig;
 import mnsl.glsl.MNSLGLSLPrinter;
 import mnsl.analysis.MNSLAnalyser;
+import haxe.EnumTools.EnumValueTools;
 
 class MNSLContext {
 
@@ -32,7 +33,77 @@ class MNSLContext {
         _finalData = res.dataList;
 
         var analyser = new MNSLAnalyser(this, res.ast);
-        analyser.run();
+        var output = analyser.run();
+
+        _finalAst = output;
+        printAST(_finalAst);
+    }
+
+    /**
+     * Print a given AST.
+     * @param ast The AST to be printed.
+     * @param indent The indentation level.
+     */
+    public function printAST(ast: MNSLNodeChildren, indent: Int = 0): Void {
+        var indentStr = StringTools.lpad("", " ", indent * 2);
+
+        for (node in ast) {
+            var name = EnumValueTools.getName(node);
+
+            switch(node) {
+                case FunctionDecl(funcName, returnType, params, body, info):
+                    Sys.println(indentStr + name + '[$funcName: $returnType]');
+                    printAST(body, indent + 1);
+                case FunctionCall(funcName, args, info):
+                    Sys.println(indentStr + name + '[$funcName]');
+                    printAST(args, indent + 1);
+                case Return(value, type, info):
+                    Sys.println(indentStr + name);
+                    printAST([value], indent + 1);
+                case VariableDecl(name, type, value, info):
+                    Sys.println(indentStr + name + " " + type);
+                    if (value != null) {
+                        printAST([value], indent + 1);
+                    }
+                case VariableAssign(varName, value, info):
+                    Sys.println(indentStr + name + '[$varName]');
+                    printAST([value], indent + 1);
+                case IfStatement(condition, body, info):
+                    Sys.println(indentStr + name);
+                    printAST([condition], indent + 1);
+                    printAST(body, indent + 1);
+                case ElseIfStatement(condition, body, info):
+                    Sys.println(indentStr + name);
+                    printAST([condition], indent + 1);
+                    printAST(body, indent + 1);
+                case ElseStatement(body, info):
+                    Sys.println(indentStr + name);
+                    printAST(body, indent + 1);
+                case BinaryOp(left, op, right, info):
+                    Sys.println(indentStr + name + '[$op]');
+                    printAST([left, right], indent + 1);
+                case UnaryOp(op, value, info):
+                    Sys.println(indentStr + name + '[$op]');
+                    printAST([value], indent + 1);
+                case WhileLoop(condition, body, info):
+                    Sys.println(indentStr + name);
+                    printAST([condition], indent + 1);
+                    printAST(body, indent + 1);
+                case ForLoop(init, condition, increment, body, info):
+                    Sys.println(indentStr + name);
+                    printAST([init, condition, increment], indent + 1);
+                    printAST(body, indent + 1);
+                case SubExpression(value, info):
+                    Sys.println(indentStr + name);
+                    printAST([value], indent + 1);
+                case StructAccess(structName, field, info):
+                    Sys.println(indentStr + name + '[$structName.$field]');
+                case ArrayAccess(arrayName, index, info):
+                    Sys.println(indentStr + name + '[$arrayName[$index]]');
+                default:
+                    Sys.println(indentStr + name);
+            }
+        }
     }
 
     /**

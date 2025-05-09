@@ -1,7 +1,6 @@
 package mnsl.glsl;
 
 enum abstract MNSLGLSLVersion(Int) to Int {
-    var GLSL_VER_100_ES = 100;
     var GLSL_VER_300_ES = 300;
     var GLSL_VER_310_ES = 310;
     var GLSL_VER_320_ES  = 320;

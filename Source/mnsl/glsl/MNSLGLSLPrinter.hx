@@ -13,9 +13,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
     private var _types: Map<String, String> = [
         "Void" => "void",
         "Int32" => "int",
-        "UInt32" => "uint",
         "Float32" => "float",
-        "Float64" => "double",
         "Vec2" => "vec2",
         "Vec3" => "vec3",
         "Vec4" => "vec4",
