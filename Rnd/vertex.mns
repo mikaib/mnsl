@@ -1,7 +1,7 @@
 // inputs
-@input(aPosition: Vec3)
-@input(aColour: Vec4)
-@input(aTexCoord: Vec2)
+@input(Position: Vec3)
+@input(Colour: Vec4)
+@input(TexCoord: Vec2)
 
 // outputs
 @output(Colour: Vec4)
@@ -9,7 +9,7 @@
 
 // functions
 func main() {
-    output.Position = input.aPosition;
-    output.Colour = input.aColour;
-    output.TexCoord = input.aTexCoord;
+    output.Position = input.Position;
+    output.Colour = input.Colour;
+    output.TexCoord = input.TexCoord;
 }

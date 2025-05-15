@@ -4,6 +4,7 @@ class MNSLType {
 
     public static var TUnknown(get, never): MNSLType;
     public static var TBool(get, never): MNSLType;
+    public static var TVoid(get, never): MNSLType;
     public static var TFloat32(get, never): MNSLType;
     public static var TInt32(get, never): MNSLType;
     public static var TMat2(get, never): MNSLType;
@@ -20,13 +21,15 @@ class MNSLType {
     public static var TVec4(get, never): MNSLType;
 
     private var _type: String;
+    private var _tempType: Bool;
 
     /**
      * Create a new MNSLType instance.
      * @param type The type name.
      */
-    private function new(t: String) {
+    private function new(t: String, temp: Bool = false) {
         _type = t;
+        _tempType = temp;
     }
 
     /**
@@ -35,6 +38,36 @@ class MNSLType {
      */
     public function setTypeStrUnsafe(type: String): Void {
         _type = type;
+    }
+
+    /**
+     * Set a type.
+     * @param type The type name.
+     */
+    public function setType(type: MNSLType): Void {
+        @:privateAccess _type = type._type;
+    }
+
+    /**
+     * Checks if the type equals another type.
+     */
+    public function equals(type: MNSLType): Bool {
+        @:privateAccess return _type == type._type;
+    }
+
+    /**
+     * Mark the type as temporary.
+     * @param temp True if the type is temporary, false otherwise.
+     */
+    public function setTempType(temp: Bool): Void {
+        _tempType = temp;
+    }
+
+    /**
+     * Check if the type is defined.
+     */
+    public inline function isDefined(): Bool {
+        return _type != "Unknown" && !_tempType;
     }
 
     /**
@@ -237,6 +270,13 @@ class MNSLType {
      */
     public static inline function get_TVec4():MNSLType {
         return new MNSLType("Vec4");
+    }
+
+    /**
+     * Create a new TVoid type.
+     */
+    public static inline function get_TVoid():MNSLType {
+        return new MNSLType("Void");
     }
 
     /**

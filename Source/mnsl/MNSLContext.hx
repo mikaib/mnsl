@@ -205,6 +205,8 @@ class MNSLContext {
                 return "Invalid character: " + char + " at position " + pos;
             case TokenizerUnterminatedString(pos):
                 return "Unterminated string at position " + pos;
+            case AnalyserNoImplementation(fn):
+                return "No implementation for function: " + fn;
         }
     }
 

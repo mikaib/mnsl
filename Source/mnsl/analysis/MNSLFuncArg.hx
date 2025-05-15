@@ -1,4 +1,5 @@
 package mnsl.analysis;
+
 import mnsl.analysis.MNSLType;
 
 @:structInit

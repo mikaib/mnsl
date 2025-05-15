@@ -234,8 +234,8 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                     for (data in _context.getShaderData()) {
-                        if (data.name == field) {
-                            print(data.name);
+                        if (data.name == field && data.kind == MNSLShaderDataKind.Output) {
+                            print("out_" + data.name);
                             return;
                         }
                     }
@@ -249,7 +249,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     for (data in _context.getShaderData()) {
                         if (data.name == field) {
-                            print(data.name);
+                            print((data.kind == MNSLShaderDataKind.Uniform ? "u_" : "in_") + data.name);
                             return;
                         }
                     }
@@ -315,23 +315,23 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             switch (data.kind) {
                 case MNSLShaderDataKind.Input:
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("attribute {0} {1};", _types.get(data.type.toString()), data.name);
+                        println("attribute {0} in_{1};", _types.get(data.type.toString()), data.name);
                     } else {
-                        println("in {0} {1};", _types.get(data.type.toString()), data.name);
+                        println("in {0} in_{1};", _types.get(data.type.toString()), data.name);
                     }
 
                 case MNSLShaderDataKind.Output:
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("varying {0} {1};", _types.get(data.type.toString()), data.name);
+                        println("varying {0} out_{1};", _types.get(data.type.toString()), data.name);
                     } else {
-                        println("out {0} {1};", _types.get(data.type.toString()), data.name);
+                        println("out {0} out_{1};", _types.get(data.type.toString()), data.name);
                     }
 
                 case MNSLShaderDataKind.Uniform:
                     if (data.arraySize != -1) {
-                        println("uniform {0} {1}[{2}];", _types.get(data.type.toString()), data.name, data.arraySize);
+                        println("uniform {0} u_{1}[{2}];", _types.get(data.type.toString()), data.name, data.arraySize);
                     } else {
-                        println("uniform {0} {1};", _types.get(data.type.toString()), data.name);
+                        println("uniform {0} u_{1};", _types.get(data.type.toString()), data.name);
                     }
             }
         }
