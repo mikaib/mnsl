@@ -9,6 +9,6 @@ class MNSLAnalyserFunction {
 
     @:to
     public function toString(): String {
-        return "MNSLAnalyserFunction(" + name + ", " + args.toString() + ", " + returnType.toString() + ")";
+        return "MNSLAnalyserFunction(" + name + ", " + args.toString() + ", " + returnType.toString() + ")" + (hasImplementation ? " hasImplementation" : "");
     }
 }

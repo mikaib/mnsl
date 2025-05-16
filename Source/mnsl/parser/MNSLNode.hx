@@ -7,13 +7,13 @@ import mnsl.tokenizer.MNSLToken;
 enum MNSLNode {
     // functions
     FunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo);
-    FunctionCall(name: String, args: MNSLNodeChildren, info: MNSLNodeInfo);
+    FunctionCall(name: String, args: MNSLNodeChildren, returnType: MNSLType, info: MNSLNodeInfo);
     Return(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo);
 
     // variables
     VariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo);
     VariableAssign(name: MNSLNode, value: MNSLNode, info: MNSLNodeInfo);
-    Identifier(name: String, info: MNSLNodeInfo);
+    Identifier(name: String, type: MNSLType, info: MNSLNodeInfo);
 
     // if statements
     IfStatement(condition: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo);

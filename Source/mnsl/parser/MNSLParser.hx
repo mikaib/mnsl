@@ -366,7 +366,7 @@ class MNSLParser {
             return;
         }
 
-        append(MNSLNode.Identifier(value, MNSLNodeInfo.fromTokenInfo(info)));
+        append(MNSLNode.Identifier(value, MNSLType.TUnknown, MNSLNodeInfo.fromTokenInfo(info)));
     }
 
     /**
@@ -795,6 +795,7 @@ class MNSLParser {
         append(FunctionCall(
             name,
             args,
+            MNSLType.TUnknown,
             MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(argsBlock[argsBlock.length - 1])])
         ));
     }

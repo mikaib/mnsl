@@ -87,7 +87,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 decreaseIndent();
                 printlnIndented("}\n");
 
-            case FunctionCall(name, args, info):
+            case FunctionCall(name, args, type, info):
                 printIndented("{0}(", name);
 
                 for (arg in args) {
@@ -113,7 +113,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
             case IfStatement(condition, body, info):
                 printIndented("if (");
+                enableInline();
                 printNode(condition);
+                disableInline();
                 println(") {");
                 increaseIndent();
                 printNodeChildren(body);
@@ -123,7 +125,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             case ElseIfStatement (condition, body, info):
                 removeLastNewLine();
                 print(" else if (");
+                enableInline();
                 printNode(condition);
+                disableInline();
                 println(") {");
                 increaseIndent();
                 printNodeChildren(body);
@@ -151,22 +155,30 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             case Return(node, type, info):
                 printIndented("return ");
                 if (node != null) {
+                    enableInline();
                     printNode(node);
+                    disableInline();
                 }
                 println(";");
 
             case BinaryOp(left, op, right, info):
+                enableInline();
                 printNode(left);
                 print(" " + toOperationStr(op) + " ");
                 printNode(right);
+                disableInline();
 
             case UnaryOp(op, node, info):
+                enableInline();
                 print(toOperationStr(op));
                 printNode(node);
+                disableInline();
 
             case WhileLoop (condition, body, info):
                 printIndented("while (");
+                enableInline();
                 printNode(condition);
+                disableInline();
                 println(") {");
                 increaseIndent();
                 printNodeChildren(body);
@@ -206,7 +218,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             case FloatLiteralNode(value, info):
                 print(value);
 
-            case Identifier (name, info):
+            case Identifier (name, type, info):
                 print(name);
 
             case Break (info):
@@ -217,7 +229,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
             case SubExpression(node, info):
                 print("(");
+                enableInline();
                 printNode(node);
+                disableInline();
                 print(")");
 
             case ArrayAccess(on, index, info):

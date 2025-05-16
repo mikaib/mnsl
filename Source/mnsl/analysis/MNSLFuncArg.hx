@@ -12,4 +12,9 @@ class MNSLFuncArg {
         return name + "(" + type + ")";
     }
 
+    public function new(name: String, type: MNSLType) {
+        this.name = name;
+        this.type = type;
+    }
+
 }

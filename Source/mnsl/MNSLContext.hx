@@ -54,8 +54,8 @@ class MNSLContext {
                 case FunctionDecl(funcName, returnType, params, body, info):
                     Sys.println(indentStr + name + '[$funcName: $returnType]');
                     printAST(body, indent + 1);
-                case FunctionCall(funcName, args, info):
-                    Sys.println(indentStr + name + '[$funcName]');
+                case FunctionCall(funcName, args, type, info):
+                    Sys.println(indentStr + name + '[$funcName: $type]');
                     printAST(args, indent + 1);
                 case Return(value, type, info):
                     Sys.println(indentStr + name);
@@ -100,8 +100,14 @@ class MNSLContext {
                     Sys.println(indentStr + name + '[$structName.$field]');
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
-                case Identifier(identifierName, info):
-                    Sys.println(indentStr + name + '[$identifierName]');
+                case Identifier(identifierName, type, info):
+                    Sys.println(indentStr + name + '[$identifierName: $type]');
+                case IntegerLiteralNode(value, info):
+                    Sys.println(indentStr + name + '[$value]');
+                case FloatLiteralNode(value, info):
+                    Sys.println(indentStr + name + '[$value]');
+                case StringLiteralNode(value, info):
+                    Sys.println(indentStr + name + '[$value]');
                 default:
                     Sys.println(indentStr + name);
             }
@@ -207,6 +213,8 @@ class MNSLContext {
                 return "Unterminated string at position " + pos;
             case AnalyserNoImplementation(fn):
                 return "No implementation for function: " + fn;
+            case MismatchingType(constraint):
+                return "Expected " + constraint.mustBe + " but got " + constraint.type;
         }
     }
 

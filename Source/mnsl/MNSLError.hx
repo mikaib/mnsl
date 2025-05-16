@@ -5,6 +5,7 @@ import mnsl.tokenizer.MNSLToken;
 import mnsl.parser.MNSLNode;
 import mnsl.parser.MNSLNodeInfo;
 import mnsl.analysis.MNSLAnalyserFunction;
+import mnsl.analysis.MNSLConstraint;
 
 enum MNSLError {
     TokenizerInvalidChar(char: Int, pos: MNSLTokenInfo);
@@ -14,4 +15,5 @@ enum MNSLError {
     ParserUnexpectedToken(token: MNSLToken, pos: MNSLTokenInfo);
     ParserUnexpectedExpression(node: MNSLNode, pos: MNSLNodeInfo);
     AnalyserNoImplementation(fn: MNSLAnalyserFunction);
+    MismatchingType(constraint: MNSLConstraint);
 }

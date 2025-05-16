@@ -11,6 +11,7 @@ class MNSLAnalyser {
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl"];
+    private var _solver: MNSLSolver;
 
     /**
      * Create a new analyser.
@@ -19,6 +20,7 @@ class MNSLAnalyser {
         this._context = context;
         this._ast = ast;
         this._globalCtx = new MNSLAnalyserContext();
+        this._solver = new MNSLSolver(context);
     }
 
     /**
@@ -80,10 +82,71 @@ class MNSLAnalyser {
             case FunctionDecl(name, returnType, args, _, _):
                 return analyseFunctionDeclPre(node, name, returnType, args, ctx);
 
-            case FunctionCall(name, args, _):
-                return analyseFunctionCallPre(node, name, args, ctx);
+            case FunctionCall(name, args, returnType, _):
+                return analyseFunctionCallPre(node, name, args, returnType, ctx);
+
             default:
                 return node;
+        }
+    }
+
+    /**
+     * Get the type of a specific node (if available).
+     */
+    public function getType(node: MNSLNode): MNSLType {
+        if (node == null) {
+            return MNSLType.TUnknown;
+        }
+
+        switch (node) {
+            case FunctionDecl(name, returnType, args, _, _):
+                return returnType;
+
+            case FunctionCall(name, args, returnType, _):
+                return returnType;
+
+            case Return(value, _):
+                return getType(value);
+
+            case VariableDecl(name, type, value, _):
+                return type;
+
+            case Identifier (name, type, _):
+                return type;
+
+            case BinaryOp(left, op, right, _):
+                var leftType = getType(left);
+                var rightType = getType(right);
+                var resType = MNSLType.TUnknown;
+
+                _solver.addConstraint({
+                    type: leftType,
+                    ofNode: left,
+                    mustBe: rightType
+                });
+
+                _solver.addConstraint({
+                    type: resType,
+                    ofNode: null,
+                    mustBe: leftType
+                });
+
+                return resType;
+
+            case UnaryOp(op, value, _):
+                return getType(value);
+
+            case SubExpression(value, _):
+                return getType(value);
+
+            case IntegerLiteralNode(value, _):
+                return MNSLType.TInt32;
+
+            case FloatLiteralNode(value, _):
+                return MNSLType.TFloat32;
+
+            default:
+                return MNSLType.TUnknown;
         }
     }
 
@@ -124,8 +187,20 @@ class MNSLAnalyser {
      * @param ctx The context of the function.
      * @return The function call node.
      */
-    public function analyseFunctionCallPre(node: MNSLNode, name: String, args: MNSLNodeChildren, ctx: MNSLAnalyserContext): MNSLNode {
-        var func = ctx.findFunctions(name, args.map(x -> x.type));
+    public function analyseFunctionCallPre(node: MNSLNode, name: String, args: MNSLNodeChildren, returnType: MNSLType, ctx: MNSLAnalyserContext): MNSLNode {
+        var f = ctx.findFunctions(name, args.map(x -> getType(x)), true);
+        if (f.length <= 0) {
+            _context.emitError(AnalyserNoImplementation({
+                name: name,
+                args: args.map(x -> new MNSLFuncArg("", getType(x))),
+                returnType: returnType
+            }));
+            return node;
+        }
+
+        returnType.setType(f[0].returnType);
+
+        return node;
     }
 
     /**
@@ -134,12 +209,7 @@ class MNSLAnalyser {
      * @param changeTo A function to change the node.
      */
     public function execAtNodePost(node: MNSLNode, ctx: MNSLAnalyserContext): Null<MNSLNode> {
-        switch (node) {
-            case FunctionCall(name, args, _):
-                return analyseFunctionCallPre(node, name, args, ctx);
-            default:
-                return node;
-        }
+        return node;
     }
 
     /**
@@ -162,6 +232,7 @@ class MNSLAnalyser {
     public function run(): MNSLNodeChildren {
         MNSLAnalyserContext.reset();
         var res = execAtBody(this._ast, this._globalCtx);
+        this._solver.solve();
         MNSLAnalyserContext.validate(this._context);
 
         return res;

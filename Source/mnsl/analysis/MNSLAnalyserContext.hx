@@ -9,11 +9,31 @@ class MNSLAnalyserContext {
     public static function validate(mnslCtx: MNSLContext): Void {
         for (ctx in contexts) {
             for (f in ctx.functions) {
-                if (!f.hasImplementation) {
+                if (!f.hasImplementation && findFunctionsIn(ctx.functions, f.name, f.args.map(x -> x.type), true).length == 0) {
                     mnslCtx.emitError(AnalyserNoImplementation(f));
                 }
             }
         }
+    }
+
+    public static function findFunctionsIn(functions: Array<MNSLAnalyserFunction>, name: String, args: Array<MNSLType>, requireImpl: Bool = false): Array<MNSLAnalyserFunction> {
+        var result = [];
+        for (f in functions) {
+            if (f.name == name && f.args.length == args.length && (!requireImpl || f.hasImplementation)) {
+                var match = true;
+                for (i in 0...args.length) {
+                    if (!f.args[i].type.equals(args[i])) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    result.push(f);
+                }
+            }
+        }
+
+        return result;
     }
 
     public static function reset(): Void {
@@ -34,22 +54,7 @@ class MNSLAnalyserContext {
         return x;
     }
 
-    public function findFunctions(name: String, args: Array<MNSLType>): Array<MNSLAnalyserFunction> {
-        var result = [];
-        for (f in functions) {
-            if (f.name == name && f.args.length == args.length) {
-                var match = true;
-                for (i in 0...args.length) {
-                    if (!f.args[i].type.equals(args[i])) {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) {
-                    result.push(f);
-                }
-            }
-        }
-        return result;
+    public function findFunctions(name: String, args: Array<MNSLType>, hasImpl: Bool = false): Array<MNSLAnalyserFunction> {
+       return inline findFunctionsIn(functions, name, args, hasImpl);
     }
 }
