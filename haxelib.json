@@ -1,0 +1,16 @@
+{
+  "name": "mana",
+  "url" : "https://github.com/mikaib/mana_framework",
+  "license": "MIT",
+  "tags": ["game", "application", "framework"],
+  "description": "Yet another magical Haxe multimedia framework.",
+  "version": "1.0.0",
+  "classPath": "Source/",
+  "releasenote": "Experimental.",
+  "contributors": ["mikaib"],
+  "dependencies": {
+    "genesis": "",
+    "portal": "",
+    "genkit_miniaudio": ""
+  }
+}

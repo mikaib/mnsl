@@ -1,7 +1,9 @@
-func test(x: Int32): Int32 {
-    return 0;
+func test(x) {
+    return "abc";
 }
 
 func main() {
-    return test(32);
+    var v;
+    var q = test(v);
+    test(q);
 }
