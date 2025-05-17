@@ -21,7 +21,7 @@ enum MNSLNode {
     ElseStatement(body: MNSLNodeChildren, info: MNSLNodeInfo);
 
     // operations
-    BinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo);
+    BinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo);
     UnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo);
 
     // loops

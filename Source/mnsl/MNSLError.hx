@@ -14,6 +14,9 @@ enum MNSLError {
     ParserInvalidKeyword(value: String, pos: MNSLTokenInfo);
     ParserUnexpectedToken(token: MNSLToken, pos: MNSLTokenInfo);
     ParserUnexpectedExpression(node: MNSLNode, pos: MNSLNodeInfo);
-    AnalyserNoImplementation(fn: MNSLAnalyserFunction);
+    AnalyserNoImplementation(fn: MNSLAnalyserFunction, pos: MNSLNodeInfo);
+    AnalyserDuplicateVariable(name: String, pos: MNSLNodeInfo);
+    AnalyserUndeclaredVariable(name: String, pos: MNSLNodeInfo);
+    AnalyserReturnOutsideFunction(pos: MNSLNodeInfo);
     MismatchingType(constraint: MNSLConstraint);
 }

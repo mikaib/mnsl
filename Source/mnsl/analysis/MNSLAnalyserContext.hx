@@ -1,60 +1,42 @@
 package mnsl.analysis;
 
-import mnsl.MNSLError;
-
 class MNSLAnalyserContext {
 
-    public static var contexts: Array<MNSLAnalyserContext> = [];
-
-    public static function validate(mnslCtx: MNSLContext): Void {
-        for (ctx in contexts) {
-            for (f in ctx.functions) {
-                if (!f.hasImplementation && findFunctionsIn(ctx.functions, f.name, f.args.map(x -> x.type), true).length == 0) {
-                    mnslCtx.emitError(AnalyserNoImplementation(f));
-                }
-            }
-        }
-    }
-
-    public static function findFunctionsIn(functions: Array<MNSLAnalyserFunction>, name: String, args: Array<MNSLType>, requireImpl: Bool = false): Array<MNSLAnalyserFunction> {
-        var result = [];
-        for (f in functions) {
-            if (f.name == name && f.args.length == args.length && (!requireImpl || f.hasImplementation)) {
-                var match = true;
-                for (i in 0...args.length) {
-                    if (!f.args[i].type.equals(args[i])) {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) {
-                    result.push(f);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    public static function reset(): Void {
-        contexts = [];
-    }
-
     public var functions: Array<MNSLAnalyserFunction>;
+    public var variables: Array<MNSLAnalyserVariable>;
+    public var currentFunction: MNSLAnalyserFunction;
 
     public function new() {
         functions = [];
-        MNSLAnalyserContext.contexts.push(this);
+        variables = [];
+        currentFunction = null;
     }
 
     public function copy(): MNSLAnalyserContext {
         var x = new MNSLAnalyserContext();
         x.functions = functions.copy();
+        x.variables = variables.copy();
+        x.currentFunction = currentFunction;
 
         return x;
     }
 
-    public function findFunctions(name: String, args: Array<MNSLType>, hasImpl: Bool = false): Array<MNSLAnalyserFunction> {
-       return inline findFunctionsIn(functions, name, args, hasImpl);
+    public function findFunction(name: String, args: Array<MNSLType>, hasImpl: Bool = false): MNSLAnalyserFunction {
+        for (f in functions) {
+            if (f.name == name && f.args.length == args.length) {
+                return f;
+            }
+        }
+        return null;
     }
+
+    public function findVariable(name: String): MNSLAnalyserVariable {
+        for (v in variables) {
+            if (v.name == name) {
+                return v;
+            }
+        }
+        return null;
+    }
+
 }

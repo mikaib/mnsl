@@ -4,6 +4,7 @@ import mnsl.parser.MNSLNodeChildren;
 import mnsl.parser.MNSLNode;
 import haxe.EnumTools.EnumValueTools;
 import haxe.EnumTools;
+import mnsl.parser.MNSLNodeInfo;
 
 class MNSLAnalyser {
 
@@ -36,14 +37,11 @@ class MNSLAnalyser {
         var name = EnumValueTools.getName(node);
         var params: Array<Dynamic> = EnumValueTools.getParameters(node);
 
-        var changeTo = (node: MNSLNode) -> {
-            name = EnumValueTools.getName(node);
-            params = EnumValueTools.getParameters(node);
-        };
-
         var resPre = this.execAtNodePre(node, ctx);
         if (resPre != null) {
-            changeTo(resPre);
+            name = EnumValueTools.getName(resPre);
+            params = EnumValueTools.getParameters(resPre);
+            node = resPre;
         }
 
         if (_cpyStck.contains(name)) {
@@ -64,12 +62,16 @@ class MNSLAnalyser {
             }
         }
 
+        node = Type.createEnum(eNode, name, params);
+
         var resPost = this.execAtNodePost(node, ctx);
         if (resPost != null) {
-            changeTo(resPost);
+            name = EnumValueTools.getName(resPost);
+            params = EnumValueTools.getParameters(resPost);
+            node = resPost;
         }
 
-        return EnumTools.createByName(eNode, name, params);
+        return node;
     }
 
     /**
@@ -79,11 +81,8 @@ class MNSLAnalyser {
      */
     public function execAtNodePre(node: MNSLNode, ctx: MNSLAnalyserContext): Null<MNSLNode> {
         switch (node) {
-            case FunctionDecl(name, returnType, args, _, _):
-                return analyseFunctionDeclPre(node, name, returnType, args, ctx);
-
-            case FunctionCall(name, args, returnType, _):
-                return analyseFunctionCallPre(node, name, args, returnType, ctx);
+            case FunctionDecl(name, returnType, args, _, info):
+                return analyseFunctionDeclPre(node, name, returnType, args, ctx, info);
 
             default:
                 return node;
@@ -114,24 +113,8 @@ class MNSLAnalyser {
             case Identifier (name, type, _):
                 return type;
 
-            case BinaryOp(left, op, right, _):
-                var leftType = getType(left);
-                var rightType = getType(right);
-                var resType = MNSLType.TUnknown;
-
-                _solver.addConstraint({
-                    type: leftType,
-                    ofNode: left,
-                    mustBe: rightType
-                });
-
-                _solver.addConstraint({
-                    type: resType,
-                    ofNode: null,
-                    mustBe: leftType
-                });
-
-                return resType;
+            case BinaryOp(left, op, right, type, _):
+                return type;
 
             case UnaryOp(op, value, _):
                 return getType(value);
@@ -145,6 +128,9 @@ class MNSLAnalyser {
             case FloatLiteralNode(value, _):
                 return MNSLType.TFloat32;
 
+            case StringLiteralNode(value, _):
+                return MNSLType.TString;
+
             default:
                 return MNSLType.TUnknown;
         }
@@ -156,7 +142,7 @@ class MNSLAnalyser {
      * @param returnType The return type of the function.
      * @param args The arguments of the function.
      */
-    public function analyseFunctionDeclPre(node: MNSLNode, name: String, returnType: MNSLType, args: MNSLFuncArgs, ctx: MNSLAnalyserContext): MNSLNode {
+    public function analyseFunctionDeclPre(node: MNSLNode, name: String, returnType: MNSLType, args: MNSLFuncArgs, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
         if (!returnType.isDefined()) {
             returnType.setType(MNSLType.TVoid);
             returnType.setTempType(true);
@@ -169,36 +155,117 @@ class MNSLAnalyser {
             arg.type.setTempType(true);
         }
 
-        ctx.functions.push({
+        var f: MNSLAnalyserFunction = {
             name: name,
             returnType: returnType,
             args: args,
             hasImplementation: true
+        };
+
+        ctx.functions.push(f);
+        ctx.currentFunction = f;
+
+        return node;
+    }
+
+    /**
+     * Run on a variable declaration node (post)
+     * @param node The variable declaration node to run on.
+     * @param name The name of the variable.
+     * @param type The type of the variable.
+     * @param value The value of the variable.
+     */
+    public function analyseVariableDeclPost(node: MNSLNode, name: String, type: MNSLType, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        if (ctx.findVariable(name) != null) {
+            _context.emitError(AnalyserDuplicateVariable(name, info));
+            return node;
+        }
+
+        _solver.addConstraint({
+            type: getType(value),
+            mustBe: type,
+            ofNode: value,
+        });
+
+        ctx.variables.push({
+            name: name,
+            type: type
         });
 
         return node;
     }
 
     /**
-     * Run on a function call (pre)
+     * Run on an identifier node (post)
+     * @param node The identifier node to run on.
+     * @param name The name of the identifier.
+     * @param type The type of the identifier.
+     */
+    public function analyseIdentifierPost(node: MNSLNode, name: String, type: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var v = ctx.findVariable(name);
+        if (v == null) {
+            _context.emitError(AnalyserUndeclaredVariable(name, info));
+            return node;
+        }
+
+        return Identifier(name, v.type, info);
+    }
+
+    /**
+     * Run on a function call (post)
      * @param node The function call node to run on.
      * @param name The name of the function.
      * @param args The arguments of the function.
      * @param ctx The context of the function.
      * @return The function call node.
      */
-    public function analyseFunctionCallPre(node: MNSLNode, name: String, args: MNSLNodeChildren, returnType: MNSLType, ctx: MNSLAnalyserContext): MNSLNode {
-        var f = ctx.findFunctions(name, args.map(x -> getType(x)), true);
-        if (f.length <= 0) {
+    public function analyseFunctionCallPost(node: MNSLNode, name: String, args: MNSLNodeChildren, returnType: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var f = ctx.findFunction(name, args.map(x -> getType(x)), true);
+        if (f == null) {
             _context.emitError(AnalyserNoImplementation({
                 name: name,
                 args: args.map(x -> new MNSLFuncArg("", getType(x))),
-                returnType: returnType
-            }));
+                returnType: returnType,
+            }, info));
             return node;
         }
 
-        returnType.setType(f[0].returnType);
+        for (i in 0...args.length) {
+            var arg = args[i];
+            var argType = getType(arg);
+
+            _solver.addConstraint({
+                type: argType,
+                mustBe: f.args[i].type,
+                ofNode: arg,
+            });
+        }
+
+        _solver.addConstraint({
+            type: returnType,
+            mustBe: f.returnType,
+            ofNode: node,
+        });
+
+        return node;
+    }
+
+    /**
+     * Run on a return node (post)
+     * @param node The return node to run on.
+     * @param value The value of the return node.
+     */
+    public function analyseReturnPost(node: MNSLNode, value: MNSLNode, type: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        if (ctx.currentFunction == null) {
+            _context.emitError(AnalyserReturnOutsideFunction(info));
+            return node;
+        }
+
+        _solver.addConstraint({
+            type: getType(value),
+            mustBe: ctx.currentFunction.returnType,
+            ofNode: value,
+        });
 
         return node;
     }
@@ -209,7 +276,22 @@ class MNSLAnalyser {
      * @param changeTo A function to change the node.
      */
     public function execAtNodePost(node: MNSLNode, ctx: MNSLAnalyserContext): Null<MNSLNode> {
-        return node;
+        switch (node) {
+            case FunctionCall(name, args, returnType, info):
+                return analyseFunctionCallPost(node, name, args, returnType, ctx, info);
+
+            case Identifier(name, type, info):
+                return analyseIdentifierPost(node, name, type, ctx, info);
+
+            case VariableDecl(name, type, value, info):
+                return analyseVariableDeclPost(node, name, type, value, ctx, info);
+
+            case Return(value, type, info):
+                return analyseReturnPost(node, value, type, ctx, info);
+
+            default:
+                return node;
+        }
     }
 
     /**
@@ -230,10 +312,8 @@ class MNSLAnalyser {
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
-        MNSLAnalyserContext.reset();
         var res = execAtBody(this._ast, this._globalCtx);
         this._solver.solve();
-        MNSLAnalyserContext.validate(this._context);
 
         return res;
     }

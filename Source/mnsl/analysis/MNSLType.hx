@@ -3,6 +3,7 @@ package mnsl.analysis;
 class MNSLType {
 
     public static var TUnknown(get, never): MNSLType;
+    public static var TString(get, never): MNSLType;
     public static var TBool(get, never): MNSLType;
     public static var TVoid(get, never): MNSLType;
     public static var TFloat32(get, never): MNSLType;
@@ -280,6 +281,13 @@ class MNSLType {
     }
 
     /**
+     * Create a new TString type.
+     */
+    public static inline function get_TString():MNSLType {
+        return new MNSLType("String");
+    }
+
+    /**
      * Get the type name.
      * @return The type name.
      */
@@ -288,5 +296,12 @@ class MNSLType {
         return _type;
     }
 
+    /**
+     * To human readable string.
+     * @return The type name.
+     */
+    public function toHumanString(): String {
+        return 'T${_type}${_tempType ? " (temp)" : ""}';
+    }
 
 }

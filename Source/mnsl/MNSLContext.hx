@@ -60,8 +60,8 @@ class MNSLContext {
                 case Return(value, type, info):
                     Sys.println(indentStr + name);
                     printAST([value], indent + 1);
-                case VariableDecl(name, type, value, info):
-                    Sys.println(indentStr + name + " " + type);
+                case VariableDecl(varName, type, value, info):
+                    Sys.println(indentStr + name + '[$varName: $type]');
                     if (value != null) {
                         printAST([value], indent + 1);
                     }
@@ -79,8 +79,8 @@ class MNSLContext {
                 case ElseStatement(body, info):
                     Sys.println(indentStr + name);
                     printAST(body, indent + 1);
-                case BinaryOp(left, op, right, info):
-                    Sys.println(indentStr + name + '[$op]');
+                case BinaryOp(left, op, right, type, info):
+                    Sys.println(indentStr + name + '[$op -> $type]');
                     printAST([left, right], indent + 1);
                 case UnaryOp(op, value, info):
                     Sys.println(indentStr + name + '[$op]');
@@ -211,8 +211,14 @@ class MNSLContext {
                 return "Invalid character: " + char + " at position " + pos;
             case TokenizerUnterminatedString(pos):
                 return "Unterminated string at position " + pos;
-            case AnalyserNoImplementation(fn):
-                return "No implementation for function: " + fn;
+            case AnalyserNoImplementation(fn , pos):
+                return "No implementation for function: " + fn + " at " + pos;
+            case AnalyserUndeclaredVariable(varName, info):
+                return "Undefined variable: " + varName + " at " + info;
+            case AnalyserDuplicateVariable(varName, info):
+                return "Duplicate variable: " + varName + " at " + info;
+            case AnalyserReturnOutsideFunction(pos):
+                return "Return statement outside of function at " + pos;
             case MismatchingType(constraint):
                 return "Expected " + constraint.mustBe + " but got " + constraint.type;
         }

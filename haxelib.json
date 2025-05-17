@@ -1,16 +1,12 @@
 {
-  "name": "mana",
-  "url" : "https://github.com/mikaib/mana_framework",
+  "name": "mnsl",
+  "url" : "https://github.com/mikaib/mnsl",
   "license": "MIT",
-  "tags": ["game", "application", "framework"],
-  "description": "Yet another magical Haxe multimedia framework.",
+  "tags": ["graphics", "framework", "shaders"],
+  "description": "Simple shader language built with Haxe",
   "version": "1.0.0",
   "classPath": "Source/",
   "releasenote": "Experimental.",
   "contributors": ["mikaib"],
-  "dependencies": {
-    "genesis": "",
-    "portal": "",
-    "genkit_miniaudio": ""
-  }
+  "dependencies": {}
 }

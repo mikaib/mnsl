@@ -229,7 +229,7 @@ class MNSLTokenizer {
                     column++;
 
                     if (position < length) {
-                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
+                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 2), { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
                         context.emitError(TokenizerUnterminatedString({
                             line: line,

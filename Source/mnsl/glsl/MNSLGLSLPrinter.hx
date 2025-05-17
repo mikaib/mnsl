@@ -161,7 +161,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 }
                 println(";");
 
-            case BinaryOp(left, op, right, info):
+            case BinaryOp(left, op, right, type, info):
                 enableInline();
                 printNode(left);
                 print(" " + toOperationStr(op) + " ");

@@ -19,12 +19,18 @@ class MNSLSolver {
         var _toRemove: Array<MNSLConstraint> = [];
 
         for (c in _constraints) {
+            trace("Solving constraint: " + c.toString());
+
             if (!c.type.isDefined() && c.mustBe.isDefined()) {
                 c.type.setType(c.mustBe);
+                c.type.setTempType(false);
+                _toRemove.push(c);
             }
 
             if (c.type.isDefined() && !c.mustBe.isDefined()) {
                 c.mustBe.setType(c.type);
+                c.mustBe.setTempType(false);
+                _toRemove.push(c);
             }
 
             if (c.type.isDefined() && c.mustBe.isDefined()) {
@@ -46,11 +52,13 @@ class MNSLSolver {
     }
 
     public function solve(): Bool {
+        trace("===== BEGIN SOLVER =====");
         var changed: Bool = true;
         while (changed) {
             changed = iter();
         }
 
+        trace("===== END SOLVER =====");
         return _constraints.length <= 0;
     }
 

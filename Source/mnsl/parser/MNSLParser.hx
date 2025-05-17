@@ -728,37 +728,20 @@ class MNSLParser {
     public function parseReturnStmt(value: String, info: MNSLTokenInfo): Void {
         var returnBlock = getBlock(None, Semicolon(null), 1);
 
-        var returnTokens = splitBlock(returnBlock, Comma(null));
-        var returns: MNSLNodeChildren = [];
-
-        for (returnTokens in returnTokens) {
-            var c = new MNSLParser(context, returnTokens);
-            var ret = c._runInternal();
-            if (ret.length == 0) {
-                context.emitError(ParserUnexpectedToken(returnTokens[0], info));
-                continue;
-            }
-
-            if (ret.length > 1) {
-                context.emitError(ParserUnexpectedToken(returnTokens[1], info));
-                continue;
-            }
-
-            returns.push(ret[0]);
-        }
-
-        if (returns.length == 0) {
+        var c = new MNSLParser(context, returnBlock);
+        var ret = c._runInternal();
+        if (ret.length == 0) {
             context.emitError(ParserUnexpectedToken(returnBlock[0], info));
             return;
         }
 
-        if (returns.length > 1) {
-            context.emitError(ParserUnexpectedToken(returnBlock[1], info));
+        if (ret.length > 1) {
+            context.emitError(ParserUnexpectedToken(returnBlock[returnBlock.length - 1], info));
             return;
         }
 
         append(Return(
-            returns[0],
+            ret[0],
             MNSLType.TUnknown,
             MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(returnBlock[returnBlock.length - 1])])
         ));
@@ -928,6 +911,7 @@ class MNSLParser {
             left,
             token,
             right[0],
+            MNSLType.TUnknown,
             MNSLNodeInfo.fromTokenInfos([getTokenInfo(rightTokens[0]), getTokenInfo(rightTokens[rightTokens.length - 1])])
         ));
     }
