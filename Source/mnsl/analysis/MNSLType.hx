@@ -6,8 +6,8 @@ class MNSLType {
     public static var TString(get, never): MNSLType;
     public static var TBool(get, never): MNSLType;
     public static var TVoid(get, never): MNSLType;
-    public static var TFloat32(get, never): MNSLType;
-    public static var TInt32(get, never): MNSLType;
+    public static var TFloat(get, never): MNSLType;
+    public static var TInt(get, never): MNSLType;
     public static var TMat2(get, never): MNSLType;
     public static var TMat23(get, never): MNSLType;
     public static var TMat24(get, never): MNSLType;
@@ -176,17 +176,17 @@ class MNSLType {
     }
 
     /**
-     * Create a new TFloat32 type.
+     * Create a new TFloat type.
      */
-    public static inline function get_TFloat32():MNSLType {
-        return new MNSLType("Float32");
+    public static inline function get_TFloat():MNSLType {
+        return new MNSLType("Float");
     }
 
     /**
-     * Create a new TInt32 type.
+     * Create a new TInt type.
      */
-    public static inline function get_TInt32():MNSLType {
-        return new MNSLType("Int32");
+    public static inline function get_TInt():MNSLType {
+        return new MNSLType("Int");
     }
 
     /**

@@ -1,9 +1,14 @@
 func test(x) {
-    return "abc";
+    return x;
 }
 
 func main() {
-    var v;
+    var v: Float;
     var q = test(v);
     test(q);
+
+    // var a: Vec2;
+    // var b: Vec3 = a;
 }
+
+

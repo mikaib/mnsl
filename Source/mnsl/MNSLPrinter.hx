@@ -8,6 +8,7 @@ class MNSLPrinter {
     private var _output: String;
     private var _indent: Int;
     private var _inline: Bool;
+    private var _inlineCounter: Int;
 
     /**
      * Creates a new printer.
@@ -19,20 +20,29 @@ class MNSLPrinter {
         _ast = context.getAST();
         _context = context;
         _inline = false;
+        _inlineCounter = 0;
     }
 
     /**
      * Enables inline printing.
      */
     public function enableInline(): Void {
-        _inline = true;
+        _inlineCounter++;
+
+        if (_inlineCounter >= 1) {
+            _inline = true;
+        }
     }
 
     /**
      * Disables inline printing.
      */
     public function disableInline(): Void {
-        _inline = false;
+        _inlineCounter--;
+
+        if (_inlineCounter <= 0) {
+            _inline = false;
+        }
     }
 
     /**

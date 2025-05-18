@@ -123,10 +123,10 @@ class MNSLAnalyser {
                 return getType(value);
 
             case IntegerLiteralNode(value, _):
-                return MNSLType.TInt32;
+                return MNSLType.TInt;
 
             case FloatLiteralNode(value, _):
-                return MNSLType.TFloat32;
+                return MNSLType.TFloat;
 
             case StringLiteralNode(value, _):
                 return MNSLType.TString;
@@ -153,6 +153,11 @@ class MNSLAnalyser {
 
             arg.type.setType(MNSLType.TVoid);
             arg.type.setTempType(true);
+
+            ctx.variables.push({
+                name: arg.name,
+                type: arg.type
+            });
         }
 
         var f: MNSLAnalyserFunction = {
