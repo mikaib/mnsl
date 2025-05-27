@@ -22,4 +22,5 @@ enum MNSLError {
     AnalyserUnresolvedConstraint(constraint: MNSLConstraint);
     AnalyserInvalidAssignment(on: MNSLNode);
     AnalyserInvalidAccess(on: MNSLNode);
+    AnalyserInvalidVectorComponent(comp: Int, info: MNSLNodeInfo);
 }

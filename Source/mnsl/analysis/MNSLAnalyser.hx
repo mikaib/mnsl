@@ -158,6 +158,9 @@ class MNSLAnalyser {
             case VectorConversion(on, fromComp, toComp):
                 return MNSLType.fromString('Vec$toComp');
 
+            case VectorCreation(comp, values, _):
+                return MNSLType.fromString('Vec$comp');
+
             case IntegerLiteralNode(value, _):
                 return MNSLType.TInt;
 
@@ -405,6 +408,21 @@ class MNSLAnalyser {
     }
 
     /**
+     * Run on a vector creation node (post)
+     * @param node The vector creation node to run on.
+     * @param comp The component of the vector.
+     * @param nodes The nodes to create the vector from.
+     */
+    public function analyseVectorCreationPost(node: MNSLNode, comp: Int, nodes: MNSLNodeChildren, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        if (comp > 4 || comp < 2) {
+            _context.emitError(AnalyserInvalidVectorComponent(comp, info));
+            return node;
+        }
+
+        return node;
+    }
+
+    /**
      * Run on the given node after the children are processed.
      * @param node The node to run on.
      * @param changeTo A function to change the node.
@@ -428,6 +446,9 @@ class MNSLAnalyser {
 
             case StructAccess(on, field, type, info):
                 return analyseStructAccessPost(node, on, field, type, ctx, info);
+
+            case VectorCreation(comp, nodes, info):
+                return analyseVectorCreationPost(node, comp, nodes, ctx, info);
 
             default:
                 return node;

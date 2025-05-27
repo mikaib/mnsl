@@ -14,7 +14,7 @@ class MNSLContext {
 
     private var _finalAst: MNSLNodeChildren;
     private var _finalData: Array<MNSLShaderData>;
-    private var _defines: Map<String, MNSLToken>;
+    private var _defines: Map<String, Array<MNSLToken>>;
 
     /**
      * Creates a new MNSLContext instance.
@@ -97,7 +97,7 @@ class MNSLContext {
                     Sys.println(indentStr + name);
                     printAST([value], indent + 1);
                 case StructAccess(structName, field, type, info):
-                    Sys.println(indentStr + name + '[$structName.$field]');
+                    Sys.println(indentStr + name + '[$structName.$field t=$type]');
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
                 case VectorConversion(on, fromComp, toComp):
@@ -120,7 +120,7 @@ class MNSLContext {
      * Get the defines.
      * @return The defines.
      */
-    public function getDefines(): Map<String, MNSLToken> {
+    public function getDefines(): Map<String, Array<MNSLToken>> {
         return _defines;
     }
 
@@ -130,7 +130,7 @@ class MNSLContext {
      * @param value The value of the define.
      */
     public function setDefineInt(key: String, value: Int): Void {
-        _defines.set(key, IntegerLiteral('$value', null));
+        _defines.set(key, [IntegerLiteral('$value', null)]);
     }
 
     /**
@@ -139,7 +139,7 @@ class MNSLContext {
      * @param value The value of the define.
      */
     public function setDefineFloat(key: String, value: Float): Void {
-        _defines.set(key, FloatLiteral('$value', null));
+        _defines.set(key, [FloatLiteral('$value', null)]);
     }
 
     /**
@@ -147,7 +147,7 @@ class MNSLContext {
      * @param key The key of the define.
      * @param value The value of the define.
      */
-    public function setDefine(key: String, value: MNSLToken): Void {
+    public function setDefine(key: String, value: Array<MNSLToken>): Void {
         _defines.set(key, value);
     }
 
@@ -156,7 +156,7 @@ class MNSLContext {
      * @param key The key of the define.
      * @return The value of the define.
      */
-    public function getDefine(key: String): MNSLToken {
+    public function getDefine(key: String): Array<MNSLToken> {
         return _defines.get(key);
     }
 
@@ -229,6 +229,8 @@ class MNSLContext {
                 return "Cannot assign to " + on;
             case AnalyserInvalidAccess(on):
                 return "Cannot access on " + on;
+            case AnalyserInvalidVectorComponent(comp, info):
+                return "Invalid amount of vector components: " + comp + " at " + info;
         }
     }
 

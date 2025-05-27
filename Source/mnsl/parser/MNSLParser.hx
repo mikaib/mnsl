@@ -265,7 +265,13 @@ class MNSLParser {
                     return;
                 }
 
-                var defineValue = context.getDefine(getTokenValue(arraySize));
+                var defineValues = context.getDefine(getTokenValue(arraySize));
+                if (defineValues == null) {
+                    context.emitError(ParserUnexpectedToken(arraySize, null));
+                    return;
+                }
+
+                var defineValue = defineValues[0];
                 if (defineValue == null) {
                     context.emitError(ParserUnexpectedToken(arraySize, null));
                     return;
@@ -309,13 +315,13 @@ class MNSLParser {
             return;
         }
 
-        var valueToken = block[2];
-        if (valueToken == null) {
-            context.emitError(ParserUnexpectedToken(valueToken, null));
+        var valueTokens = block.slice(2);
+        if (valueTokens.length == 0) {
+            context.emitError(ParserUnexpectedToken(valueTokens[2], null));
             return;
         }
 
-        context.setDefine(name, valueToken);
+        context.setDefine(name, valueTokens);
     }
 
     /**
@@ -324,24 +330,38 @@ class MNSLParser {
      */
     public function parseSubExpression(token: MNSLToken): Void {
         var block = getBlock(LeftParen(null), RightParen(null), 1);
+        var parts = splitBlock(block, Comma(null));
+        var nodes: MNSLNodeChildren = [];
 
-        var c = new MNSLParser(context, block);
-        var expr = c._runInternal();
+        for (part in parts) {
+            var parser = new MNSLParser(context, part);
+            var parsed = parser._runInternal();
 
-        if (expr.length == 0) {
-            context.emitError(ParserUnexpectedToken(block[0], null));
-            return;
+            if (parsed.length == 0) {
+                context.emitError(ParserUnexpectedToken(part[0], null));
+                return;
+            }
+
+            if (parsed.length > 1) {
+                context.emitError(ParserUnexpectedExpression(parsed[1], null));
+                return;
+            }
+
+            nodes.push(parsed[0]);
         }
 
-        if (expr.length > 1) {
-            context.emitError(ParserUnexpectedExpression(expr[1], null));
-            return;
+        if (nodes.length > 1) {
+            append(VectorCreation(
+                nodes.length,
+                nodes,
+                MNSLNodeInfo.fromTokenInfos([getTokenInfo(token), getTokenInfo(block[block.length - 1])])
+            ));
+        } else {
+            append(SubExpression(
+                nodes[0],
+                MNSLNodeInfo.fromTokenInfos([getTokenInfo(token), getTokenInfo(block[block.length - 1])])
+            ));
         }
-
-        append(SubExpression(
-            expr[0],
-            MNSLNodeInfo.fromTokenInfos([getTokenInfo(token), getTokenInfo(block[block.length - 1])])
-        ));
     }
 
     /**
@@ -351,8 +371,20 @@ class MNSLParser {
      */
     public function parseIdentifier(value: String, info: MNSLTokenInfo): Void {
         if (context.getDefine(value) != null) {
-            tokens[currentIndex - 1] = context.getDefine(value);
-            value = getTokenValue(tokens[currentIndex - 1]);
+            var parseCtx = new MNSLParser(context, context.getDefine(value));
+            var parsed = parseCtx._runInternal();
+            if (parsed.length == 0) {
+                context.emitError(ParserUnexpectedToken(context.getDefine(value)[0], info));
+                return;
+            }
+
+            if (parsed.length > 1) {
+                context.emitError(ParserUnexpectedExpression(parsed[1], null));
+                return;
+            }
+
+            append(parsed[0]);
+            return;
         }
 
         if (keywords.contains(value)) {

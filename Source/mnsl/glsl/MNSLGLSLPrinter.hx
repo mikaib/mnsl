@@ -244,6 +244,22 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     print(")");
                 }
 
+            case VectorCreation(components, nodes, info):
+                print("vec");
+                print('$components');
+                print("(");
+
+                for (i in 0 ... nodes.length) {
+                    enableInline();
+                    printNode(nodes[i]);
+                    disableInline();
+                    if (i < nodes.length - 1) {
+                        print(", ");
+                    }
+                }
+
+                print(")");
+
             case IntegerLiteralNode(value, info):
                 print(value);
 

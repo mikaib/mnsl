@@ -36,6 +36,7 @@ enum MNSLNode {
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
 
     // vector operations
+    VectorCreation(components: Int, nodes: MNSLNodeChildren, info: MNSLNodeInfo);
     VectorConversion(on: MNSLNode, fromComponents: Int, toComponents: Int);
 
     // literals
