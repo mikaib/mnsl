@@ -1,0 +1,12 @@
+func test(x) {
+    // return 0;
+    return x;
+}
+
+func main() {
+    var v: Float;
+    var q = test(v);
+    test(q);
+
+    return q;
+}
