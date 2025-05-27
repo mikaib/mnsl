@@ -147,6 +147,7 @@ class MNSLParser {
         append(StructAccess(
             accessOn,
             accessName,
+            MNSLType.TUnknown,
             MNSLNodeInfo.fromTokenInfos([getTokenInfo(token), getTokenInfo(tokens[currentIndex - 1])])
         ));
     }

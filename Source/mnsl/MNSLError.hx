@@ -21,4 +21,5 @@ enum MNSLError {
     AnalyserMismatchingType(constraint: MNSLConstraint);
     AnalyserUnresolvedConstraint(constraint: MNSLConstraint);
     AnalyserInvalidAssignment(on: MNSLNode);
+    AnalyserInvalidAccess(on: MNSLNode);
 }

@@ -5,10 +5,13 @@ import mnsl.parser.MNSLNode;
 import haxe.EnumTools.EnumValueTools;
 import haxe.EnumTools;
 import mnsl.parser.MNSLNodeInfo;
+import mnsl.parser.MNSLShaderDataKind;
 
 class MNSLAnalyser {
 
     private var _context: MNSLContext;
+    private var _inputs: MNSLAnalyserVariable;
+    private var _outputs: MNSLAnalyserVariable;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl"];
@@ -21,6 +24,33 @@ class MNSLAnalyser {
         this._context = context;
         this._ast = ast;
         this._globalCtx = new MNSLAnalyserContext();
+
+        this._inputs = {
+            name: "input",
+            type: MNSLType.TCTValue,
+            struct: true,
+            fields: []
+        };
+
+        this._outputs = {
+            name: "output",
+            type: MNSLType.TCTValue,
+            struct: true,
+            fields: [
+                { name: "Position", type: MNSLType.TVec4 }
+            ]
+        };
+
+        for (d in this._context.getShaderData()) {
+            var toCat: MNSLAnalyserVariable = d.kind == MNSLShaderDataKind.Input || d.kind == MNSLShaderDataKind.Uniform ? this._inputs : this._outputs;
+            toCat.fields.push({
+                name: d.name,
+                type: d.type
+            });
+        }
+
+        this._globalCtx.variables.push(this._inputs);
+        this._globalCtx.variables.push(this._outputs);
         this._solver = new MNSLSolver(context);
     }
 
@@ -113,6 +143,9 @@ class MNSLAnalyser {
             case Identifier (name, type, _):
                 return type;
 
+            case StructAccess(on, field, type, _):
+                return type;
+
             case BinaryOp(left, op, right, type, _):
                 return type;
 
@@ -121,6 +154,9 @@ class MNSLAnalyser {
 
             case SubExpression(value, _):
                 return getType(value);
+
+            case VectorConversion(on, fromComp, toComp):
+                return MNSLType.fromString('Vec$toComp');
 
             case IntegerLiteralNode(value, _):
                 return MNSLType.TInt;
@@ -201,27 +237,65 @@ class MNSLAnalyser {
     }
 
     /**
+     * Get the MNSLAnalyserVariable from a node.
+     */
+    public function getVariableOf(node: MNSLNode, info: MNSLNodeInfo, ctx: MNSLAnalyserContext): MNSLAnalyserVariable {
+        var structStck: Array<String> = [];
+
+        function findName(node: MNSLNode): String {
+            switch (node) {
+                case Identifier(name, _, _):
+                    return name;
+                case StructAccess(on, field, type, info):
+                    structStck.push(field);
+                    return findName(on);
+                default:
+                    _context.emitError(AnalyserInvalidAccess(node));
+                    return null;
+            }
+        }
+
+        var currCtx = ctx;
+        var currField = findName(node);
+        var currName = currField;
+        var accessOk: Bool = true;
+        var v: MNSLAnalyserVariable = null;
+
+        while (accessOk) {
+            v = currCtx.findVariable(currField);
+            if (v == null) {
+                accessOk = false;
+                break;
+            }
+
+            if (structStck.length <= 0) {
+                break;
+            }
+
+            currField = structStck.pop();
+            currName += "." + currField;
+
+            currCtx = new MNSLAnalyserContext();
+            currCtx.variables = currCtx.variables.concat(v.fields);
+        }
+
+        if (!accessOk) {
+            _context.emitError(AnalyserUndeclaredVariable(currName, info));
+            return null;
+        }
+
+        return v;
+    }
+
+    /**
      * Run on a variable assignment node (post)
      * @param node The variable assignment node to run on.
      * @param name The name of the variable.
      * @param value The value of the variable.
      */
     public function analyseVariableAssignPost(node: MNSLNode, on: MNSLNode, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
-        function findName(node: MNSLNode): String {
-            switch (node) {
-                case Identifier(name, _, _):
-                    return name;
-                default:
-                    _context.emitError(AnalyserInvalidAssignment(on));
-                    return null;
-            }
-        }
-
-        var name = findName(on);
-        var v = ctx.findVariable(name);
-
+        var v = getVariableOf(on, info, ctx);
         if (v == null) {
-            _context.emitError(AnalyserUndeclaredVariable(name, info));
             return node;
         }
 
@@ -248,6 +322,27 @@ class MNSLAnalyser {
         }
 
         return Identifier(name, v.type, info);
+    }
+
+    /**
+     * Run on a struct access node (post)
+     * @param node The struct access node to run on.
+     * @param on The node to access the struct from.
+     * @param field The field to access.
+     */
+    public function analyseStructAccessPost(node: MNSLNode, on: MNSLNode, field: String, type: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var v = getVariableOf(node, info, ctx);
+        if (v == null) {
+            return node;
+        }
+
+        _solver.addConstraint({
+            type: v.type,
+            mustBe: type,
+            ofNode: node,
+        });
+
+        return node;
     }
 
     /**
@@ -331,6 +426,9 @@ class MNSLAnalyser {
             case Return(value, type, info):
                 return analyseReturnPost(node, value, type, ctx, info);
 
+            case StructAccess(on, field, type, info):
+                return analyseStructAccessPost(node, on, field, type, ctx, info);
+
             default:
                 return node;
         }
@@ -390,7 +488,6 @@ class MNSLAnalyser {
             }
         }
 
-        trace(node, changed);
         return changed ? Type.createEnum(e, name, params) : node;
     }
 

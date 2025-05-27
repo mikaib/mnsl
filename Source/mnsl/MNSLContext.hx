@@ -96,7 +96,7 @@ class MNSLContext {
                 case SubExpression(value, info):
                     Sys.println(indentStr + name);
                     printAST([value], indent + 1);
-                case StructAccess(structName, field, info):
+                case StructAccess(structName, field, type, info):
                     Sys.println(indentStr + name + '[$structName.$field]');
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
@@ -227,6 +227,8 @@ class MNSLContext {
                 return "Unresolved constraint: " + constraint;
             case AnalyserInvalidAssignment(on):
                 return "Cannot assign to " + on;
+            case AnalyserInvalidAccess(on):
+                return "Cannot access on " + on;
         }
     }
 

@@ -20,7 +20,6 @@ class MNSLSolver {
         var _toRemove: Array<MNSLConstraint> = [];
 
         for (c in _constraints) {
-            trace("solving", c);
             if (!c.type.isDefined() && c.mustBe.isDefined()) {
                 c.type.setType(c.mustBe);
                 c.type.setTempType(false);
@@ -61,7 +60,6 @@ class MNSLSolver {
             var componentsOfType = c.type.getVectorComponents();
             var componentsOfMustBe = c.mustBe.getVectorComponents();
 
-            trace("Cast", componentsOfType, "to", componentsOfMustBe);
             if (componentsOfType >= componentsOfMustBe) {
                 _replacements.push({
                     node: c.ofNode,

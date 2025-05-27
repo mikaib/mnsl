@@ -20,6 +20,7 @@ class MNSLType {
     public static var TVec2(get, never): MNSLType;
     public static var TVec3(get, never): MNSLType;
     public static var TVec4(get, never): MNSLType;
+    public static var TCTValue(get, never): MNSLType;
 
     private var _type: String;
     private var _tempType: Bool;
@@ -336,6 +337,13 @@ class MNSLType {
      */
     public static inline function get_TString():MNSLType {
         return new MNSLType("String");
+    }
+
+    /**
+     * Create a new TCTValue type.
+     */
+    public static inline function get_TCTValue():MNSLType {
+        return new MNSLType("CTValue");
     }
 
     /**

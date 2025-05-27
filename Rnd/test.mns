@@ -1,14 +1,15 @@
-func test(x) {
-    return x;
-}
+// inputs
+@input(Position: Vec3)
+@input(Colour: Vec4)
+@input(TexCoord: Vec2)
 
+// outputs
+@output(Colour: Vec4)
+@output(TexCoord: Vec2)
+
+// functions
 func main() {
-    var a: Vec3;
-    var b = a;
-    var c: Vec2 = test(b);
-    var d = c;
-
-    return d;
+    output.Position = input.Position;
+    // output.Colour = input.Colour;
+    // output.TexCoord = input.TexCoord;
 }
-
-
