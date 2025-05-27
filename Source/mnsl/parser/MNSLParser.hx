@@ -695,6 +695,7 @@ class MNSLParser {
             var valueBlock = getBlock(None, Semicolon(null), 1);
             var c = new MNSLParser(context, valueBlock);
             var value = c._runInternal();
+
             if (value.length == 0) {
                 context.emitError(ParserUnexpectedToken(valueBlock[0], info));
                 return;

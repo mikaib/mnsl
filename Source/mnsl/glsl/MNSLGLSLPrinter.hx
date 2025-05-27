@@ -227,10 +227,10 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     for (i in fromComp ... toComp) {
                         print(", ");
-                        if (i == toComp - 1)
-                            print("1.0");
-                        else
+                        if (i == 2)
                             print("0.0");
+                        else
+                            print("1.0");
                     }
 
                     print(")");

@@ -15,6 +15,16 @@ class MNSLAnalyser {
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl"];
+    private var _vectorAccess: Map<String, { comp: Int, char: String }> = [
+        "x" => { comp: 0, char: "x" },
+        "y" => { comp: 1, char: "y" },
+        "z" => { comp: 2, char: "z" },
+        "w" => { comp: 3, char: "w" },
+        "r" => { comp: 0, char: "x" },
+        "g" => { comp: 1, char: "y" },
+        "b" => { comp: 2, char: "z" },
+        "a" => { comp: 3, char: "w" }
+    ];
     private var _solver: MNSLSolver;
 
     /**
@@ -91,6 +101,8 @@ class MNSLAnalyser {
                 continue;
             }
         }
+
+        this._solver.solve();
 
         node = Type.createEnum(eNode, name, params);
 
@@ -265,10 +277,28 @@ class MNSLAnalyser {
         var v: MNSLAnalyserVariable = null;
 
         while (accessOk) {
-            v = currCtx.findVariable(currField);
-            if (v == null) {
-                accessOk = false;
-                break;
+            if (v != null && v.type.isVector() && _vectorAccess.exists(currField)) {
+                var accessInfo = _vectorAccess.get(currField);
+                if (accessInfo.comp < 0 || accessInfo.comp >= v.type.getVectorComponents()) {
+                    _context.emitError(AnalyserInvalidVectorComponent(accessInfo.comp, info));
+                    return null;
+                }
+
+                v = {
+                    name: currField,
+                    type: MNSLType.TFloat,
+                    struct: false,
+                    fields: []
+                };
+            } else {
+                v = currCtx.findVariable(currField);
+                if (v == null) {
+                    accessOk = false;
+                    break;
+                }
+
+                currCtx = new MNSLAnalyserContext();
+                currCtx.variables = currCtx.variables.concat(v.fields);
             }
 
             if (structStck.length <= 0) {
