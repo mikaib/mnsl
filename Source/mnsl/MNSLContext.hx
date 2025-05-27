@@ -100,6 +100,8 @@ class MNSLContext {
                     Sys.println(indentStr + name + '[$structName.$field]');
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
+                case VectorConversion(on, fromComp, toComp):
+                    Sys.println(indentStr + name + '[$on: $fromComp -> $toComp]');
                 case Identifier(identifierName, type, info):
                     Sys.println(indentStr + name + '[$identifierName: $type]');
                 case IntegerLiteralNode(value, info):
@@ -219,8 +221,12 @@ class MNSLContext {
                 return "Duplicate variable: " + varName + " at " + info;
             case AnalyserReturnOutsideFunction(pos):
                 return "Return statement outside of function at " + pos;
-            case MismatchingType(constraint):
-                return "Expected " + constraint.mustBe + " but got " + constraint.type;
+            case AnalyserMismatchingType(constraint):
+                return "Expected " + constraint.mustBe + " but got " + constraint.type + " at " + constraint.ofNode;
+            case AnalyserUnresolvedConstraint(constraint):
+                return "Unresolved constraint: " + constraint;
+            case AnalyserInvalidAssignment(on):
+                return "Cannot assign to " + on;
         }
     }
 

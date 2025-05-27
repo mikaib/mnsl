@@ -18,5 +18,7 @@ enum MNSLError {
     AnalyserDuplicateVariable(name: String, pos: MNSLNodeInfo);
     AnalyserUndeclaredVariable(name: String, pos: MNSLNodeInfo);
     AnalyserReturnOutsideFunction(pos: MNSLNodeInfo);
-    MismatchingType(constraint: MNSLConstraint);
+    AnalyserMismatchingType(constraint: MNSLConstraint);
+    AnalyserUnresolvedConstraint(constraint: MNSLConstraint);
+    AnalyserInvalidAssignment(on: MNSLNode);
 }

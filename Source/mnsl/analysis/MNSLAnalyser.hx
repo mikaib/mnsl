@@ -149,10 +149,10 @@ class MNSLAnalyser {
         }
 
         for (arg in args) {
-            if (arg.type.isDefined()) continue;
-
-            arg.type.setType(MNSLType.TVoid);
-            arg.type.setTempType(true);
+            if (!arg.type.isDefined()) {
+                arg.type.setType(MNSLType.TVoid);
+                arg.type.setTempType(true);
+            }
 
             ctx.variables.push({
                 name: arg.name,
@@ -195,6 +195,40 @@ class MNSLAnalyser {
         ctx.variables.push({
             name: name,
             type: type
+        });
+
+        return node;
+    }
+
+    /**
+     * Run on a variable assignment node (post)
+     * @param node The variable assignment node to run on.
+     * @param name The name of the variable.
+     * @param value The value of the variable.
+     */
+    public function analyseVariableAssignPost(node: MNSLNode, on: MNSLNode, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        function findName(node: MNSLNode): String {
+            switch (node) {
+                case Identifier(name, _, _):
+                    return name;
+                default:
+                    _context.emitError(AnalyserInvalidAssignment(on));
+                    return null;
+            }
+        }
+
+        var name = findName(on);
+        var v = ctx.findVariable(name);
+
+        if (v == null) {
+            _context.emitError(AnalyserUndeclaredVariable(name, info));
+            return node;
+        }
+
+        _solver.addConstraint({
+            type: getType(value),
+            mustBe: v.type,
+            ofNode: value,
         });
 
         return node;
@@ -247,8 +281,8 @@ class MNSLAnalyser {
         }
 
         _solver.addConstraint({
-            type: returnType,
-            mustBe: f.returnType,
+            type: f.returnType,
+            mustBe: returnType,
             ofNode: node,
         });
 
@@ -291,6 +325,9 @@ class MNSLAnalyser {
             case VariableDecl(name, type, value, info):
                 return analyseVariableDeclPost(node, name, type, value, ctx, info);
 
+            case VariableAssign(on, value, info):
+                return analyseVariableAssignPost(node, on, value, ctx, info);
+
             case Return(value, type, info):
                 return analyseReturnPost(node, value, type, ctx, info);
 
@@ -313,12 +350,65 @@ class MNSLAnalyser {
         return newBody;
     }
 
+    public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>): Void {
+        for (i in 0...body.length) {
+            body[i] = applyReplacementsToNode(body[i], replacements);
+        }
+    }
+
+    private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>): MNSLNode {
+        for (r in replacements) {
+            if (r.node == node) {
+                return r.to;
+            }
+        }
+
+        if (node == null) {
+            return null;
+        }
+
+        var e = Type.getEnum(node);
+
+        var name = EnumValueTools.getName(node);
+        var params = EnumValueTools.getParameters(node);
+        var changed = false;
+
+        for (i in 0...params.length) {
+            var p: Dynamic = params[i];
+            if (p == null) {
+                continue;
+            }
+
+            if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode)) {
+               this.applyReplacements(p, replacements);
+            } else if (Std.isOfType(p, MNSLNode)) {
+                var newP = applyReplacementsToNode(p, replacements);
+                if (newP != p) {
+                    params[i] = newP;
+                    changed = true;
+                }
+            }
+        }
+
+        trace(node, changed);
+        return changed ? Type.createEnum(e, name, params) : node;
+    }
+
     /**
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
         var res = execAtBody(this._ast, this._globalCtx);
-        this._solver.solve();
+
+        if (!this._solver.solve()) {
+            var unresolvedConstraints = this._solver.getUnresolvedConstraints();
+            for (c in unresolvedConstraints) {
+                _context.emitError(AnalyserUnresolvedConstraint(c));
+            }
+        }
+
+        var replacements = this._solver.getReplacements();
+        this.applyReplacements(res, replacements);
 
         return res;
     }

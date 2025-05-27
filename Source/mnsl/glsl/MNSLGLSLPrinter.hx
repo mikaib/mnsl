@@ -212,6 +212,15 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 decreaseIndent();
                 printlnIndented("}");
 
+            case VectorConversion(node, fromComp, toComp):
+                print("vec");
+                print('$toComp');
+                print("(");
+                enableInline();
+                printNode(node);
+                disableInline();
+                print(")");
+
             case IntegerLiteralNode(value, info):
                 print(value);
 

@@ -35,6 +35,9 @@ enum MNSLNode {
     StructAccess(on: MNSLNode, field: String, info: MNSLNodeInfo);
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
 
+    // vector operations
+    VectorConversion(on: MNSLNode, fromComponents: Int, toComponents: Int);
+
     // literals
     IntegerLiteralNode(value: String, info: MNSLNodeInfo);
     FloatLiteralNode(value: String, info: MNSLNodeInfo);

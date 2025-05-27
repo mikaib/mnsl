@@ -5,6 +5,7 @@ import mnsl.parser.MNSLNode;
 class MNSLSolver {
 
     private var _constraints: Array<MNSLConstraint> = [];
+    private var _replacements: Array<MNSLReplaceCmd> = [];
     private var _context: MNSLContext;
 
     public function new(context: MNSLContext) {
@@ -19,8 +20,7 @@ class MNSLSolver {
         var _toRemove: Array<MNSLConstraint> = [];
 
         for (c in _constraints) {
-            trace("Solving constraint: " + c.toString());
-
+            trace("solving", c);
             if (!c.type.isDefined() && c.mustBe.isDefined()) {
                 c.type.setType(c.mustBe);
                 c.type.setTempType(false);
@@ -35,7 +35,12 @@ class MNSLSolver {
 
             if (c.type.isDefined() && c.mustBe.isDefined()) {
                 if (!c.type.equals(c.mustBe)) {
-                    _context.emitError(MismatchingType(c));
+                    if (this.tryCast(c)) {
+                        _toRemove.push(c);
+                        continue;
+                    }
+
+                    _context.emitError(AnalyserMismatchingType(c));
                 }
             }
         }
@@ -51,15 +56,47 @@ class MNSLSolver {
         return false;
     }
 
+    public function tryCast(c: MNSLConstraint): Bool {
+        if (c.type.isVector() && c.mustBe.isVector()) {
+            var componentsOfType = c.type.getVectorComponents();
+            var componentsOfMustBe = c.mustBe.getVectorComponents();
+
+            trace("Cast", componentsOfType, "to", componentsOfMustBe);
+            if (componentsOfType >= componentsOfMustBe) {
+                _replacements.push({
+                    node: c.ofNode,
+                    to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
+                });
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getUnresolvedConstraints(): Array<MNSLConstraint> {
+        var _tmp: Array<MNSLConstraint> = [];
+
+        for (c in _constraints) {
+            if (c.type.isUnknown() && c.mustBe.isUnknown()) {
+                _tmp.push(c);
+            }
+        }
+
+        return _tmp;
+    }
+
+    public function getReplacements(): Array<MNSLReplaceCmd> {
+        return _replacements;
+    }
+
     public function solve(): Bool {
-        trace("===== BEGIN SOLVER =====");
         var changed: Bool = true;
         while (changed) {
             changed = iter();
         }
 
-        trace("===== END SOLVER =====");
-        return _constraints.length <= 0;
+        return getUnresolvedConstraints().length == 0;
     }
 
 }

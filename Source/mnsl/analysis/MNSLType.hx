@@ -109,6 +109,19 @@ class MNSLType {
     }
 
     /**
+     * Gets the amount of components in the vector type.
+     * @return The number of components, or -1 if not a vector.
+     */
+    public inline function getVectorComponents(): Int {
+        switch (_type) {
+            case "Vec2": return 2;
+            case "Vec3": return 3;
+            case "Vec4": return 4;
+            default: return -1;
+        }
+    }
+
+    /**
      * Check if the type is a vector of any kind.
      */
     public inline function isVector(): Bool {
@@ -134,6 +147,44 @@ class MNSLType {
      */
     public inline function isMatrixWithEqualSize(size: Int): Bool {
         return _type == "Mat" + size + "" + size || _type == "Mat" + size;
+    }
+
+    /**
+     * Gets the width of the matrix.
+     * @return The number of columns, or -1 if not a matrix.
+     */
+    public inline function getMatrixWidth(): Int {
+        switch (_type) {
+            case "Mat2": return 2;
+            case "Mat23": return 2;
+            case "Mat24": return 2;
+            case "Mat3": return 3;
+            case "Mat32": return 3;
+            case "Mat34": return 3;
+            case "Mat4": return 4;
+            case "Mat42": return 4;
+            case "Mat43": return 4;
+            default: return -1;
+        }
+    }
+
+    /**
+     * Gets the height of the matrix.
+     * @return The number of rows, or -1 if not a matrix.
+     */
+    public inline function getMatrixHeight(): Int {
+        switch (_type) {
+            case "Mat2": return 2;
+            case "Mat23": return 3;
+            case "Mat24": return 4;
+            case "Mat3": return 3;
+            case "Mat32": return 2;
+            case "Mat34": return 4;
+            case "Mat4": return 4;
+            case "Mat42": return 2;
+            case "Mat43": return 3;
+            default: return -1;
+        }
     }
 
     /**
@@ -302,6 +353,13 @@ class MNSLType {
      */
     public function toHumanString(): String {
         return 'T${_type}${_tempType ? " (temp)" : ""}';
+    }
+
+    /**
+     * Copy the type.
+     */
+    public function copy(): MNSLType {
+        return new MNSLType(_type, _tempType);
     }
 
 }
