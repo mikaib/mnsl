@@ -60,13 +60,12 @@ class MNSLSolver {
             var componentsOfType = c.type.getVectorComponents();
             var componentsOfMustBe = c.mustBe.getVectorComponents();
 
-            if (componentsOfType >= componentsOfMustBe) {
-                _replacements.push({
-                    node: c.ofNode,
-                    to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
-                });
-                return true;
-            }
+            _replacements.push({
+                node: c.ofNode,
+                to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
+            });
+
+            return true;
         }
 
         return false;

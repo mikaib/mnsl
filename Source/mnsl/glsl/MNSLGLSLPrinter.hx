@@ -213,13 +213,36 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printlnIndented("}");
 
             case VectorConversion(node, fromComp, toComp):
-                print("vec");
-                print('$toComp');
-                print("(");
-                enableInline();
-                printNode(node);
-                disableInline();
-                print(")");
+                if (fromComp == toComp) {
+                    enableInline();
+                    printNode(node);
+                    disableInline();
+                } else if (fromComp < toComp) {
+                    print("vec");
+                    print('$toComp');
+                    print("(");
+                    enableInline();
+                    printNode(node);
+                    disableInline();
+
+                    for (i in fromComp ... toComp) {
+                        print(", ");
+                        if (i == toComp - 1)
+                            print("1.0");
+                        else
+                            print("0.0");
+                    }
+
+                    print(")");
+                } else {
+                    print("vec");
+                    print('$toComp');
+                    print("(");
+                    enableInline();
+                    printNode(node);
+                    disableInline();
+                    print(")");
+                }
 
             case IntegerLiteralNode(value, info):
                 print(value);
