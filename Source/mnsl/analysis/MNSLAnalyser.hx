@@ -12,6 +12,7 @@ class MNSLAnalyser {
     private var _context: MNSLContext;
     private var _inputs: MNSLAnalyserVariable;
     private var _outputs: MNSLAnalyserVariable;
+    private var _functions: Array<MNSLAnalyserFunction>;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl"];
@@ -51,6 +52,17 @@ class MNSLAnalyser {
             ]
         };
 
+        this._functions = [
+            {
+                name: "texture",
+                args: [
+                    { name: "sampler", type: MNSLType.TSampler },
+                    { name: "texCoord", type: MNSLType.TVec2 },
+                ],
+                returnType: MNSLType.TVec4
+            }
+        ];
+
         for (d in this._context.getShaderData()) {
             var toCat: MNSLAnalyserVariable = d.kind == MNSLShaderDataKind.Input || d.kind == MNSLShaderDataKind.Uniform ? this._inputs : this._outputs;
             toCat.fields.push({
@@ -61,6 +73,7 @@ class MNSLAnalyser {
 
         this._globalCtx.variables.push(this._inputs);
         this._globalCtx.variables.push(this._outputs);
+        this._globalCtx.functions = this._globalCtx.functions.concat(this._functions);
         this._solver = new MNSLSolver(context);
     }
 

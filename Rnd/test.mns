@@ -1,5 +1,20 @@
+// inputs
+@input(Colour: Vec4)
+@input(TexCoord: Vec2)
+
+// outputs
+@output(FragColour: Vec4)
+
+// uniforms
+@uniform(Texture: Sampler)
+
+// functions
 func main() {
-    var a = (0.0, 0.0);
-    var b = (a.x, a.x, a.y, a.y);
-    return b;
+    output.FragColour = texture(input.Texture, input.TexCoord) * input.Colour;
 }
+
+// TODO:
+// - multiple implementations (either `sin(x: T): T` or overloads)
+// - binops
+// - builtin functions / vars
+// - input. to uniform. for uniforms

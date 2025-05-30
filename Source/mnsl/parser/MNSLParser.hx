@@ -1020,9 +1020,20 @@ class MNSLParser {
         var blocks: Array<Array<MNSLToken>> = [];
         var currentBlock: Array<MNSLToken> = [];
         var sepType = EnumValueTools.getName(sep);
+        var depth = 0;
 
         for (token in block) {
-            if (EnumValueTools.getName(token) == sepType) {
+            var tokenName = EnumValueTools.getName(token);
+
+            if (tokenName == "LeftParen") {
+                depth++;
+            }
+
+            if (tokenName == "RightParen") {
+                depth--;
+            }
+
+            if (tokenName == sepType && depth == 0) {
                 blocks.push(currentBlock);
                 currentBlock = [];
             } else {

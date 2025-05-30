@@ -20,6 +20,8 @@ class MNSLType {
     public static var TVec2(get, never): MNSLType;
     public static var TVec3(get, never): MNSLType;
     public static var TVec4(get, never): MNSLType;
+    public static var TSampler(get, never): MNSLType;
+    public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
 
     private var _type: String;
@@ -337,6 +339,20 @@ class MNSLType {
      */
     public static inline function get_TString():MNSLType {
         return new MNSLType("String");
+    }
+
+    /**
+     * Create a new TSampler type.
+     */
+    public static inline function get_TSampler():MNSLType {
+        return new MNSLType("Sampler");
+    }
+
+    /**
+     * Create a new TCubeSampler type.
+     */
+    public static inline function get_TCubeSampler():MNSLType {
+        return new MNSLType("CubeSampler");
     }
 
     /**
