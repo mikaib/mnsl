@@ -101,7 +101,8 @@ class MNSLContext {
                 case ArrayAccess(arrayName, index, info):
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
                 case VectorConversion(on, fromComp, toComp):
-                    Sys.println(indentStr + name + '[$on: $fromComp -> $toComp]');
+                    Sys.println(indentStr + name + '[$fromComp -> $toComp]');
+                    printAST([on], indent + 1);
                 case VectorCreation(comp, values, info):
                     Sys.println(indentStr + name + '[Vec$comp]');
                     printAST(values, indent + 1);

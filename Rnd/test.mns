@@ -1,8 +1,14 @@
 func main() {
-    var a: Vec3 = (1.0, 2.0, 3.0);
-    var b: Vec4 = a * (1.0, 2.0, 3.0, 4.0);
-    var c: Vec4 = (1.0, 2.0, 3.0, 4.0) * a;
-    var d = a;
+    // good
+    var a = 5;
+    var b = a * 2;
+    var c: Vec2 = a;
+    var d = c * b * 2;
+    var e: Vec3 = a;
+    var f: Vec4 = e * b * 2;
+    var g: Vec4 = (1.0, 2.0, 3.0, 4.0) * e;
+    var h: Vec4 = e * (1.0, 2.0, 3.0, 4.0);
+    var i = a * b * c * d * e * f * g * h;
 }
 
 // TODO:

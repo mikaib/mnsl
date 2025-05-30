@@ -11,24 +11,6 @@ class Test {
         });
 
         trace(glsl);
-
-        var test: MyClass = {
-            hello: "Hello",
-            world: "World"
-        };
-    }
-
-}
-
-@:structInit
-class MyClass {
-
-    public var hello: String;
-    public var world: String;
-    public var helloGetter(get, never): String;
-
-    inline function get_helloGetter(): String {
-        return hello + " " + world;
     }
 
 }
