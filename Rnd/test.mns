@@ -1,20 +1,7 @@
-// inputs
-@input(Colour: Vec4)
-@input(TexCoord: Vec2)
-
-// outputs
-@output(FragColour: Vec4)
-
-// uniforms
-@uniform(Texture: Sampler)
-
-// functions
 func main() {
-    output.FragColour = texture(uniform.Texture, input.TexCoord) * input.Colour;
-}
 
+}
 // TODO:
-// - multiple implementations (either `sin(x: T): T` or overloads)
-// - builtin functions / vars
-// - input. to uniform. for uniforms
+// - function overloads + update builtin functions to use those (for better type safety)
+// - fix ArrayAccess type not correctly typed (see PBR example)
 // - swizzle
