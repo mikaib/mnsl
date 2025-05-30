@@ -148,7 +148,7 @@ class MNSLAnalyser {
     /**
      * Get the type of a specific node (if available).
      */
-    public function getType(node: MNSLNode): MNSLType {
+    public static function getType(node: MNSLNode): MNSLType {
         if (node == null) {
             return MNSLType.TUnknown;
         }
@@ -384,8 +384,8 @@ class MNSLAnalyser {
         }
 
         _solver.addConstraint({
-            type: v.type,
-            mustBe: type,
+            type: type,
+            mustBe: v.type,
             ofNode: node,
         });
 
@@ -423,8 +423,8 @@ class MNSLAnalyser {
         }
 
         _solver.addConstraint({
-            type: f.returnType,
-            mustBe: returnType,
+            type: returnType,
+            mustBe: f.returnType,
             ofNode: node,
         });
 
@@ -536,8 +536,9 @@ class MNSLAnalyser {
 
          _solver.addConstraint({
             type: type,
-            mustBe: leftType,
+            mustBe: rightType,
             ofNode: node,
+            _mustBeOfNode: right
          });
 
         return node;

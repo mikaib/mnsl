@@ -102,6 +102,9 @@ class MNSLContext {
                     Sys.println(indentStr + name + '[$arrayName[$index]]');
                 case VectorConversion(on, fromComp, toComp):
                     Sys.println(indentStr + name + '[$on: $fromComp -> $toComp]');
+                case VectorCreation(comp, values, info):
+                    Sys.println(indentStr + name + '[Vec$comp]');
+                    printAST(values, indent + 1);
                 case Identifier(identifierName, type, info):
                     Sys.println(indentStr + name + '[$identifierName: $type]');
                 case IntegerLiteralNode(value, info):

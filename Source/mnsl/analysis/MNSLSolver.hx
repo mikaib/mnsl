@@ -2,6 +2,7 @@ package mnsl.analysis;
 
 import mnsl.parser.MNSLNode;
 import haxe.EnumTools.EnumValueTools;
+import mnsl.parser.MNSLNodeChildren;
 
 class MNSLSolver {
 
@@ -70,7 +71,12 @@ class MNSLSolver {
             var componentsOfType = c.type.getVectorComponents();
             var componentsOfMustBe = c.mustBe.getVectorComponents();
 
-            _replacements.push({
+            // this will ensure that in the case we *can* cast, we will prefer casting up instead of down (regarding component count)
+            if (componentsOfType > componentsOfMustBe && c._isBinaryOp) {
+                return true;
+            }
+
+            addReplacement({
                 node: c.ofNode,
                 to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
             });
@@ -81,7 +87,7 @@ class MNSLSolver {
         if (c.type.isNumerical() && c.mustBe.isVector()) {
             var componentsOfMustBe = c.mustBe.getVectorComponents();
 
-            _replacements.push({
+            addReplacement({
                 node: c.ofNode,
                 to: VectorCreation(componentsOfMustBe, [for (i in 0...componentsOfMustBe) c.ofNode], null)
             });
@@ -102,6 +108,29 @@ class MNSLSolver {
         }
 
         return _tmp;
+    }
+
+    public function addReplacement(replacement: MNSLReplaceCmd): Void {
+        for (existing in _constraints) {
+            // this is a bit of a hack, let me explain.
+            // when using multiple contraints to create a "system" of constraints, one of the constraints may be unexpectedly cast causing serious problems.
+            // one example of this is binary operators where the left and right type get connected to each other, after which the binop itself connects to the right type.
+            // if the right type is cast to another type, the binop itself will not be updated and still assume the old type.
+            // this replacement logic makes it so that the "follow up" constraints will correctly use the new type.
+            if (EnumValueTools.equals(existing.ofNode, replacement.node)) {
+                var newType = MNSLAnalyser.getType(replacement.to);
+                existing.ofNode = replacement.to;
+                existing.type = newType;
+            }
+
+            if (existing._mustBeOfNode != null && EnumValueTools.equals(existing._mustBeOfNode, replacement.node)) {
+                var newType = MNSLAnalyser.getType(replacement.to);
+                existing._mustBeOfNode = replacement.to;
+                existing.mustBe = newType;
+            }
+        }
+
+        _replacements.push(replacement);
     }
 
     public function getReplacements(): Array<MNSLReplaceCmd> {

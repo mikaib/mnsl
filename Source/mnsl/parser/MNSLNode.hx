@@ -34,6 +34,7 @@ enum MNSLNode {
     SubExpression(node: MNSLNode, info: MNSLNodeInfo);
     StructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo);
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
+    TypeWrapper(type: MNSLType);
 
     // vector operations
     VectorCreation(components: Int, nodes: MNSLNodeChildren, info: MNSLNodeInfo);

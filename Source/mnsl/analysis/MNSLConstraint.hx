@@ -10,6 +10,7 @@ class MNSLConstraint {
     public var _optional: Bool = false;
     public var _isBinaryOp: Bool = false;
     public var _operationOperator: String = '';
+    public var _mustBeOfNode: MNSLNode = null;
 
     @:to
     public function toString(): String {
