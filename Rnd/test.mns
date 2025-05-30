@@ -1,19 +1,11 @@
-// inputs
-@input(Colour: Vec4)
-@input(TexCoord: Vec2)
-
-// outputs
-@output(FragColour: Vec3)
-
-// uniforms
-@uniform(Texture: Sampler)
-
-// functions
 func main() {
-    output.FragColour = texture(input.Texture, input.TexCoord) * 3;
+    var a: Vec3 = (1.0, 2.0, 3.0);
+    var b: Vec4 = a * (1.0, 2.0, 3.0, 4.0);
+    var c: Vec4 = (1.0, 2.0, 3.0, 4.0) * a;
 }
 
 // TODO:
 // - multiple implementations (either `sin(x: T): T` or overloads)
 // - builtin functions / vars
 // - input. to uniform. for uniforms
+// - swizzle
