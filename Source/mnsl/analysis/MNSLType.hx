@@ -86,14 +86,21 @@ class MNSLType {
      * Check if the type is a floating point number of any precision.
      */
     public inline function isFloat(): Bool {
-        return _type == "Float32";
+        return _type == "Float";
+    }
+
+    /**
+     * Check if the type is numeric, which includes both integers and floating point numbers.
+     */
+    public inline function isNumerical(): Bool {
+        return isFloat() || isInt();
     }
 
     /**
      * Check if the type is an integer of any precision.
      */
     public inline function isInt(): Bool {
-        return _type == "Int32";
+        return _type == "Int";
     }
 
     /**

@@ -7,6 +7,7 @@ class MNSLConstraint {
     public var type: MNSLType;
     public var ofNode: MNSLNode;
     public var mustBe: MNSLType;
+    public var _optional: Bool = false;
     public var _isBinaryOp: Bool = false;
     public var _operationOperator: String = '';
 

@@ -521,7 +521,8 @@ class MNSLAnalyser {
              mustBe: leftType,
              ofNode: right,
              _operationOperator: opName,
-             _isBinaryOp: true
+             _isBinaryOp: true,
+             _optional: true
          });
 
         _solver.addConstraint({
@@ -529,7 +530,8 @@ class MNSLAnalyser {
             mustBe: rightType,
             ofNode: left,
             _operationOperator: opName,
-            _isBinaryOp: true
+            _isBinaryOp: true,
+            _optional: true
         });
 
          _solver.addConstraint({
@@ -598,10 +600,16 @@ class MNSLAnalyser {
     }
 
     private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>): MNSLNode {
+        var doRemove: MNSLReplaceCmd = null;
         for (r in replacements) {
             if (r.node == node) {
-                return r.to;
+                node = r.to;
+                doRemove = r;
             }
+        }
+
+        if (doRemove != null) {
+            replacements.remove(doRemove);
         }
 
         if (node == null) {

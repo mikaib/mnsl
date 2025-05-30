@@ -1,6 +1,7 @@
 package mnsl.analysis;
 
 import mnsl.parser.MNSLNode;
+import haxe.EnumTools.EnumValueTools;
 
 class MNSLSolver {
 
@@ -39,6 +40,11 @@ class MNSLSolver {
                         continue;
                     }
 
+                    if (c._optional) {
+                        _toRemove.push(c);
+                        continue;
+                    }
+
                     if (c._isBinaryOp) {
                         _context.emitError(AnalyserInvalidBinop(c.type, c.mustBe, c._operationOperator, c));
                     } else {
@@ -67,6 +73,17 @@ class MNSLSolver {
             _replacements.push({
                 node: c.ofNode,
                 to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
+            });
+
+            return true;
+        }
+
+        if (c.type.isNumerical() && c.mustBe.isVector()) {
+            var componentsOfMustBe = c.mustBe.getVectorComponents();
+
+            _replacements.push({
+                node: c.ofNode,
+                to: VectorCreation(componentsOfMustBe, [for (i in 0...componentsOfMustBe) c.ofNode], null)
             });
 
             return true;
