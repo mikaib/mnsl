@@ -117,6 +117,8 @@ class MNSLSolver {
             // one example of this is binary operators where the left and right type get connected to each other, after which the binop itself connects to the right type.
             // if the right type is cast to another type, the binop itself will not be updated and still assume the old type.
             // this replacement logic makes it so that the "follow up" constraints will correctly use the new type.
+            // one thing to note is that this logic may look bug-prone on the surface level, it is actually fine due to the fact that every node contains MNSLNodeInfo which avoids updating the wrong nodes.
+            // even if MNSLNodeInfo is null, it may still be unique due to a child node.
             if (EnumValueTools.equals(existing.ofNode, replacement.node)) {
                 var newType = MNSLAnalyser.getType(replacement.to);
                 existing.ofNode = replacement.to;
