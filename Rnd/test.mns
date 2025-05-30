@@ -10,7 +10,7 @@
 
 // functions
 func main() {
-    output.FragColour = texture(input.Texture, input.TexCoord) * input.Colour;
+    output.FragColour = texture(input.Texture, input.TexCoord) * 3;
 }
 
 // TODO:
