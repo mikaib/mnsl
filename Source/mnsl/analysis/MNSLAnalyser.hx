@@ -69,6 +69,16 @@ class MNSLAnalyser {
                     { name: "texCoord", type: MNSLType.TVec2 },
                 ],
                 returnType: MNSLType.TVec4
+            },
+            {
+                name: "test",
+                args: [
+                    { name: "x", type: MNSLType.Template("K") },
+                    { name: "y", type: MNSLType.Template("V") },
+                    { name: "z", type: MNSLType.Template("K") },
+                    { name: "w", type: MNSLType.Template("V") }
+                ],
+                returnType: MNSLType.Template("V")
             }
         ];
 
@@ -427,9 +437,24 @@ class MNSLAnalyser {
             return node;
         }
 
+        var templates: Map<String, MNSLType> = [];
         for (i in 0...args.length) {
             var arg = args[i];
             var argType = getType(arg);
+
+            if (f.args[i].type.isTemplate()) {
+                if (!templates.exists(f.args[i].type.getTemplateName())) {
+                    templates.set(f.args[i].type.getTemplateName(), argType);
+                }
+
+                _solver.addConstraint({
+                    type: argType,
+                    mustBe: templates.get(f.args[i].type.getTemplateName()),
+                    ofNode: arg
+                });
+
+                continue;
+            }
 
             _solver.addConstraint({
                 type: argType,
@@ -438,11 +463,23 @@ class MNSLAnalyser {
             });
         }
 
-        _solver.addConstraint({
-            type: returnType,
-            mustBe: f.returnType,
-            ofNode: node,
-        });
+        if (f.returnType.isTemplate()) {
+            if (!templates.exists(f.returnType.getTemplateName())) {
+                templates.set(f.returnType.getTemplateName(), returnType);
+            }
+
+            _solver.addConstraint({
+                type: returnType,
+                mustBe: templates.get(f.returnType.getTemplateName()),
+                ofNode: node,
+            });
+        } else {
+            _solver.addConstraint({
+                type: returnType,
+                mustBe: f.returnType,
+                ofNode: node,
+            });
+        }
 
         return node;
     }

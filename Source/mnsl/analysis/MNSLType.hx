@@ -24,6 +24,10 @@ class MNSLType {
     public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
 
+    public static function Template(T: String): MNSLType {
+        return new MNSLType('Template<$T>', true);
+    }
+
     private var _type: String;
     private var _tempType: Bool;
 
@@ -108,6 +112,22 @@ class MNSLType {
      */
     public inline function isBool(): Bool {
         return _type == "Bool";
+    }
+
+    /**
+     * check if the type is a template
+     */
+    public inline function isTemplate(): Bool {
+        return StringTools.startsWith(_type, "Template<") && StringTools.endsWith(_type, ">");
+    }
+
+    /**
+     * Get template name.
+     * @return The template name, or null if not a template.
+     */
+    public inline function getTemplateName(): String {
+        if (!isTemplate()) return null;
+        return _type.substr(9, _type.length - 10);
     }
 
     /**
