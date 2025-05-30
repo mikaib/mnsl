@@ -444,7 +444,7 @@ class MNSLAnalyser {
 
             if (f.args[i].type.isTemplate()) {
                 if (!templates.exists(f.args[i].type.getTemplateName())) {
-                    templates.set(f.args[i].type.getTemplateName(), argType);
+                    templates.set(f.args[i].type.getTemplateName(), MNSLType.TUnknown);
                 }
 
                 _solver.addConstraint({
@@ -465,7 +465,7 @@ class MNSLAnalyser {
 
         if (f.returnType.isTemplate()) {
             if (!templates.exists(f.returnType.getTemplateName())) {
-                templates.set(f.returnType.getTemplateName(), returnType);
+                templates.set(f.returnType.getTemplateName(), MNSLType.TUnknown);
             }
 
             _solver.addConstraint({
