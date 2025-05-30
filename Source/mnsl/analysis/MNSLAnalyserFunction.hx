@@ -6,6 +6,7 @@ class MNSLAnalyserFunction {
     public var args: MNSLFuncArgs;
     public var returnType: MNSLType;
     public var hasImplementation: Bool = false;
+    public var remap: Null<String> = null;
 
     @:to
     public function toString(): String {

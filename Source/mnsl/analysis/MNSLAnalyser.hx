@@ -61,26 +61,192 @@ class MNSLAnalyser {
             fields: []
         };
 
-        this._functions = [
-            {
-                name: "texture",
-                args: [
-                    { name: "sampler", type: MNSLType.TSampler },
-                    { name: "texCoord", type: MNSLType.TVec2 },
-                ],
-                returnType: MNSLType.TVec4
-            },
-            {
-                name: "test",
-                args: [
-                    { name: "x", type: MNSLType.Template("K") },
-                    { name: "y", type: MNSLType.Template("V") },
-                    { name: "z", type: MNSLType.Template("K") },
-                    { name: "w", type: MNSLType.Template("V") }
-                ],
-                returnType: MNSLType.Template("V")
-            }
-        ];
+       this._functions = [
+           {
+               name: "texture",
+               remap: "__mnsl_texture",
+               args: [
+                   { name: "sampler", type: MNSLType.TSampler },
+                   { name: "texCoord", type: MNSLType.TVec2 },
+               ],
+               returnType: MNSLType.TVec4
+           },
+           {
+               name: "sin",
+               remap: "__mnsl_sin",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "cos",
+               remap: "__mnsl_cos",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "tan",
+               remap: "__mnsl_tan",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "normalize",
+               remap: "__mnsl_normalize",
+               args: [
+                   { name: "v", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "dot",
+               remap: "__mnsl_dot",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "y", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.TFloat
+           },
+           {
+               name: "cross",
+               remap: "__mnsl_cross",
+               args: [
+                   { name: "x", type: MNSLType.TVec3 },
+                   { name: "y", type: MNSLType.TVec3 }
+               ],
+               returnType: MNSLType.TVec3
+           },
+           {
+               name: "length",
+               remap: "__mnsl_length",
+               args: [
+                   { name: "v", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.TFloat
+           },
+           {
+               name: "reflect",
+               remap: "__mnsl_reflect",
+               args: [
+                   { name: "I", type: MNSLType.Template("T") },
+                   { name: "N", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "refract",
+               remap: "__mnsl_refract",
+               args: [
+                   { name: "I", type: MNSLType.Template("T") },
+                   { name: "N", type: MNSLType.Template("T") },
+                   { name: "eta", type: MNSLType.TFloat }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "pow",
+               remap: "__mnsl_pow",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "y", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "exp",
+               remap: "__mnsl_exp",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "log",
+               remap: "__mnsl_log",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "sqrt",
+               remap: "__mnsl_sqrt",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "abs",
+               remap: "__mnsl_abs",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "clamp",
+               remap: "__mnsl_clamp",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "minVal", type: MNSLType.Template("T") },
+                   { name: "maxVal", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "mix",
+               remap: "__mnsl_mix",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "y", type: MNSLType.Template("T") },
+                   { name: "a", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "step",
+               remap: "__mnsl_step",
+               args: [
+                   { name: "edge", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "smoothstep",
+               remap: "__mnsl_smoothstep",
+               args: [
+                   { name: "edge0", type: MNSLType.Template("T") },
+                   { name: "edge1", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "max",
+               remap: "__mnsl_max",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "y", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+           },
+           {
+               name: "min",
+               remap: "__mnsl_min",
+               args: [
+                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "y", type: MNSLType.Template("T") }
+               ],
+               returnType: MNSLType.Template("T")
+          }
+       ];
 
         var varMap: Map<MNSLShaderDataKind, MNSLAnalyserVariable> = [
             MNSLShaderDataKind.Input => this._inputs,
@@ -126,6 +292,17 @@ class MNSLAnalyser {
 
         if (_cpyStck.contains(name)) {
             ctx = ctx.copy();
+
+            // hack to get properly functional function params
+            if (name == "FunctionDecl") {
+                var args: MNSLFuncArgs = params[2];
+                for (arg in args) {
+                    ctx.variables.push({
+                        name: arg.name,
+                        type: arg.type
+                    });
+                }
+            }
         }
 
         for (pi in 0...params.length) {
@@ -244,11 +421,6 @@ class MNSLAnalyser {
                 arg.type.setType(MNSLType.TVoid);
                 arg.type.setTempType(true);
             }
-
-            ctx.variables.push({
-                name: arg.name,
-                type: arg.type
-            });
         }
 
         var f: MNSLAnalyserFunction = {
