@@ -231,6 +231,8 @@ class MNSLContext {
                 return "Cannot access on " + on;
             case AnalyserInvalidVectorComponent(comp, info):
                 return "Invalid amount of vector components: " + comp + " at " + info;
+            case AnalyserInvalidBinop(tLeft, tRight, op, constraint):
+                return "Invalid binary operation: " + tLeft + " " + op + " " + tRight + " at " + constraint.ofNode;
         }
     }
 

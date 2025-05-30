@@ -39,7 +39,11 @@ class MNSLSolver {
                         continue;
                     }
 
-                    _context.emitError(AnalyserMismatchingType(c));
+                    if (c._isBinaryOp) {
+                        _context.emitError(AnalyserInvalidBinop(c.type, c.mustBe, c._operationOperator, c));
+                    } else {
+                        _context.emitError(AnalyserMismatchingType(c));
+                    }
                 }
             }
         }

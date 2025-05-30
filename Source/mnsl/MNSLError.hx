@@ -6,6 +6,7 @@ import mnsl.parser.MNSLNode;
 import mnsl.parser.MNSLNodeInfo;
 import mnsl.analysis.MNSLAnalyserFunction;
 import mnsl.analysis.MNSLConstraint;
+import mnsl.analysis.MNSLType;
 
 enum MNSLError {
     TokenizerInvalidChar(char: Int, pos: MNSLTokenInfo);
@@ -23,4 +24,5 @@ enum MNSLError {
     AnalyserInvalidAssignment(on: MNSLNode);
     AnalyserInvalidAccess(on: MNSLNode);
     AnalyserInvalidVectorComponent(comp: Int, info: MNSLNodeInfo);
+    AnalyserInvalidBinop(tLeft: MNSLType, tRight: MNSLType, op: String, constraint: MNSLConstraint);
 }

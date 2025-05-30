@@ -6,6 +6,7 @@ import haxe.EnumTools.EnumValueTools;
 import haxe.EnumTools;
 import mnsl.parser.MNSLNodeInfo;
 import mnsl.parser.MNSLShaderDataKind;
+import mnsl.tokenizer.MNSLToken;
 
 class MNSLAnalyser {
 
@@ -466,6 +467,81 @@ class MNSLAnalyser {
     }
 
     /**
+     * Run on a binary operation node (post)
+     * @param node The binary operation node to run on.
+     * @param left The left operand of the binary operation.
+     * @param op The operator of the binary operation.
+     * @param right The right operand of the binary operation.
+     */
+    public function analyseBinaryOpPost(node: MNSLNode, left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var leftType = getType(left);
+        var rightType = getType(right);
+
+        var opName: String = switch(op) {
+            case Minus(_):
+                "-";
+            case Plus(_):
+                "+";
+            case Slash(_):
+                "/";
+            case Star(_):
+                "*";
+            case Percent(_):
+                "%";
+            case Question(_):
+                "?";
+            case Equal(_):
+                "=";
+            case Colon(_):
+                ":";
+            case Spread(_):
+                "...";
+            case And(_):
+                "&&";
+            case Or(_):
+                "||";
+            case Less(_):
+                "<";
+            case Greater(_):
+                ">";
+            case LessEqual(_):
+                "<=";
+            case GreaterEqual(_):
+                ">=";
+            case NotEqual(_):
+                "!=";
+            case Not(_):
+                "!";
+            default:
+                "<->";
+        }
+
+         _solver.addConstraint({
+             type: rightType,
+             mustBe: leftType,
+             ofNode: right,
+             _operationOperator: opName,
+             _isBinaryOp: true
+         });
+
+        _solver.addConstraint({
+            type: leftType,
+            mustBe: rightType,
+            ofNode: left,
+            _operationOperator: opName,
+            _isBinaryOp: true
+        });
+
+         _solver.addConstraint({
+            type: type,
+            mustBe: leftType,
+            ofNode: node,
+         });
+
+        return node;
+    }
+
+    /**
      * Run on the given node after the children are processed.
      * @param node The node to run on.
      * @param changeTo A function to change the node.
@@ -492,6 +568,9 @@ class MNSLAnalyser {
 
             case VectorCreation(comp, nodes, info):
                 return analyseVectorCreationPost(node, comp, nodes, ctx, info);
+
+            case BinaryOp(left, op, right, type, info):
+                return analyseBinaryOpPost(node, left, op, right, type, ctx, info);
 
             default:
                 return node;
