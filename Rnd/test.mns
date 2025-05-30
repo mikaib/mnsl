@@ -3,7 +3,7 @@
 @input(TexCoord: Vec2)
 
 // outputs
-@output(FragColour: Vec4)
+@output(FragColour: Vec3)
 
 // uniforms
 @uniform(Texture: Sampler)
@@ -15,6 +15,5 @@ func main() {
 
 // TODO:
 // - multiple implementations (either `sin(x: T): T` or overloads)
-// - binops
 // - builtin functions / vars
 // - input. to uniform. for uniforms
