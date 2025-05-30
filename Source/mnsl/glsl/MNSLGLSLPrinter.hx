@@ -310,8 +310,17 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                     for (data in _context.getShaderData()) {
-                        if (data.name == field) {
-                            print((data.kind == MNSLShaderDataKind.Uniform ? "u_" : "in_") + data.name);
+                        if (data.name == field && data.kind == MNSLShaderDataKind.Input) {
+                            print("in_" + data.name);
+                            return;
+                        }
+                    }
+                }
+
+                if (on.match(Identifier("uniform", _))) {
+                    for (data in _context.getShaderData()) {
+                        if (data.name == field && data.kind == MNSLShaderDataKind.Uniform) {
+                            print("u_" + data.name);
                             return;
                         }
                     }

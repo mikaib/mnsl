@@ -13,6 +13,7 @@ class MNSLAnalyser {
     private var _context: MNSLContext;
     private var _inputs: MNSLAnalyserVariable;
     private var _outputs: MNSLAnalyserVariable;
+    private var _uniforms: MNSLAnalyserVariable;
     private var _functions: Array<MNSLAnalyserFunction>;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
@@ -53,6 +54,13 @@ class MNSLAnalyser {
             ]
         };
 
+        this._uniforms = {
+            name: "uniform",
+            type: MNSLType.TCTValue,
+            struct: true,
+            fields: []
+        };
+
         this._functions = [
             {
                 name: "texture",
@@ -64,8 +72,14 @@ class MNSLAnalyser {
             }
         ];
 
+        var varMap: Map<MNSLShaderDataKind, MNSLAnalyserVariable> = [
+            MNSLShaderDataKind.Input => this._inputs,
+            MNSLShaderDataKind.Output => this._outputs,
+            MNSLShaderDataKind.Uniform => this._uniforms
+        ];
+
         for (d in this._context.getShaderData()) {
-            var toCat: MNSLAnalyserVariable = d.kind == MNSLShaderDataKind.Input || d.kind == MNSLShaderDataKind.Uniform ? this._inputs : this._outputs;
+            var toCat = varMap.get(d.kind);
             toCat.fields.push({
                 name: d.name,
                 type: d.type
@@ -74,7 +88,9 @@ class MNSLAnalyser {
 
         this._globalCtx.variables.push(this._inputs);
         this._globalCtx.variables.push(this._outputs);
+        this._globalCtx.variables.push(this._uniforms);
         this._globalCtx.functions = this._globalCtx.functions.concat(this._functions);
+
         this._solver = new MNSLSolver(context);
     }
 
