@@ -4,4 +4,9 @@ func main() {
 // TODO:
 // - function overloads + update builtin functions to use those (for better type safety)
 // - fix ArrayAccess type not correctly typed (see PBR example)
+// - add vector functions so that you may initialize a vec3 using `vec3(1.0)`
+// - add *= +=, etc
+// - finish remaining analyser functions (if, else, elseif, unaryop, while, for, break, continue)
+// - optimizer system (using "plugins")
 // - swizzle
+// - preprocessor conditionals and include directives
