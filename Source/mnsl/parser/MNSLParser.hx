@@ -863,6 +863,33 @@ class MNSLParser {
             args.push(arg[0]);
         }
 
+        if (name == "vec2" || name == "vec3" || name == "vec4") {
+            var comp: Int = Std.parseInt(name.substr(3));
+            var info: MNSLNodeInfo = MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])]);
+
+            if (args.length == 1) {
+                append(VectorCreation(
+                    comp,
+                    [for (i in 0...comp) args[0]],
+                    info
+                ));
+            } else if (args.length < comp) {
+                var toFill: Array<MNSLNode> = [FloatLiteralNode("0.0", info), FloatLiteralNode("0.0", info), FloatLiteralNode("0.0", info), FloatLiteralNode("1.0", info)];
+                for (idx in 0...args.length) {
+                    toFill[idx] = args[idx];
+                }
+                append(VectorCreation(comp, toFill.slice(0, comp), info));
+            } else {
+                append(VectorCreation(
+                    comp,
+                    args.slice(0, comp),
+                    MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])])
+                ));
+            }
+
+            return;
+        }
+
         append(FunctionCall(
             name,
             args,
