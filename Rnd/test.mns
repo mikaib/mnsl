@@ -1,5 +1,4 @@
 func test() {
-    var test: Int;
-    test = 3.2;
-    test = test + 2 * 1.1;
+    var test;
+    test *= 5.2 * 2.0 + 2;
 }

@@ -116,6 +116,12 @@ class MNSLParser {
 
                 default:
                     if (isOperator(token)) {
+                        if (peekCurrentToken(0).match(Assign(_))) {
+                            getCurrentToken();
+                            parseOperatorAssignment(token);
+                            continue;
+                        }
+
                         parseOperator(token);
                         continue;
                     }
@@ -753,6 +759,54 @@ class MNSLParser {
             MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(assignBlock[assignBlock.length - 1])])
         ));
     }
+
+    /**
+     * This function will parse an operator assignment.
+     * @param token The operator token to parse.
+     */
+    public function parseOperatorAssignment(token: MNSLToken): Void {
+        var oper = token;
+        var left: MNSLNode = pop();
+        if (left == null) {
+            context.emitError(ParserUnexpectedExpression(left, null));
+            return;
+        }
+
+        var rightTokens: Array<MNSLToken> = [];
+        while (currentIndex < tokens.length && !tokens[currentIndex].match(Semicolon(_))) {
+            rightTokens.push(tokens[currentIndex]);
+            currentIndex++;
+        }
+
+        if (rightTokens.length == 0) {
+            context.emitError(ParserUnexpectedToken(tokens[currentIndex], null));
+            return;
+        }
+
+        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens)._runInternal();
+        if (right.length == 0) {
+            context.emitError(ParserUnexpectedToken(rightTokens[0], null));
+            return;
+        }
+
+        if (right.length > 1) {
+            context.emitError(ParserUnexpectedExpression(right[1], null));
+            return;
+        }
+
+        append(VariableAssign(
+            left,
+            BinaryOp(
+                left,
+                oper,
+                right[0],
+                MNSLType.TUnknown,
+                MNSLNodeInfo.fromTokenInfos([getTokenInfo(oper), getTokenInfo(rightTokens[rightTokens.length - 1])])
+            ),
+            MNSLNodeInfo.fromTokenInfos([getTokenInfo(oper), getTokenInfo(rightTokens[rightTokens.length - 1])])
+        ));
+    }
+
 
     /**
      * This function will parse a return statement.

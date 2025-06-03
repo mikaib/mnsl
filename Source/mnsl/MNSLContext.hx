@@ -114,6 +114,9 @@ class MNSLContext {
                     Sys.println(indentStr + name + '[$value]');
                 case StringLiteralNode(value, info):
                     Sys.println(indentStr + name + '[$value]');
+                case TypeCast(on, from, to):
+                    Sys.println(indentStr + name + '[$from -> $to]');
+                    printAST([on], indent + 1);
                 default:
                     Sys.println(indentStr + name);
             }

@@ -381,6 +381,9 @@ class MNSLAnalyser {
             case UnaryOp(op, value, _):
                 return getType(value);
 
+            case TypeCast(on, from, to):
+                return to;
+
             case SubExpression(value, _):
                 return getType(value);
 
