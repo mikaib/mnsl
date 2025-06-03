@@ -1,0 +1,25 @@
+{
+  "name": "mnsl-lang",
+  "displayName": "MNSL",
+  "description": "MNSL Language support",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "mnsl",
+      "aliases": ["MNSL", "mnsl"],
+      "extensions": [".mns", ".mnsl", ".mnsv", ".mnsf", ".mnsp", ".mnst", ".mnsg", ".mnsc", ".mnsh", ".mnsm", ".mnsr"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "mnsl",
+      "scopeName": "source.mnsl",
+      "path": "./syntaxes/mnsl.tmLanguage.json"
+    }]
+  }
+}
