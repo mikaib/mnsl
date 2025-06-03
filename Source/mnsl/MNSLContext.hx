@@ -240,6 +240,8 @@ class MNSLContext {
                 return "Invalid amount of vector components: " + comp + " at " + info;
             case AnalyserInvalidBinop(tLeft, tRight, op, constraint):
                 return "Invalid binary operation: " + tLeft + " " + op + " " + tRight + " at " + constraint.ofNode;
+            case AnalyserUnknownVectorComponent(node, info):
+                return "Type of vector component is unknown: " + node + " at vector " + info;
         }
     }
 

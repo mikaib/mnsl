@@ -18,6 +18,7 @@ class MNSLAnalyser {
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl"];
+    private var _deferPostType: Array<Void -> Void> = [];
     private var _vectorAccess: Map<String, { comp: Int, char: String }> = [
         "x" => { comp: 0, char: "x" },
         "y" => { comp: 1, char: "y" },
@@ -694,7 +695,35 @@ class MNSLAnalyser {
             return node;
         }
 
-        return node;
+        var newComp = 0;
+        var newNodes: MNSLNodeChildren = [];
+        for (arg in nodes) {
+            var t = getType(arg);
+            if (!t.isDefined()) {
+                _context.emitError(AnalyserUnknownVectorComponent(arg, info));
+                return node;
+            }
+
+            if (t.isVector()) {
+                var compArr = ['x', 'y', 'z', 'w'];
+                for (cIdx in 0...t.getVectorComponents()) {
+                    if (cIdx < t.getVectorComponents()) {
+                        newNodes.push(StructAccess(arg, compArr[cIdx], MNSLType.TFloat, info));
+                        newComp++;
+                    }
+                }
+            } else {
+                newNodes.push(arg);
+                newComp++;
+            }
+        }
+
+        if (newComp > 4 || newComp < 2) {
+            _context.emitError(AnalyserInvalidVectorComponent(newComp, info));
+            return node;
+        }
+
+        return VectorCreation(newComp, newNodes, info);
     }
 
     /**
@@ -875,6 +904,13 @@ class MNSLAnalyser {
     }
 
     /**
+     * Defer something to be run after the analysis is done.
+     */
+    public function deferPostType(f: Void -> Void): Void {
+        this._deferPostType.push(f);
+    }
+
+    /**
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
@@ -885,6 +921,10 @@ class MNSLAnalyser {
             for (c in unresolvedConstraints) {
                 _context.emitError(AnalyserUnresolvedConstraint(c));
             }
+        }
+
+        for (f in this._deferPostType) {
+            f();
         }
 
         var replacements = this._solver.getReplacements();
