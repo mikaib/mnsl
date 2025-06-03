@@ -8,12 +8,13 @@ class MNSLTokenizer {
     private var position: Int;
     private var length: Int;
     private var context: MNSLContext;
+    private var defines: Map<String, Dynamic>;
 
     /**
      * The MNSLTokenizer class is used to tokenize MNSL (Mana Shader Language) source code. (dot mns files)
      * @param source The MNSL source code to tokenize.
      */
-    public function new(context: MNSLContext, source:String) {
+    public function new(context: MNSLContext, source: String, defines: Map<String, Dynamic>) {
         this.source = source
             .replace("\r\n", "\n")
             .replace("\r", "\n");
@@ -21,6 +22,7 @@ class MNSLTokenizer {
         this.position = 0;
         this.length = source.length;
         this.context = context;
+        this.defines = defines;
     }
 
     /**
@@ -34,7 +36,7 @@ class MNSLTokenizer {
         while (position < length) {
             var char = source.charAt(position);
             var initialPosition: Int = position;
-            
+
             switch (char) {
                 case '\t':
                     column += 4;
