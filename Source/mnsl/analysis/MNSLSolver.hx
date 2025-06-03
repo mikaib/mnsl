@@ -95,6 +95,19 @@ class MNSLSolver {
             return true;
         }
 
+        if (c.type.isNumerical() && c.mustBe.isNumerical()) {
+            if (c._isBinaryOp && c.type.isFloat()) {
+                return true;
+            }
+
+            addReplacement({
+                node: c.ofNode,
+                to: TypePromotion(c.ofNode, c.type, c.mustBe)
+            });
+
+            return true;
+        }
+
         return false;
     }
 
