@@ -384,6 +384,9 @@ class MNSLAnalyser {
             case SubExpression(value, _):
                 return getType(value);
 
+            case ArrayAccess(on, index, info):
+                return getType(on);
+
             case VectorConversion(on, fromComp, toComp):
                 return MNSLType.fromString('Vec$toComp');
 
