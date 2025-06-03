@@ -288,7 +288,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printNode(index);
                 print("]");
 
-            case TypePromotion(on, from, to):
+            case TypeCast(on, from, to):
                 printIndented(_types.get(to.toString()));
                 print("(");
                 enableInline();

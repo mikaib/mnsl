@@ -102,7 +102,7 @@ class MNSLSolver {
 
             addReplacement({
                 node: c.ofNode,
-                to: TypePromotion(c.ofNode, c.type, c.mustBe)
+                to: TypeCast(c.ofNode, c.type, c.mustBe)
             });
 
             return true;
