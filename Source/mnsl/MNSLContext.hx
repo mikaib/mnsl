@@ -9,6 +9,7 @@ import mnsl.glsl.MNSLGLSLConfig;
 import mnsl.glsl.MNSLGLSLPrinter;
 import mnsl.analysis.MNSLAnalyser;
 import haxe.EnumTools.EnumValueTools;
+import mnsl.optimizer.MNSLOptimizer;
 
 class MNSLContext {
 
@@ -39,14 +40,21 @@ class MNSLContext {
 
         var parser = new MNSLParser(this, tokens);
         var res = parser.run();
-
         _finalAst = res.ast;
         _finalData = res.dataList;
 
         var analyser = new MNSLAnalyser(this, res.ast);
         var output = analyser.run();
-
         _finalAst = output;
+
+        var optimizer = new MNSLOptimizer(this, output);
+        for (plugin in _options.optimizerPlugins) {
+            optimizer.addPlugin(plugin);
+        }
+
+        var optimized = optimizer.run();
+        _finalAst = optimized;
+
         printAST(_finalAst);
     }
 

@@ -1,6 +1,7 @@
-@uniform(Texture: Sampler)
-@input(TexCoord: Vec2)
-
 func main() {
-    var colour: Vec4 = texture(uniform.Texture, input.TexCoord).rgb;
+    var someVec: Vec4;
+    someVec.wxyz = vec4(1.0, 2.0, 3.0, 4.0);
+    someVec.zx = vec2(3.0, 5.0);
+
+    var t: Vec4 = vec3(1.0);
 }
