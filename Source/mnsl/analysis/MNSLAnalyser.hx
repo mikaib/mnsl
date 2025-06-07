@@ -64,14 +64,6 @@ class MNSLAnalyser {
 
        this._functions = [
            {
-               name: "test",
-               remap: "__mnsl_test",
-               args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TVec2]) },
-               ],
-                returnType: MNSLType.Template("T")
-           },
-           {
                name: "texture",
                remap: "__mnsl_texture",
                args: [
@@ -84,7 +76,7 @@ class MNSLAnalyser {
                name: "sin",
                remap: "__mnsl_sin",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -92,7 +84,7 @@ class MNSLAnalyser {
                name: "cos",
                remap: "__mnsl_cos",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -100,7 +92,7 @@ class MNSLAnalyser {
                name: "tan",
                remap: "__mnsl_tan",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -108,7 +100,7 @@ class MNSLAnalyser {
                name: "normalize",
                remap: "__mnsl_normalize",
                args: [
-                   { name: "v", type: MNSLType.Template("T") }
+                   { name: "v", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -116,8 +108,8 @@ class MNSLAnalyser {
                name: "dot",
                remap: "__mnsl_dot",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
-                   { name: "y", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.TFloat
            },
@@ -134,7 +126,7 @@ class MNSLAnalyser {
                name: "length",
                remap: "__mnsl_length",
                args: [
-                   { name: "v", type: MNSLType.Template("T") }
+                   { name: "v", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.TFloat
            },
@@ -142,8 +134,8 @@ class MNSLAnalyser {
                name: "reflect",
                remap: "__mnsl_reflect",
                args: [
-                   { name: "I", type: MNSLType.Template("T") },
-                   { name: "N", type: MNSLType.Template("T") }
+                   { name: "I", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "N", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -151,8 +143,8 @@ class MNSLAnalyser {
                name: "refract",
                remap: "__mnsl_refract",
                args: [
-                   { name: "I", type: MNSLType.Template("T") },
-                   { name: "N", type: MNSLType.Template("T") },
+                   { name: "I", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "N", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "eta", type: MNSLType.TFloat }
                ],
                returnType: MNSLType.Template("T")
@@ -161,8 +153,8 @@ class MNSLAnalyser {
                name: "pow",
                remap: "__mnsl_pow",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
-                   { name: "y", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -170,7 +162,7 @@ class MNSLAnalyser {
                name: "exp",
                remap: "__mnsl_exp",
                args: [
-                   { name: "x", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -178,7 +170,7 @@ class MNSLAnalyser {
                name: "log",
                remap: "__mnsl_log",
                args: [
-                   { name: "x", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -186,7 +178,7 @@ class MNSLAnalyser {
                name: "sqrt",
                remap: "__mnsl_sqrt",
                args: [
-                   { name: "x", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -194,7 +186,7 @@ class MNSLAnalyser {
                name: "abs",
                remap: "__mnsl_abs",
                args: [
-                   { name: "x", type: MNSLType.Template("T") }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T")
            },
@@ -202,7 +194,7 @@ class MNSLAnalyser {
                name: "clamp",
                remap: "__mnsl_clamp",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "minVal", type: MNSLType.Template("T") },
                    { name: "maxVal", type: MNSLType.Template("T") }
                ],
@@ -212,7 +204,7 @@ class MNSLAnalyser {
                name: "mix",
                remap: "__mnsl_mix",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "y", type: MNSLType.Template("T") },
                    { name: "a", type: MNSLType.Template("T") }
                ],
@@ -222,7 +214,7 @@ class MNSLAnalyser {
                name: "step",
                remap: "__mnsl_step",
                args: [
-                   { name: "edge", type: MNSLType.Template("T") },
+                   { name: "edge", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "x", type: MNSLType.Template("T") }
                ],
                returnType: MNSLType.Template("T")
@@ -231,7 +223,7 @@ class MNSLAnalyser {
                name: "smoothstep",
                remap: "__mnsl_smoothstep",
                args: [
-                   { name: "edge0", type: MNSLType.Template("T") },
+                   { name: "edge0", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "edge1", type: MNSLType.Template("T") },
                    { name: "x", type: MNSLType.Template("T") }
                ],
@@ -241,7 +233,7 @@ class MNSLAnalyser {
                name: "max",
                remap: "__mnsl_max",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "y", type: MNSLType.Template("T") }
                ],
                returnType: MNSLType.Template("T")
@@ -250,11 +242,11 @@ class MNSLAnalyser {
                name: "min",
                remap: "__mnsl_min",
                args: [
-                   { name: "x", type: MNSLType.Template("T") },
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "y", type: MNSLType.Template("T") }
                ],
                returnType: MNSLType.Template("T")
-          }
+           }
        ];
 
         var varMap: Map<MNSLShaderDataKind, MNSLAnalyserVariable> = [

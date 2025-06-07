@@ -196,7 +196,7 @@ class MNSLType {
      * @param size The number of columns and rows.
      */
     public inline function isMatrixWithEqualSize(size: Int): Bool {
-        return _type == _type == "Mat" + size;
+        return _type == "Mat" + size;
     }
 
     /**
@@ -206,14 +206,8 @@ class MNSLType {
     public inline function getMatrixWidth(): Int {
         switch (_type) {
             case "Mat2": return 2;
-            case "Mat23": return 2;
-            case "Mat24": return 2;
             case "Mat3": return 3;
-            case "Mat32": return 3;
-            case "Mat34": return 3;
             case "Mat4": return 4;
-            case "Mat42": return 4;
-            case "Mat43": return 4;
             default: return -1;
         }
     }
@@ -225,14 +219,9 @@ class MNSLType {
     public inline function getMatrixHeight(): Int {
         switch (_type) {
             case "Mat2": return 2;
-            case "Mat23": return 3;
-            case "Mat24": return 4;
             case "Mat3": return 3;
-            case "Mat32": return 2;
-            case "Mat34": return 4;
             case "Mat4": return 4;
-            case "Mat42": return 2;
-            case "Mat43": return 3;
+            default: return -1;
         }
     }
 
