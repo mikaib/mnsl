@@ -501,29 +501,14 @@ class MNSLAnalyser {
         var v: MNSLAnalyserVariable = null;
 
         while (accessOk) {
-            if (v != null && v.type.isVector() && _vectorAccess.exists(currField)) {
-                var accessInfo = _vectorAccess.get(currField);
-                if (accessInfo.comp < 0 || accessInfo.comp >= v.type.getVectorComponents()) {
-                    _context.emitError(AnalyserInvalidVectorComponent(accessInfo.comp, info));
-                    return null;
-                }
-
-                v = {
-                    name: currField,
-                    type: MNSLType.TFloat,
-                    struct: false,
-                    fields: []
-                };
-            } else {
-                v = currCtx.findVariable(currField);
-                if (v == null) {
-                    accessOk = false;
-                    break;
-                }
-
-                currCtx = new MNSLAnalyserContext();
-                currCtx.variables = currCtx.variables.concat(v.fields);
+            v = currCtx.findVariable(currField);
+            if (v == null) {
+                accessOk = false;
+                break;
             }
+
+            currCtx = new MNSLAnalyserContext();
+            currCtx.variables = currCtx.variables.concat(v.fields);
 
             if (structStck.length <= 0) {
                 break;
@@ -551,6 +536,49 @@ class MNSLAnalyser {
      * @param value The value of the variable.
      */
     public function analyseVariableAssignPost(node: MNSLNode, on: MNSLNode, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        switch (on) {
+            case VectorCreation(comp, values, _):
+                _solver.addConstraint({
+                    type: getType(value),
+                    mustBe: MNSLType.fromString('Vec$comp'),
+                    ofNode: value,
+                });
+
+                var blockBody: Array<MNSLNode> = [];
+                var componentOrder = ['x', 'y', 'z', 'w'];
+
+                for (cIdx in 0...values.length) {
+                    blockBody.push(VariableAssign(values[cIdx], StructAccess(value, componentOrder[cIdx], MNSLType.fromString('Vec$comp'), info), info));
+                }
+
+                return Block(blockBody, info);
+
+            case StructAccess(accessOn, field, type, structInfo): // identifier will already be VectorCreation when using swizzling, thus this is only needed for 1 component.
+                var t = getType(accessOn);
+                if (t.isVector()) {
+                    if (_vectorAccess.exists(field)) {
+                        var vecAccess = _vectorAccess.get(field);
+                        if (vecAccess.comp >= t.getVectorComponents()) {
+                            _context.emitError(AnalyserInvalidVectorComponent(vecAccess.comp, info));
+                            return node;
+                        }
+
+                        _solver.addConstraint({
+                            type: getType(value),
+                            mustBe: MNSLType.TFloat,
+                            ofNode: value,
+                        });
+
+                        return VariableAssign(StructAccess(accessOn, _vectorAccess.get(field).char, type, structInfo), value, info);
+                    } else {
+                        _context.emitError(AnalyserUndeclaredVariable('VectorAccess($t.$field)', info));
+                        return node;
+                    }
+                }
+
+            default:
+        }
+
         var v = getVariableOf(on, info, ctx);
         if (v == null) {
             return node;
@@ -588,6 +616,54 @@ class MNSLAnalyser {
      * @param field The field to access.
      */
     public function analyseStructAccessPost(node: MNSLNode, on: MNSLNode, field: String, type: MNSLType, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var t = getType(on);
+
+        if (t.isDefined() && t.isVector()) {
+            var parts = field.split("");
+            if (parts.length == 1) {
+                if (!_vectorAccess.exists(parts[0])) {
+                    _context.emitError(AnalyserUndeclaredVariable('VectorAccess($t.$field)', info));
+                    return node;
+                }
+
+                if (_vectorAccess.get(parts[0]).comp >= t.getVectorComponents()) {
+                    _context.emitError(AnalyserInvalidVectorComponent(_vectorAccess.get(parts[0]).comp, info));
+                    return node;
+                }
+
+                _solver.addConstraint({
+                    type: type,
+                    mustBe: MNSLType.TFloat,
+                    ofNode: node,
+                });
+
+                return StructAccess(on, _vectorAccess.get(parts[0]).char, type, info);
+            }
+
+            var newComps: Array<MNSLNode> = [];
+            for (c in parts) {
+                if (!_vectorAccess.exists(c)) {
+                    _context.emitError(AnalyserUndeclaredVariable('VectorAccess($t.$field)', info));
+                    return node;
+                }
+
+                if (_vectorAccess.get(c).comp >= t.getVectorComponents()) {
+                    _context.emitError(AnalyserInvalidVectorComponent(_vectorAccess.get(c).comp, info));
+                    return node;
+                }
+
+                newComps.push(StructAccess(on, _vectorAccess.get(c).char, type, info));
+            }
+
+            _solver.addConstraint({
+                type: type,
+                mustBe: MNSLType.fromString('Vec${newComps.length}'),
+                ofNode: node,
+            });
+
+            return VectorCreation(newComps.length, newComps, info);
+        }
+
         var v = getVariableOf(node, info, ctx);
         if (v == null) {
             return node;
@@ -998,6 +1074,7 @@ class MNSLAnalyser {
         }
 
         if (doRemove != null) {
+            replacements = replacements.copy();
             replacements.remove(doRemove);
         }
 

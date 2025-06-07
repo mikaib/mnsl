@@ -293,6 +293,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 disableInline();
                 print(")");
 
+            case Block(body, info):
+                printNodeChildren(body);
+
             case StructAccess(on, field, type, info):
                 if (on.match(Identifier("output", _))) {
                     if (_internalOutputStruct.exists(field)) {

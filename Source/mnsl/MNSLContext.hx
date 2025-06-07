@@ -136,6 +136,9 @@ class MNSLContext {
                 case TypeCast(on, from, to):
                     Sys.println(indentStr + name + '[$from -> $to]');
                     printAST([on], indent + 1);
+                case Block(body, info):
+                    Sys.println(indentStr + name);
+                    printAST(body, indent + 1);
                 default:
                     Sys.println(indentStr + name);
             }

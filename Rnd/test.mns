@@ -1,3 +1,6 @@
 func main() {
-
+    var vec = vec4(1.0);
+    vec.xy = 1.0;
+    vec.zw = 0.0;
+    vec.rgb = vec.bgr;
 }

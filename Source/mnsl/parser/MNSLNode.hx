@@ -32,6 +32,7 @@ enum MNSLNode {
 
     // other lang features
     SubExpression(node: MNSLNode, info: MNSLNodeInfo);
+    Block(body: MNSLNodeChildren, info: MNSLNodeInfo);
     StructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo);
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
     TypeCast(on: MNSLNode, from: MNSLType, to: MNSLType);
