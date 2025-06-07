@@ -1,6 +1,7 @@
 package mnsl.analysis;
 
 import mnsl.parser.MNSLNode;
+import mnsl.tokenizer.MNSLToken;
 import haxe.EnumTools.EnumValueTools;
 import mnsl.parser.MNSLNodeChildren;
 
@@ -22,18 +23,6 @@ class MNSLSolver {
         var _toRemove: Array<MNSLConstraint> = [];
 
         for (c in _constraints) {
-            if (!c.type.isDefined() && c.mustBe.isDefined()) {
-                c.type.setType(c.mustBe);
-                c.type.setTempType(false);
-                _toRemove.push(c);
-            }
-
-            if (c.type.isDefined() && !c.mustBe.isDefined()) {
-                c.mustBe.setType(c.type);
-                c.mustBe.setTempType(false);
-                _toRemove.push(c);
-            }
-
             if (c.type.isDefined() && c.mustBe.isDefined()) {
                 if (!c.type.equals(c.mustBe)) {
                     if (this.tryCast(c)) {
@@ -53,6 +42,66 @@ class MNSLSolver {
                     }
                 }
             }
+
+            if (!c.type.isDefined() && c.mustBe.isDefined()) {
+                if (c.type.accepts(c.mustBe)) {
+                    c.type.setType(c.mustBe);
+                    c.type.setTempType(false);
+                    _toRemove.push(c);
+                } else {
+                    var done: Bool = false;
+                    for (l in c.type.getLimits()) {
+                        if (this.tryCastType(c.ofNode, c.type, l)) {
+                            c.type.setType(l);
+                            c.type.setTempType(false);
+                            _toRemove.push(c);
+                            break;
+                        }
+                    }
+
+                    if (done) {
+                        continue;
+                    }
+
+                    if (c._optional) {
+                        _toRemove.push(c);
+                        continue;
+                    }
+
+                    _context.emitError(AnalyserMismatchingEitherType(c.type.getLimits(), c.ofNode));
+                }
+            }
+
+            if (c.type.isDefined() && !c.mustBe.isDefined()) {
+                if (c.mustBe.accepts(c.type)) {
+                    c.mustBe.setType(c.type);
+                    c.mustBe.setTempType(false);
+                    _toRemove.push(c);
+                    continue;
+                } else {
+                    var done: Bool = false;
+                    for (l in c.mustBe.getLimits()) {
+                        if (this.tryCastType(c.ofNode, c.type, l)) {
+                            c.mustBe.setType(l);
+                            c.mustBe.setTempType(false);
+                            _toRemove.push(c);
+                            done = true;
+                            break;
+                        }
+                    }
+
+                    if (done) {
+                        continue;
+                    }
+
+                    if (c._optional) {
+                        _toRemove.push(c);
+                        continue;
+                    }
+
+                    _context.emitError(AnalyserMismatchingEitherType(c.mustBe.getLimits(), c.ofNode));
+                }
+            }
         }
 
         for (c in _toRemove) {
@@ -64,6 +113,16 @@ class MNSLSolver {
         }
 
         return false;
+    }
+
+    public function tryCastType(node: MNSLNode, from: MNSLType, to: MNSLType): Bool {
+        var c: MNSLConstraint = {
+            type: from,
+            mustBe: to,
+            ofNode: node,
+        };
+
+        return this.tryCast(c);
     }
 
     public function tryCast(c: MNSLConstraint): Bool {
@@ -90,6 +149,15 @@ class MNSLSolver {
             addReplacement({
                 node: c.ofNode,
                 to: VectorCreation(componentsOfMustBe, [for (i in 0...componentsOfMustBe) c.ofNode], null)
+            });
+
+            return true;
+        }
+
+        if (c.type.isNumerical() && c.mustBe.isBool()) {
+            addReplacement({
+                node: c.ofNode,
+                to: BinaryOp(c.ofNode, NotEqual(null), IntegerLiteralNode("0", null), MNSLType.TBool, null)
             });
 
             return true;

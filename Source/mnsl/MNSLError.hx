@@ -16,6 +16,7 @@ enum MNSLError {
     ParserInvalidKeyword(value: String, pos: MNSLTokenInfo);
     ParserUnexpectedToken(token: MNSLToken, pos: MNSLTokenInfo);
     ParserUnexpectedExpression(node: MNSLNode, pos: MNSLNodeInfo);
+    ParserConditionalWithoutIf(pos: MNSLTokenInfo);
     AnalyserNoImplementation(fn: MNSLAnalyserFunction, pos: MNSLNodeInfo);
     AnalyserDuplicateVariable(name: String, pos: MNSLNodeInfo);
     AnalyserUndeclaredVariable(name: String, pos: MNSLNodeInfo);
@@ -27,4 +28,7 @@ enum MNSLError {
     AnalyserInvalidVectorComponent(comp: Int, info: MNSLNodeInfo);
     AnalyserUnknownVectorComponent(node: MNSLNode, info: MNSLNodeInfo);
     AnalyserInvalidBinop(tLeft: MNSLType, tRight: MNSLType, op: String, constraint: MNSLConstraint);
+    AnalyserInvalidUnaryOp(op: MNSLToken, info: MNSLNodeInfo);
+    AnalyserLoopKeywordOutsideLoop(node: MNSLNode, info: MNSLNodeInfo);
+    AnalyserMismatchingEitherType(limits: Array<MNSLType>, node: MNSLNode);
 }

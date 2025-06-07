@@ -200,10 +200,24 @@ class MNSLTokenizer {
                     position++;
                     column++;
 
+                    if (source.charAt(position) == "-") {
+                        appendToken(MNSLToken.Assign({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.IntegerLiteral("1", { line: line, column: column, length: 1, position: initialPosition }));
+                        position++;
+                        column++;
+                    }
+
                 case '+':
                     appendToken(MNSLToken.Plus({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
+
+                    if (source.charAt(position) == "+") {
+                        appendToken(MNSLToken.Assign({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.IntegerLiteral("1", { line: line, column: column, length: 1, position: initialPosition }));
+                        position++;
+                        column++;
+                    }
 
                 case ';':
                     appendToken(MNSLToken.Semicolon({ line: line, column: column, length: 1, position: initialPosition }));

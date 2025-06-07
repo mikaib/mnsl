@@ -614,6 +614,12 @@ class MNSLParser {
      * @param info The token info.
      */
     public function parseElseStmt(value: String, info: MNSLTokenInfo): Void {
+        var last = peekLast();
+        if (last == null || (!last.match(IfStatement(_, _, _)) && !last.match(ElseIfStatement(_, _, _)))) {
+            context.emitError(ParserConditionalWithoutIf(info));
+            return;
+        }
+
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
         var body = new MNSLParser(context, bodyBlock)._runInternal();
 
@@ -629,6 +635,12 @@ class MNSLParser {
      * @param info The token info.
      */
     public function parseElseIfStmt(value: String, info: MNSLTokenInfo): Void {
+        var last = peekLast();
+        if (last == null || !last.match(IfStatement(_, _, _))) {
+            context.emitError(ParserConditionalWithoutIf(info));
+            return;
+        }
+
         var conditionBlock = getBlock(LeftParen(null), RightParen(null));
         var conditionTokens = splitBlock(conditionBlock, Comma(null));
         var conditions: MNSLNodeChildren = [];
@@ -867,26 +879,7 @@ class MNSLParser {
             var comp: Int = Std.parseInt(name.substr(3));
             var info: MNSLNodeInfo = MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])]);
 
-            if (args.length == 1) {
-                append(VectorCreation(
-                    comp,
-                    [for (i in 0...comp) args[0]],
-                    info
-                ));
-            } else if (args.length < comp) {
-                var toFill: Array<MNSLNode> = [FloatLiteralNode("0.0", info), FloatLiteralNode("0.0", info), FloatLiteralNode("0.0", info), FloatLiteralNode("1.0", info)];
-                for (idx in 0...args.length) {
-                    toFill[idx] = args[idx];
-                }
-                append(VectorCreation(comp, toFill.slice(0, comp), info));
-            } else {
-                append(VectorCreation(
-                    comp,
-                    args.slice(0, comp),
-                    MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])])
-                ));
-            }
-
+            append(VectorCreation(comp, args, info));
             return;
         }
 
@@ -1049,6 +1042,18 @@ class MNSLParser {
         }
 
         return ast.pop();
+    }
+
+    /**
+     * Peek the last added node from the AST.
+    * @return The last added node.
+    */
+    public function peekLast(): MNSLNode {
+        if (ast.length == 0) {
+            return null;
+        }
+
+        return ast[ast.length - 1];
     }
 
     /**

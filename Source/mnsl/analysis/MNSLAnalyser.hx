@@ -17,7 +17,7 @@ class MNSLAnalyser {
     private var _functions: Array<MNSLAnalyserFunction>;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
-    private var _cpyStck: Array<String> = ["FunctionDecl"];
+    private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop"];
     private var _deferPostType: Array<Void -> Void> = [];
     private var _vectorAccess: Map<String, { comp: Int, char: String }> = [
         "x" => { comp: 0, char: "x" },
@@ -63,6 +63,14 @@ class MNSLAnalyser {
         };
 
        this._functions = [
+           {
+               name: "test",
+               remap: "__mnsl_test",
+               args: [
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TVec2]) },
+               ],
+                returnType: MNSLType.Template("T")
+           },
            {
                name: "texture",
                remap: "__mnsl_texture",
@@ -304,6 +312,11 @@ class MNSLAnalyser {
                     });
                 }
             }
+
+            // hack to make continue; and break; work correctly
+            if (name == "WhileLoop" || name == "ForLoop") {
+                ctx.currentIsLoop = true;
+            }
         }
 
         for (pi in 0...params.length) {
@@ -444,7 +457,7 @@ class MNSLAnalyser {
     }
 
     /**
-     * Run on a variable declaration node (post)
+     * Run on a variable declaration node (post`)
      * @param node The variable declaration node to run on.
      * @param name The name of the variable.
      * @param type The type of the variable.
@@ -623,7 +636,10 @@ class MNSLAnalyser {
 
             if (f.args[i].type.isTemplate()) {
                 if (!templates.exists(f.args[i].type.getTemplateName())) {
-                    templates.set(f.args[i].type.getTemplateName(), MNSLType.TUnknown);
+                    var t = MNSLType.TUnknown;
+                    t.setLimits(f.args[i].type.getLimits());
+
+                    templates.set(f.args[i].type.getTemplateName(), t);
                 }
 
                 _solver.addConstraint({
@@ -718,6 +734,30 @@ class MNSLAnalyser {
             }
         }
 
+        if (newComp != comp) {
+            if (newComp < comp) {
+                if (newComp == 1) {
+                    while (newComp < comp) { // vecN(x) -> vecN(x, x, x, x)
+                        newNodes.push(newNodes[0]);
+                        newComp++;
+                    }
+                } else {
+                    while (newComp < comp) { // vecN(x, y, z, w) -> vecN(x ?? 0.0, y ?? 0.0, z ?? 0.0, w ?? 1.0)
+                        if (newComp == 3) newNodes.push(FloatLiteralNode("1.0", info));
+                        else newNodes.push(FloatLiteralNode("0.0", info));
+
+                        newComp++;
+                    }
+                }
+            } else if (nodes.length == 1) { // allow vecN(vecN) truncation
+                newNodes = newNodes.slice(0, comp);
+                newComp = comp;
+            } else { // disallow truncation when two or more components are used
+                _context.emitError(AnalyserInvalidVectorComponent(newComp, info));
+                return node;
+            }
+        }
+
         if (newComp > 4 || newComp < 2) {
             _context.emitError(AnalyserInvalidVectorComponent(newComp, info));
             return node;
@@ -794,12 +834,76 @@ class MNSLAnalyser {
             _optional: true
         });
 
-         _solver.addConstraint({
+        var resType = switch(op) {
+            case Equal(_): MNSLType.TBool;
+            case NotEqual(_): MNSLType.TBool;
+            case Less(_): MNSLType.TBool;
+            case Greater(_): MNSLType.TBool;
+            case LessEqual(_): MNSLType.TBool;
+            case GreaterEqual(_): MNSLType.TBool;
+            case And(_): MNSLType.TBool;
+            case Or(_): MNSLType.TBool;
+            case Slash (_): MNSLType.TFloat;
+            default: rightType;
+        };
+
+        _solver.addConstraint({
             type: type,
-            mustBe: rightType,
+            mustBe: resType,
             ofNode: node,
             _mustBeOfNode: right
-         });
+        });
+
+        return node;
+    }
+
+    /**
+     * Run on a conditional node (post)
+     * @param node The conditional node to run on.
+     * @param cond The condition of the conditional node.
+     * @param body The body of the conditional node.
+     */
+    public function analyseConditionalPost(node: MNSLNode, cond: MNSLNode, body: MNSLNodeChildren, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        _solver.addConstraint({
+            type: getType(cond),
+            mustBe: MNSLType.TBool,
+            ofNode: cond,
+        });
+
+        return node;
+    }
+
+    /**
+     * Run on a unary operation node (post)
+     * @param node The unary operation node to run on.
+     * @param op The operator of the unary operation.
+     * @param value The value of the unary operation.
+     */
+    public function analyseUnaryOpPost(node: MNSLNode, op: MNSLToken, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var isAllowed = switch(op) {
+            case Not(_): true;
+            case Minus(_): true;
+            case Plus(_): true;
+            default: false;
+        };
+
+        if (!isAllowed) {
+            _context.emitError(AnalyserInvalidUnaryOp(op, info));
+            return node;
+        }
+
+        return node;
+    }
+
+    /**
+     * Run on a loop keyword node (post)
+     * @param node The loop keyword node to run on.
+     */
+    public function analyseLoopKeyword(node: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        if (!ctx.currentIsLoop) {
+            _context.emitError(AnalyserLoopKeywordOutsideLoop(node, info));
+            return node;
+        }
 
         return node;
     }
@@ -834,6 +938,27 @@ class MNSLAnalyser {
 
             case BinaryOp(left, op, right, type, info):
                 return analyseBinaryOpPost(node, left, op, right, type, ctx, info);
+
+            case UnaryOp(op, value, info):
+                return analyseUnaryOpPost(node, op, value, ctx, info);
+
+            case IfStatement(cond, body, info):
+                return analyseConditionalPost(node, cond, body, ctx, info);
+
+            case ElseIfStatement(cond, body, info):
+                return analyseConditionalPost(node, cond, body, ctx, info);
+
+            case WhileLoop(cond, body, info):
+                return analyseConditionalPost(node, cond, body, ctx, info);
+
+            case ForLoop(init, condition, increment, body, info):
+                return analyseConditionalPost(node, condition, body, ctx, info);
+
+            case Continue(info):
+                return analyseLoopKeyword(node, ctx, info);
+
+            case Break(info):
+                return analyseLoopKeyword(node, ctx, info);
 
             default:
                 return node;

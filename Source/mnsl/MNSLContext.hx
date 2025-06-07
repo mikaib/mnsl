@@ -47,7 +47,7 @@ class MNSLContext {
         var output = analyser.run();
 
         _finalAst = output;
-        // printAST(_finalAst);
+        printAST(_finalAst);
     }
 
     /**
@@ -235,6 +235,8 @@ class MNSLContext {
                 return "Unexpected token: " + token + " at position " + pos;
             case ParserUnexpectedExpression(node, pos):
                 return "Unexpected expression: " + node + " at position " + pos;
+            case ParserConditionalWithoutIf(pos):
+                return "Conditional statement without 'if' or 'elseif' at position " + pos;
             case TokenizerInvalidChar(char, pos):
                 return "Invalid character: " + char + " at position " + pos;
             case TokenizerUnterminatedString(pos):
@@ -263,6 +265,20 @@ class MNSLContext {
                 return "Invalid binary operation: " + tLeft + " " + op + " " + tRight + " at " + constraint.ofNode;
             case AnalyserUnknownVectorComponent(node, info):
                 return "Type of vector component is unknown: " + node + " at vector " + info;
+            case AnalyserInvalidUnaryOp(op, info):
+                return "Invalid unary operation: " + op + " at " + info;
+            case AnalyserLoopKeywordOutsideLoop(node, info):
+                return EnumValueTools.getName(node) + " outside of loop at " + info;
+            case AnalyserMismatchingEitherType(limits, node):
+                var limitStr = "";
+                for (limitIdx in 0...limits.length) {
+                    if (limitIdx > 0) {
+                        limitStr += limitIdx == limits.length - 1 ? " or " : ", ";
+                    }
+                    limitStr += limits[limitIdx];
+                }
+
+                return node + " did not match any of the expected types: " + limitStr;
         }
     }
 

@@ -5,11 +5,13 @@ class MNSLAnalyserContext {
     public var functions: Array<MNSLAnalyserFunction>;
     public var variables: Array<MNSLAnalyserVariable>;
     public var currentFunction: MNSLAnalyserFunction;
+    public var currentIsLoop: Bool;
 
     public function new() {
         functions = [];
         variables = [];
         currentFunction = null;
+        currentIsLoop = false;
     }
 
     public function copy(): MNSLAnalyserContext {

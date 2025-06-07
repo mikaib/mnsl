@@ -1,9 +1,5 @@
-#include "pbr.mns"
-
 func main() {
-    #if TEST_DEFINE
-        return 1.0;
-    #else
-        return vec2(1.0);
-    #end
+   return vec2(
+        vec4(vec2(2.0), 3.0)
+   );
 }

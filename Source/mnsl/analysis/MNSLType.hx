@@ -24,20 +24,59 @@ class MNSLType {
     public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
 
-    public static function Template(T: String): MNSLType {
-        return new MNSLType('Template<$T>', true);
+    public static function Template(T: String, ?limits: Array<MNSLType>): MNSLType {
+        return new MNSLType('Template<$T>', true, limits);
     }
 
     private var _type: String;
     private var _tempType: Bool;
+    private var _limits: Array<MNSLType>;
 
     /**
      * Create a new MNSLType instance.
      * @param type The type name.
      */
-    private function new(t: String, temp: Bool = false) {
+    private function new(t: String, temp: Bool = false, ?limits: Array<MNSLType>): Void {
         _type = t;
         _tempType = temp;
+        _limits = limits != null ? limits : [];
+    }
+
+    /**
+     * Get the limits of the template type.
+     * @return An array of MNSLType representing the limits, or an empty array if not a template.
+     */
+    public inline function getLimits(): Array<MNSLType> {
+        return _limits;
+    }
+
+    /**
+     * Set the limits of the template type.
+     * @param limits An array of MNSLType representing the limits.
+     */
+    public function setLimits(limits: Array<MNSLType>): Void {
+        _limits = limits;
+    }
+
+    /**
+     * Check if the type has limits
+     * @return True if the type has limits, false otherwise.
+     */
+    public inline function hasLimits(): Bool {
+        return _limits.length > 0;
+    }
+
+    /**
+     * Check if the type accepts a specific type as a limit.
+     */
+    public function accepts(t: MNSLType): Bool {
+        if (!hasLimits()) return true;
+
+        for (l in _limits) {
+            if (l.equals(t)) return true;
+        }
+
+        return false;
     }
 
     /**

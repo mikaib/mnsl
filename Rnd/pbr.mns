@@ -1,3 +1,6 @@
+#include "fragment.mns"
+#include "vertex.mns"
+
 // defines
 @define(PI, 3.14159265359)
 @define(MAX_LIGHTS, 4)
