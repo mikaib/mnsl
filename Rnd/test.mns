@@ -1,3 +1,5 @@
+#include "pbr.mns"
+
 func main() {
     #if TEST_DEFINE
         return 1.0;

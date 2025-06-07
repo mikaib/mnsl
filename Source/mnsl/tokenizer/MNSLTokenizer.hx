@@ -33,11 +33,114 @@ class MNSLTokenizer {
         var line: Int = 1;
         var column: Int = 0;
 
+        var skipActive: Bool = false;
+        var condActive: Bool = false;
+        var condResult: Bool = true;
+
+        var appendToken = (token: MNSLToken) -> {
+            if (!skipActive) {
+                tokens.push(token);
+            }
+        };
+
         while (position < length) {
             var char = source.charAt(position);
             var initialPosition: Int = position;
 
             switch (char) {
+                case '#':
+                    position++;
+                    column++;
+                    var cmd = "";
+                    while (position < length && isLetter(source.charCodeAt(position))) {
+                        cmd += source.charAt(position);
+                        position++;
+                        column++;
+                    }
+
+                    cmd = cmd.toLowerCase();
+                    var args = [];
+                    while (position < length && source.charAt(position) != '\n') {
+                        if (source.charAt(position) == ' ') {
+                            position++;
+                            column++;
+                        } else {
+                            var arg = "";
+                            while (position < length && source.charAt(position) != ' ' && source.charAt(position) != '\n') {
+                                if (source.charAt(position) == '"' || source.charAt(position) == '\'') {
+                                    position++;
+                                    column++;
+                                    continue;
+                                }
+                                arg += source.charAt(position);
+                                position++;
+                                column++;
+                            }
+                            args.push(arg);
+                        }
+                    }
+
+                    position++;
+                    column = 0;
+                    line++;
+
+                    if (cmd == "if") {
+                        if (args.length == 0) {
+                            context.emitError(TokenizerPreprocessorError(
+                                "Missing condition for #if directive",
+                                {
+                                    line: line,
+                                    column: column,
+                                    length: position - initialPosition,
+                                    position: initialPosition
+                                }
+                            ));
+                        } else {
+                            var condition = args.join(" ");
+                            if (condition.startsWith("!")) {
+                                condResult = !defines.exists(condition.substr(1));
+                            } else {
+                                condResult = defines.exists(condition);
+                            }
+                            skipActive = !condResult;
+                            condActive = true;
+                        }
+                    } else if (cmd == "else" && condActive) {
+                        skipActive = condResult;
+                    } else if (cmd == "end") {
+                        skipActive = false;
+                        condActive = false;
+                    } else if (cmd == "include" && !skipActive) {
+                        var sourceStr = context.getOptions().preprocessorIncludeFunc(args[0], context.getOptions().rootPath);
+                        if (sourceStr == null) {
+                            context.emitError(TokenizerPreprocessorError(
+                                "Failed to include file: " + args[0],
+                                {
+                                    line: line,
+                                    column: column,
+                                    length: position - initialPosition,
+                                    position: initialPosition
+                                }
+                            ));
+                        } else {
+                            var tokenizer = new MNSLTokenizer(context, sourceStr, defines);
+                            var includedTokens = tokenizer.run();
+                            for (token in includedTokens) {
+                                appendToken(token);
+                            }
+                        }
+                    } else {
+                        context.emitError(TokenizerPreprocessorError(
+                            "Unknown or invalid preprocessor command: #" + cmd,
+                            {
+                                line: line,
+                                column: column,
+                                length: position - initialPosition,
+                                position: initialPosition
+                            }
+                        ));
+                    }
+
                 case '\t':
                     column += 4;
                     position++;
@@ -52,58 +155,58 @@ class MNSLTokenizer {
                     position++;
 
                 case '@':
-                    tokens.push(MNSLToken.At({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.At({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '(':
-                    tokens.push(MNSLToken.LeftParen({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.LeftParen({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case ')':
-                    tokens.push(MNSLToken.RightParen({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.RightParen({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '[':
-                    tokens.push(MNSLToken.LeftBracket({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.LeftBracket({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
 
                 case ']':
-                    tokens.push(MNSLToken.RightBracket({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.RightBracket({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case "{":
-                    tokens.push(MNSLToken.LeftBrace({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.LeftBrace({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case "}":
-                    tokens.push(MNSLToken.RightBrace({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.RightBrace({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case ',':
-                    tokens.push(MNSLToken.Comma({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Comma({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '-':
-                    tokens.push(MNSLToken.Minus({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Minus({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '+':
-                    tokens.push(MNSLToken.Plus({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Plus({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case ';':
-                    tokens.push(MNSLToken.Semicolon({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Semicolon({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
@@ -114,7 +217,7 @@ class MNSLTokenizer {
                             column++;
                         }
                     } else {
-                        tokens.push(MNSLToken.Slash({ line: line, column: column, length: 1, position: initialPosition }));
+                        appendToken(MNSLToken.Slash({ line: line, column: column, length: 1, position: initialPosition }));
                         position++;
                         column++;
                     }
@@ -128,88 +231,88 @@ class MNSLTokenizer {
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Star({ line: line, column: column, length: 1, position: initialPosition }));
+                        appendToken(MNSLToken.Star({ line: line, column: column, length: 1, position: initialPosition }));
                         position++;
                         column++;
                     }
 
                 case '%':
-                    tokens.push(MNSLToken.Percent({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Percent({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '?':
-                    tokens.push(MNSLToken.Question({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Question({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '=':
                     if (source.charAt(position + 1) == '=') {
-                        tokens.push(MNSLToken.Equal({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.Equal({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Assign({ line: line, column: column, length: 1, position: initialPosition }));
+                        appendToken(MNSLToken.Assign({ line: line, column: column, length: 1, position: initialPosition }));
                         position++;
                         column++;
                     }
 
                 case ':':
-                    tokens.push(MNSLToken.Colon({ line: line, column: column, length: 1, position: initialPosition }));
+                    appendToken(MNSLToken.Colon({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
 
                 case '&':
                     if (source.charAt(position + 1) == '&') {
-                        tokens.push(MNSLToken.And({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.And({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.And({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise AND
+                        appendToken(MNSLToken.And({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise AND
                         position++;
                         column++;
                     }
 
                 case '|':
                     if (source.charAt(position + 1) == '|') {
-                        tokens.push(MNSLToken.Or({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.Or({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Or({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise OR
+                        appendToken(MNSLToken.Or({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise OR
                         position++;
                         column++;
                     }
 
                 case '<':
                     if (source.charAt(position + 1) == '=') {
-                        tokens.push(MNSLToken.LessEqual({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.LessEqual({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Less({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise left shift
+                        appendToken(MNSLToken.Less({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise left shift
                         position++;
                         column++;
                     }
 
                 case '>':
                     if (source.charAt(position + 1) == '=') {
-                        tokens.push(MNSLToken.GreaterEqual({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.GreaterEqual({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Greater({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise right shift
+                        appendToken(MNSLToken.Greater({ line: line, column: column, length: 1, position: initialPosition })); // TODO: Handle bitwise right shift
                         position++;
                         column++;
                     }
 
                 case '!':
                     if (source.charAt(position + 1) == '=') {
-                        tokens.push(MNSLToken.NotEqual({ line: line, column: column, length: 2, position: initialPosition }));
+                        appendToken(MNSLToken.NotEqual({ line: line, column: column, length: 2, position: initialPosition }));
                         position += 2;
                         column += 2;
                     } else {
-                        tokens.push(MNSLToken.Not({ line: line, column: column, length: 1, position: initialPosition }));
+                        appendToken(MNSLToken.Not({ line: line, column: column, length: 1, position: initialPosition }));
                         position++;
                         column++;
                     }
@@ -231,7 +334,7 @@ class MNSLTokenizer {
                     column++;
 
                     if (position < length) {
-                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 2), { line: line, column: column, length: position - start, position: initialPosition }));
+                        appendToken(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 2), { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
                         context.emitError(TokenizerUnterminatedString({
                             line: line,
@@ -258,7 +361,7 @@ class MNSLTokenizer {
                     column++;
 
                     if (position < length) {
-                        tokens.push(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
+                        appendToken(MNSLToken.StringLiteral(source.substr(start + 1, position - start - 1), { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
                         context.emitError(TokenizerUnterminatedString({
                             line: line,
@@ -270,11 +373,11 @@ class MNSLTokenizer {
 
                 case '.':
                     if (source.charAt(position + 1) == '.' && source.charAt(position + 2) == '.') {
-                        tokens.push(MNSLToken.Spread({ line: line, column: column, length: 3, position: initialPosition }));
+                        appendToken(MNSLToken.Spread({ line: line, column: column, length: 3, position: initialPosition }));
                         position += 3;
                         column += 3;
                     } else {
-                        tokens.push(MNSLToken.Dot({ line: line, column: column, length: 1, position: initialPosition }));
+                        appendToken(MNSLToken.Dot({ line: line, column: column, length: 1, position: initialPosition }));
                         position++;
                         column++;
                     }
@@ -293,9 +396,9 @@ class MNSLTokenizer {
                         }
                         var value = source.substr(start, position - start);
                         if (hasDot) {
-                            tokens.push(MNSLToken.FloatLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
+                            appendToken(MNSLToken.FloatLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
                         } else {
-                            tokens.push(MNSLToken.IntegerLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
+                            appendToken(MNSLToken.IntegerLiteral(value, { line: line, column: column, length: position - start, position: initialPosition }));
                         }
                     } else if (charCode >= 65 && charCode <= 90 || charCode >= 97 && charCode <= 122 || charCode == 95) { // A-Z, a-z, _
                         var start = position;
@@ -304,7 +407,7 @@ class MNSLTokenizer {
                             column++;
                         }
                         var value = source.substr(start, position - start);
-                        tokens.push(MNSLToken.Identifier(value, { line: line, column: column, length: position - start, position: initialPosition }));
+                        appendToken(MNSLToken.Identifier(value, { line: line, column: column, length: position - start, position: initialPosition }));
                     } else {
                         position++;
                         column++;

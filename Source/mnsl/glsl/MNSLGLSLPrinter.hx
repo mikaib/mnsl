@@ -189,19 +189,16 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printIndented("for (");
                 enableInline();
                 if (init != null) {
-                    trace("init", init);
                     printNode(init);
                 }
                 removeLastSemicolon();
                 print("; ");
                 if (condition != null) {
-                    trace("condition", condition);
                     printNode(condition);
                 }
                 removeLastSemicolon();
                 print("; ");
                 if (increment != null) {
-                    trace("increment", increment);
                     printNode(increment);
                 }
                 removeLastSemicolon();

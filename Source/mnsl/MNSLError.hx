@@ -10,6 +10,7 @@ import mnsl.analysis.MNSLType;
 
 enum MNSLError {
     TokenizerInvalidChar(char: Int, pos: MNSLTokenInfo);
+    TokenizerPreprocessorError(msg: String, pos: MNSLTokenInfo);
     TokenizerUnterminatedString(pos: MNSLTokenInfo);
     ParserInvalidToken(token: MNSLToken);
     ParserInvalidKeyword(value: String, pos: MNSLTokenInfo);

@@ -15,15 +15,26 @@ class MNSLContext {
     private var _finalAst: MNSLNodeChildren;
     private var _finalData: Array<MNSLShaderData>;
     private var _defines: Map<String, Array<MNSLToken>>;
+    private var _options: MNSLContextOptions;
 
     /**
      * Creates a new MNSLContext instance.
      * @param source The source code to be parsed.
      */
-    public function new(source: String) {
-        _defines = [];
+    public function new(source: String, options: MNSLContextOptions) {
+        _defines = options.defines;
+        _options = options;
 
-        var tokenizer: MNSLTokenizer = new MNSLTokenizer(this, source);
+        if (_options.rootPath == null) {
+            _options.rootPath = "./";
+        }
+
+        var preprocDefines: Map<String, Dynamic> = [];
+        for (def in options.preprocessorDefines) {
+            preprocDefines[def] = 1;
+        }
+
+        var tokenizer: MNSLTokenizer = new MNSLTokenizer(this, source, preprocDefines);
         var tokens: Array<MNSLToken> = tokenizer.run();
 
         var parser = new MNSLParser(this, tokens);
@@ -36,7 +47,15 @@ class MNSLContext {
         var output = analyser.run();
 
         _finalAst = output;
-        printAST(_finalAst);
+        // printAST(_finalAst);
+    }
+
+    /**
+     * Get the options of the context.
+     * @return The options of the context.
+     */
+    public function getOptions(): MNSLContextOptions {
+        return _options;
     }
 
     /**
@@ -220,6 +239,8 @@ class MNSLContext {
                 return "Invalid character: " + char + " at position " + pos;
             case TokenizerUnterminatedString(pos):
                 return "Unterminated string at position " + pos;
+            case TokenizerPreprocessorError(msg, pos):
+                return "Preprocessor error: " + msg + " at position " + pos;
             case AnalyserNoImplementation(fn , pos):
                 return "No implementation for function: " + fn + " at " + pos;
             case AnalyserUndeclaredVariable(varName, info):

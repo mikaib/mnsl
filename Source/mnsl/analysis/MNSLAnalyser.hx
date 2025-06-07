@@ -854,12 +854,23 @@ class MNSLAnalyser {
         return newBody;
     }
 
+    /**
+     * Applies replacements to the body.
+     * @param body The body to apply replacements to.
+     * @param replacements The replacements to apply.
+     */
     public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>): Void {
         for (i in 0...body.length) {
             body[i] = applyReplacementsToNode(body[i], replacements);
         }
     }
 
+    /**
+     * Applies replacements to a single node.
+     * @param node The node to apply replacements to.
+     * @param replacements The replacements to apply.
+     * @return The new node after applying the replacements.
+     */
     private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>): MNSLNode {
         var doRemove: MNSLReplaceCmd = null;
         for (r in replacements) {
