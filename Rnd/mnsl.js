@@ -1926,17 +1926,24 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		return newBody;
 	}
 	,applyReplacements: function(body,replacements,exceptions) {
+		body = body.slice();
 		var _g = 0;
 		var _g1 = body.length;
 		while(_g < _g1) {
 			var i = _g++;
 			body[i] = this.applyReplacementsToNode(body[i],replacements,exceptions);
 		}
+		return body;
 	}
 	,applyReplacementsToNode: function(node,replacements,exceptions) {
 		exceptions = exceptions.slice();
-		if(exceptions.indexOf(node) != -1) {
-			return node;
+		var _g = 0;
+		while(_g < exceptions.length) {
+			var e = exceptions[_g];
+			++_g;
+			if(Type.enumEq(e,node)) {
+				return node;
+			}
 		}
 		var _g = 0;
 		while(_g < replacements.length) {
@@ -1953,7 +1960,6 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		var e = Type.getEnum(node);
 		var name = $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name;
 		var params = Type.enumParameters(node);
-		var changed = false;
 		var _g = 0;
 		var _g1 = params.length;
 		while(_g < _g1) {
@@ -1963,20 +1969,12 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				continue;
 			}
 			if(((p) instanceof Array) && p[0] != null && js_Boot.__instanceof(p[0],mnsl_parser_MNSLNode)) {
-				this.applyReplacements(p,replacements,exceptions);
+				params[i] = this.applyReplacements(p,replacements,exceptions);
 			} else if(js_Boot.__instanceof(p,mnsl_parser_MNSLNode)) {
-				var newP = this.applyReplacementsToNode(p,replacements,exceptions);
-				if(newP != p) {
-					params[i] = newP;
-					changed = true;
-				}
+				params[i] = this.applyReplacementsToNode(p,replacements,exceptions);
 			}
 		}
-		if(changed) {
-			return Type.createEnum(e,name,params);
-		} else {
-			return node;
-		}
+		return Type.createEnum(e,name,params);
 	}
 	,deferPostType: function(f) {
 		this._deferPostType.push(f);
@@ -2000,7 +1998,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			f();
 		}
 		var replacements = this._solver.getReplacements();
-		this.applyReplacements(res,replacements,[]);
+		res = this.applyReplacements(res,replacements,[]);
 		return res;
 	}
 	,__class__: mnsl_analysis_MNSLAnalyser
@@ -3300,7 +3298,7 @@ mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess.prototype = $extend(mnsl_optimizer
 			var params = Type.enumParameters(node);
 			var on = params[0];
 			fields.push(params[1]);
-			return Type.enumEq(on,firstOn);
+			return Std.string(on) == Std.string(firstOn);
 		})) {
 			return node;
 		}
