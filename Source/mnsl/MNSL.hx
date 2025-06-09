@@ -1,7 +1,5 @@
 package mnsl;
 
-import sys.io.File;
-import sys.FileSystem;
 import haxe.io.Path;
 
 class MNSL {
@@ -19,13 +17,14 @@ class MNSL {
      * @param file The path to the MNSL file to parse.
      */
     public static function fromFile(file: String, options: MNSLContextOptions): MNSLContext {
-        var filePath = FileSystem.absolutePath(file);
+        #if !MNSL_NO_SYS
+        var filePath = sys.FileSystem.absolutePath(file);
 
-        if (!FileSystem.exists(filePath)) {
-            throw "File not found: " + filePath;
+        if (!sys.FileSystem.exists(filePath)) {
+            throw "sys.io.File not found: " + filePath;
         }
 
-        var fileContent = File.getContent(filePath);
+        var fileContent = sys.io.File.getContent(filePath);
         if (fileContent == null) {
             throw "Failed to read file: " + filePath;
         }
@@ -35,6 +34,9 @@ class MNSL {
         }
 
         return new MNSLContext(fileContent, options);
+        #else
+        return new MNSLContext("", options);
+        #end
     }
 
 }

@@ -39,10 +39,10 @@ class MNSLOptimizeSwizzleAccess extends MNSLOptimizerPlugin {
         var fields: Array<String> = [];
         if (!allMatchFunction(values, function(node: MNSLNode) {
             var params = EnumValueTools.getParameters(node);
-            var on = params[0];
+            var on: MNSLNode = params[0];
             fields.push(params[1]);
 
-            return Type.enumEq(on, firstOn);
+            return Std.string(on) == Std.string(firstOn);
         })) return node;
 
         // optimize it

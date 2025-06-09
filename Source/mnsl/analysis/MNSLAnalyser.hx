@@ -1049,10 +1049,12 @@ class MNSLAnalyser {
      * @param body The body to apply replacements to.
      * @param replacements The replacements to apply.
      */
-    public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>): Void {
+    public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>) {
+        body = body.copy();
         for (i in 0...body.length) {
             body[i] = applyReplacementsToNode(body[i], replacements, exceptions);
         }
+        return body;
     }
 
     /**
@@ -1064,8 +1066,8 @@ class MNSLAnalyser {
     private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>): MNSLNode {
         exceptions = exceptions.copy();
 
-        if (exceptions.contains(node)) {
-            return node;
+        for (e in exceptions) {
+            if (Type.enumEq(e, node)) return node;
         }
 
          for (r in replacements) {
@@ -1073,7 +1075,7 @@ class MNSLAnalyser {
                 exceptions.push(node);
                 node = r.to;
             }
-        }
+         }
 
         if (node == null) {
             return null;
@@ -1083,7 +1085,6 @@ class MNSLAnalyser {
 
         var name = EnumValueTools.getName(node);
         var params = EnumValueTools.getParameters(node);
-        var changed = false;
 
         for (i in 0...params.length) {
             var p: Dynamic = params[i];
@@ -1092,17 +1093,13 @@ class MNSLAnalyser {
             }
 
             if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode)) {
-               this.applyReplacements(p, replacements, exceptions);
+                params[i] = applyReplacements(p, replacements, exceptions);
             } else if (Std.isOfType(p, MNSLNode)) {
-                var newP = applyReplacementsToNode(p, replacements, exceptions);
-                if (newP != p) {
-                    params[i] = newP;
-                    changed = true;
-                }
+                params[i] = applyReplacementsToNode(p, replacements, exceptions);
             }
         }
 
-        return changed ? Type.createEnum(e, name, params) : node;
+        return Type.createEnum(e, name, params);
     }
 
     /**
@@ -1130,7 +1127,7 @@ class MNSLAnalyser {
         }
 
         var replacements = this._solver.getReplacements();
-        this.applyReplacements(res, replacements, []);
+        res = this.applyReplacements(res, replacements, []);
 
         return res;
     }

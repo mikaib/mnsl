@@ -67,6 +67,13 @@ class MNSLContext {
     }
 
     /**
+     * logs a message to the console.
+     */
+    public function log(message: String): Void {
+        trace(message);
+    }
+
+    /**
      * Print a given AST.
      * @param ast The AST to be printed.
      * @param indent The indentation level.
@@ -79,76 +86,76 @@ class MNSLContext {
 
             switch(node) {
                 case FunctionDecl(funcName, returnType, params, body, info):
-                    Sys.println(indentStr + name + '[$funcName: $returnType]');
+                    log(indentStr + name + '[$funcName: $returnType]');
                     printAST(body, indent + 1);
                 case FunctionCall(funcName, args, type, info):
-                    Sys.println(indentStr + name + '[$funcName: $type]');
+                    log(indentStr + name + '[$funcName: $type]');
                     printAST(args, indent + 1);
                 case Return(value, type, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([value], indent + 1);
                 case VariableDecl(varName, type, value, info):
-                    Sys.println(indentStr + name + '[$varName: $type]');
+                    log(indentStr + name + '[$varName: $type]');
                     if (value != null) {
                         printAST([value], indent + 1);
                     }
                 case VariableAssign(varName, value, info):
-                    Sys.println(indentStr + name + '[$varName]');
+                    log(indentStr + name + '[$varName]');
                     printAST([value], indent + 1);
                 case IfStatement(condition, body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([condition], indent + 1);
                     printAST(body, indent + 1);
                 case ElseIfStatement(condition, body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([condition], indent + 1);
                     printAST(body, indent + 1);
                 case ElseStatement(body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST(body, indent + 1);
                 case BinaryOp(left, op, right, type, info):
-                    Sys.println(indentStr + name + '[$op -> $type]');
+                    log(indentStr + name + '[$op -> $type]');
                     printAST([left, right], indent + 1);
                 case UnaryOp(op, value, info):
-                    Sys.println(indentStr + name + '[$op]');
+                    log(indentStr + name + '[$op]');
                     printAST([value], indent + 1);
                 case WhileLoop(condition, body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([condition], indent + 1);
                     printAST(body, indent + 1);
                 case ForLoop(init, condition, increment, body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([init, condition, increment], indent + 1);
                     printAST(body, indent + 1);
                 case SubExpression(value, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST([value], indent + 1);
                 case StructAccess(structName, field, type, info):
-                    Sys.println(indentStr + name + '[$structName.$field t=$type]');
+                    log(indentStr + name + '[$structName.$field t=$type]');
                 case ArrayAccess(arrayName, index, info):
-                    Sys.println(indentStr + name + '[$arrayName[$index]]');
+                    log(indentStr + name + '[$arrayName[$index]]');
                 case VectorConversion(on, fromComp, toComp):
-                    Sys.println(indentStr + name + '[$fromComp -> $toComp]');
+                    log(indentStr + name + '[$fromComp -> $toComp]');
                     printAST([on], indent + 1);
                 case VectorCreation(comp, values, info):
-                    Sys.println(indentStr + name + '[Vec$comp]');
+                    log(indentStr + name + '[Vec$comp]');
                     printAST(values, indent + 1);
                 case Identifier(identifierName, type, info):
-                    Sys.println(indentStr + name + '[$identifierName: $type]');
+                    log(indentStr + name + '[$identifierName: $type]');
                 case IntegerLiteralNode(value, info):
-                    Sys.println(indentStr + name + '[$value]');
+                    log(indentStr + name + '[$value]');
                 case FloatLiteralNode(value, info):
-                    Sys.println(indentStr + name + '[$value]');
+                    log(indentStr + name + '[$value]');
                 case StringLiteralNode(value, info):
-                    Sys.println(indentStr + name + '[$value]');
+                    log(indentStr + name + '[$value]');
                 case TypeCast(on, from, to):
-                    Sys.println(indentStr + name + '[$from -> $to]');
+                    log(indentStr + name + '[$from -> $to]');
                     printAST([on], indent + 1);
                 case Block(body, info):
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
                     printAST(body, indent + 1);
                 default:
-                    Sys.println(indentStr + name);
+                    log(indentStr + name);
             }
         }
     }

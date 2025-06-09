@@ -1,7 +1,25 @@
-func main() {
-    var someVec: Vec4;
-    someVec.wxyz = vec4(1.0, 2.0, 3.0, 4.0);
-    someVec.zx = vec2(3.0, 5.0);
+// @input(Colour: Vec4)
+// @input(TexCoord: Vec2)
+// @output(FragColour: Vec4)
+// @uniform(Texture: Sampler)
+//
+// func main() {
+//     output.FragColour = texture(uniform.Texture, input.TexCoord * 2).rgba * input.Colour;
+// }
 
-    var t: Vec4 = vec3(1.0);
+// func main() {
+//     var a = 1;
+//     var b = 2;
+//     var c = a * b;
+//     var d = a ** b;
+//     var e = c;
+//
+//     return e;
+// }
+
+func main() {
+    var vec = vec4(1.0);
+    vec.xy = 1.0;
+    vec.zw = 0.0;
+    vec.rgb = vec.bgr;
 }
