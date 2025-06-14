@@ -7,6 +7,7 @@ import mnsl.parser.MNSLNodeInfo;
 import mnsl.analysis.MNSLAnalyserFunction;
 import mnsl.analysis.MNSLConstraint;
 import mnsl.analysis.MNSLType;
+import mnsl.parser.MNSLNodeChildren;
 
 enum MNSLError {
     TokenizerInvalidChar(char: Int, pos: MNSLTokenInfo);
@@ -21,7 +22,9 @@ enum MNSLError {
     AnalyserDuplicateVariable(name: String, pos: MNSLNodeInfo);
     AnalyserUndeclaredVariable(name: String, pos: MNSLNodeInfo);
     AnalyserReturnOutsideFunction(pos: MNSLNodeInfo);
+    AnalyserMissingReturn(func: MNSLAnalyserFunction, node: MNSLNodeChildren);
     AnalyserMismatchingType(constraint: MNSLConstraint);
+    AnalyserUnknownType(type: MNSLType, node: MNSLNode);
     AnalyserUnresolvedConstraint(constraint: MNSLConstraint);
     AnalyserInvalidAssignment(on: MNSLNode);
     AnalyserInvalidAccess(on: MNSLNode);

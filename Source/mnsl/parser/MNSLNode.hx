@@ -36,6 +36,7 @@ enum MNSLNode {
     StructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo);
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
     TypeCast(on: MNSLNode, from: MNSLType, to: MNSLType);
+    VoidNode(info: MNSLNodeInfo);
     TypeWrapper(type: MNSLType);
 
     // vector operations
@@ -46,4 +47,5 @@ enum MNSLNode {
     IntegerLiteralNode(value: String, info: MNSLNodeInfo);
     FloatLiteralNode(value: String, info: MNSLNodeInfo);
     StringLiteralNode(value: String, info: MNSLNodeInfo);
+    BooleanLiteralNode(value: Bool, info: MNSLNodeInfo);
 }

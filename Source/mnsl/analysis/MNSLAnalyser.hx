@@ -18,6 +18,11 @@ class MNSLAnalyser {
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
     private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop"];
+    private var _types: Array<String> = [
+        "Void", "Int", "Float", "Bool",
+        "Vec2", "Vec3", "Vec4", "Mat2", "Mat3", "Mat4",
+        "Sampler"
+    ];
     private var _deferPostType: Array<Void -> Void> = [];
     private var _vectorAccess: Map<String, { comp: Int, char: String }> = [
         "x" => { comp: 0, char: "x" },
@@ -410,6 +415,12 @@ class MNSLAnalyser {
 
             case StringLiteralNode(value, _):
                 return MNSLType.TString;
+
+            case BooleanLiteralNode(value, _):
+                return MNSLType.TInt;
+
+            case VoidNode(_):
+                return MNSLType.TVoid;
 
             default:
                 return MNSLType.TUnknown;
@@ -1058,6 +1069,17 @@ class MNSLAnalyser {
     }
 
     /**
+     * Check the type validity of a node.
+     */
+    public function checkTypeValidity(node: MNSLNode): Void {
+        var t = getType(node);
+        if (t.isDefined() && !_types.contains(t.toString())) {
+            _context.emitError(AnalyserUnknownType(t, node));
+            return;
+        }
+    }
+
+    /**
      * Applies replacements to a single node.
      * @param node The node to apply replacements to.
      * @param replacements The replacements to apply.
@@ -1078,6 +1100,7 @@ class MNSLAnalyser {
          }
 
         if (node == null) {
+            checkTypeValidity(node);
             return null;
         }
 
@@ -1099,7 +1122,10 @@ class MNSLAnalyser {
             }
         }
 
-        return Type.createEnum(e, name, params);
+        var resNode = Type.createEnum(e, name, params);
+        checkTypeValidity(resNode);
+
+        return resNode;
     }
 
     /**
@@ -1107,6 +1133,149 @@ class MNSLAnalyser {
      */
     public function deferPostType(f: Void -> Void): Void {
         this._deferPostType.push(f);
+    }
+
+    /**
+     * Check branches for missing return statements.
+     */
+    public function checkBranchesOnBody(body: MNSLNodeChildren, inFunction: Null<MNSLAnalyserFunction>) {
+        if (inFunction == null) {
+            for (node in body) {
+                checkBranchesOnNode(node, inFunction);
+            }
+            return;
+        }
+
+        if (inFunction.returnType.equals(MNSLType.TVoid)) {
+            for (node in body) {
+                checkBranchesOnNode(node, inFunction);
+            }
+            return;
+        }
+
+        for (node in body) {
+            checkBranchesOnNode(node, inFunction);
+        }
+    }
+
+    /**
+     * Check branches for missing return statements.
+     */
+    public function checkBranchesOnNode(node: MNSLNode, inFunction: Null<MNSLAnalyserFunction>) {
+        if (node == null) return;
+
+        switch (node) {
+            case FunctionDecl(name, returnType, args, body, info):
+                var func: MNSLAnalyserFunction = {
+                    name: name,
+                    returnType: returnType,
+                    args: args,
+                    hasImplementation: true
+                };
+
+                if (!func.returnType.equals(MNSLType.TVoid) && !bodyHasReturn(body)) {
+                    _context.emitError(AnalyserMissingReturn(func, body));
+                }
+
+                checkBranchesOnBody(body, func);
+
+            case IfStatement(cond, body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            case ElseStatement(body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            case ElseIfStatement(cond, body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            case WhileLoop(cond, body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            case ForLoop(init, condition, increment, body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            case Block(body, info):
+                checkBranchesOnBody(body, inFunction);
+
+            default:
+                var params = EnumValueTools.getParameters(node);
+                for (p in 0...params.length) {
+                    var pNode: Dynamic = params[p];
+                    if (pNode == null) continue;
+
+                    if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode)) {
+                        checkBranchesOnBody(pNode, inFunction);
+                    } else if (Std.isOfType(pNode, MNSLNode)) {
+                        checkBranchesOnNode(pNode, inFunction);
+                    }
+                }
+        }
+    }
+
+    /**
+     * function to check if a body has a guaranteed return path
+     */
+    private function bodyHasReturn(body: MNSLNodeChildren): Bool {
+        var i = 0;
+        while (i < body.length) {
+            var node = body[i];
+
+            switch (node) {
+                case Return(_, _, _):
+                    return true;
+
+                case IfStatement(cond, ifBody, info):
+                    var ifHasReturn = bodyHasReturn(ifBody);
+                    var hasElse = false;
+                    var allBranchesReturn = ifHasReturn;
+
+                    var j = i + 1;
+                    while (j < body.length) {
+                        switch (body[j]) {
+                            case ElseIfStatement(elseCond, elseIfBody, _):
+                                var elseIfHasReturn = bodyHasReturn(elseIfBody);
+                                allBranchesReturn = allBranchesReturn && elseIfHasReturn;
+                                j++;
+
+                            case ElseStatement(elseBody, _):
+                                hasElse = true;
+                                var elseHasReturn = bodyHasReturn(elseBody);
+                                allBranchesReturn = allBranchesReturn && elseHasReturn;
+                                j++;
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (hasElse && allBranchesReturn) {
+                        return true;
+                    }
+
+                    i = j;
+                    continue;
+
+                case ElseIfStatement(_, _, _):
+                    i++;
+                    continue;
+
+                case ElseStatement(_, _):
+                    i++;
+                    continue;
+
+                case Block(blockBody, _):
+                    if (bodyHasReturn(blockBody)) {
+                        return true;
+                    }
+
+                default:
+            }
+
+            i++;
+        }
+
+        return false;
     }
 
     /**
@@ -1122,12 +1291,14 @@ class MNSLAnalyser {
             }
         }
 
+        var replacements = this._solver.getReplacements();
+        res = this.applyReplacements(res, replacements, []);
+
         for (f in this._deferPostType) {
             f();
         }
 
-        var replacements = this._solver.getReplacements();
-        res = this.applyReplacements(res, replacements, []);
+        this.checkBranchesOnBody(res, null);
 
         return res;
     }

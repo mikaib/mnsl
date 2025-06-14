@@ -1,3 +1,5 @@
+func test() {}
+
 // func main() {
 //     if (true) {
 //         return;
@@ -5,8 +7,6 @@
 //         // nothing
 //     }
 // }
-
-func test() {}
 
 // func main() {
 //     if (true) {

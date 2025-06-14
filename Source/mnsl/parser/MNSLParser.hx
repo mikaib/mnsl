@@ -405,6 +405,16 @@ class MNSLParser {
             return;
         }
 
+        if (value == "true") {
+            append(BooleanLiteralNode(true, MNSLNodeInfo.fromTokenInfo(info)));
+            return;
+        }
+
+        if (value == "false") {
+            append(BooleanLiteralNode(false, MNSLNodeInfo.fromTokenInfo(info)));
+            return;
+        }
+
         append(MNSLNode.Identifier(value, MNSLType.TUnknown, MNSLNodeInfo.fromTokenInfo(info)));
     }
 
@@ -826,6 +836,16 @@ class MNSLParser {
      * @param info The token info.
      */
     public function parseReturnStmt(value: String, info: MNSLTokenInfo): Void {
+        // peek next token
+        if (peekCurrentTokenType(0) == "Semicolon") {
+            append(Return(
+                VoidNode(MNSLNodeInfo.fromTokenInfo(info)),
+                MNSLType.TUnknown,
+                MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(tokens[currentIndex - 1])])
+            ));
+            return;
+        }
+
         var returnBlock = getBlock(None, Semicolon(null), 1);
 
         var c = new MNSLParser(context, returnBlock);

@@ -267,10 +267,14 @@ class MNSLContext {
                 return "Undefined variable: " + varName + " at " + info;
             case AnalyserDuplicateVariable(varName, info):
                 return "Duplicate variable: " + varName + " at " + info;
+            case AnalyserMissingReturn(func, node):
+                return "Missing return statement in function: " + func + " at " + node;
             case AnalyserReturnOutsideFunction(pos):
                 return "Return statement outside of function at " + pos;
             case AnalyserMismatchingType(constraint):
                 return "Expected " + constraint.mustBe + " but got " + constraint.type + " at " + constraint.ofNode;
+            case AnalyserUnknownType(type, node):
+                return "Unknown type: " + type + " at " + node;
             case AnalyserUnresolvedConstraint(constraint):
                 return "Unresolved constraint: " + constraint;
             case AnalyserInvalidAssignment(on):

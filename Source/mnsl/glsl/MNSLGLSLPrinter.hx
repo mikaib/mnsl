@@ -122,6 +122,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 decreaseIndent();
                 printlnIndented("}");
 
+            case VoidNode(info):
+                return;
+
             case ElseIfStatement (condition, body, info):
                 removeLastNewLine();
                 print(" else if (");
@@ -152,8 +155,12 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 removeLastSemicolon();
                 println(";");
 
+            case BooleanLiteralNode(value, info):
+                print(value ? "1" : "0");
+
             case Return(node, type, info):
-                printIndented("return ");
+                var nodeIsVoid = (node == null || node.match(VoidNode(_)));
+                printIndented('return${nodeIsVoid ? "" : " "}');
                 if (node != null) {
                     enableInline();
                     printNode(node);
