@@ -9,7 +9,7 @@ import mnsl.glsl.MNSLGLSLConfig;
 import mnsl.glsl.MNSLGLSLPrinter;
 import mnsl.analysis.MNSLAnalyser;
 import haxe.EnumTools.EnumValueTools;
-import mnsl.optimizer.MNSLOptimizer;
+import mnsl.optimiser.MNSLOptimiser;
 
 class MNSLContext {
 
@@ -47,7 +47,7 @@ class MNSLContext {
         var output = analyser.run();
         _finalAst = output;
 
-        var optimizer = new MNSLOptimizer(this, output);
+        var optimizer = new MNSLOptimiser(this, output);
         for (plugin in _options.optimizerPlugins) {
             optimizer.addPlugin(plugin);
         }
@@ -289,6 +289,15 @@ class MNSLContext {
                 return "Type of vector component is unknown: " + node + " at vector " + info;
             case AnalyserInvalidUnaryOp(op, info):
                 return "Invalid unary operation: " + op + " at " + info;
+            case AnalyserRecursiveFunction(func, chain, info):
+                var chainStr = "";
+                for (i in 0...chain.length) {
+                    if (i > 0) {
+                        chainStr += " -> ";
+                    }
+                    chainStr += chain[i];
+                }
+                return "Recursive function detected: " + func + " in chain: " + chainStr + " at " + info;
             case AnalyserLoopKeywordOutsideLoop(node, info):
                 return EnumValueTools.getName(node) + " outside of loop at " + info;
             case AnalyserMismatchingEitherType(limits, node):

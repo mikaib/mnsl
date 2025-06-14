@@ -1,9 +1,9 @@
-package mnsl.optimizer.impl;
+package mnsl.optimiser.impl;
 
 import mnsl.parser.MNSLNode;
 import haxe.EnumTools.EnumValueTools;
 
-class MNSLOptimizeSwizzleAssign extends MNSLOptimizerPlugin {
+class MNSLOptimiseSwizzleAssign extends MNSLOptimiserPlugin {
 
     /**
      * Create a new MNSLOptimizerPlugin.
@@ -19,7 +19,7 @@ class MNSLOptimizeSwizzleAssign extends MNSLOptimizerPlugin {
      * @param node The MNSLNode to optimize.
      * @param optimizer The MNSLOptimizer instance.
      */
-    override public function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimizer): MNSLNode {
+    override public function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimiser): MNSLNode {
         // check if all elements in the block are assignments
         if (!allMatchFunction(params[0], function(node: MNSLNode) {
             return EnumValueTools.getName(node) == "VariableAssign";

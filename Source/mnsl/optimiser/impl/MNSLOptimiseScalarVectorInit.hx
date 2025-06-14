@@ -1,9 +1,9 @@
-package mnsl.optimizer.impl;
+package mnsl.optimiser.impl;
 
 import mnsl.parser.MNSLNode;
 import mnsl.parser.MNSLNodeChildren;
 
-class MNSLOptimizeScalarVectorInit extends MNSLOptimizerPlugin {
+class MNSLOptimiseScalarVectorInit extends MNSLOptimiserPlugin {
 
     /**
      * Create a new MNSLOptimizerPlugin.
@@ -19,7 +19,7 @@ class MNSLOptimizeScalarVectorInit extends MNSLOptimizerPlugin {
      * @param node The MNSLNode to optimize.
      * @param optimizer The MNSLOptimizer instance.
      */
-    override public function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimizer): MNSLNode {
+    override public function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimiser): MNSLNode {
         var components: Int = params[0];
         var values: MNSLNodeChildren = params[1];
 

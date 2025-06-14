@@ -1279,6 +1279,43 @@ class MNSLAnalyser {
     }
 
     /**
+     * Checks function decls for recursion (calling itself).
+     */
+    public function checkForRecursion(body: MNSLNodeChildren, inFunction: MNSLAnalyserFunction): Void {
+        for (node in body) {
+            switch (node) {
+                case FunctionCall(name, args, returnType, info):
+                    if (inFunction != null && name == inFunction.name) {
+                        _context.emitError(AnalyserRecursiveFunction(name, [name, name], info));
+                    }
+                case FunctionDecl(name, returnType, args, body, info):
+                    if (inFunction != null && name == inFunction.name) {
+                        _context.emitError(AnalyserRecursiveFunction(name, [name], info));
+                    } else {
+                        checkForRecursion(body, {
+                            name: name,
+                            returnType: returnType,
+                            args: args,
+                            hasImplementation: true
+                        });
+                    }
+                default:
+                    var params = EnumValueTools.getParameters(node);
+                    for (p in 0...params.length) {
+                        var pNode: Dynamic = params[p];
+                        if (pNode == null) continue;
+
+                        if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode)) {
+                            checkForRecursion(pNode, inFunction);
+                        } else if (Std.isOfType(pNode, MNSLNode)) {
+                            checkForRecursion([pNode], inFunction);
+                        }
+                    }
+            }
+        }
+    }
+
+    /**
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
@@ -1299,6 +1336,7 @@ class MNSLAnalyser {
         }
 
         this.checkBranchesOnBody(res, null);
+        this.checkForRecursion(res, null);
 
         return res;
     }

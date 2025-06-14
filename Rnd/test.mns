@@ -1,61 +1,11 @@
-// func main() {
-//     if (true) {
-//         return;
-//     } else {
-//         // nothing
-//     }
-// }
+func main() {
 
-func test() {}
+}
 
-// func main() {
-//     if (true) {
-//         return 1.0;
-//     } else {
-//         test();
-//     }
-//
-//     return 2.0;
-// }
+func a() {
+    a();
+}
 
-// func main() {
-//     if (true) {
-//        return 1.0;
-//     } else {
-//         if (true) {
-//             return 2.0;
-//         } else {
-//             return 3.0;
-//         }
-//     }
-// }
-
-// func main() {
-//     if (true) {
-//        return 1.0;
-//     } else {
-//         if (true) {
-//             return 2.0;
-//         } else {
-//
-//         }
-//     }
-//
-//     return 4.0;
-// }
-//
-// func main() {
-//     if (true) {
-//         return 1.0;
-//     } else {
-//         if (true) {
-//             return 2.0;
-//         } else {
-//             if (true) {
-//                 return 3.0;
-//             } else {
-//                 return 4.0;
-//             }
-//         }
-//     }
-// }
+func b() {
+    a();
+}

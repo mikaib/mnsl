@@ -415,6 +415,11 @@ class MNSLParser {
             return;
         }
 
+        if (keywords.contains(value)) {
+            context.emitError(ParserInvalidKeyword(value, info));
+            return;
+        }
+
         append(MNSLNode.Identifier(value, MNSLType.TUnknown, MNSLNodeInfo.fromTokenInfo(info)));
     }
 
@@ -731,6 +736,11 @@ class MNSLParser {
 
             if (value.length > 1) {
                 context.emitError(ParserUnexpectedToken(valueBlock[1], info));
+                return;
+            }
+
+            if (keywords.contains(name)) {
+                context.emitError(ParserInvalidKeyword(name, info));
                 return;
             }
 

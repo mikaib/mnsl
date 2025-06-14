@@ -1,11 +1,11 @@
-package mnsl.optimizer;
+package mnsl.optimiser;
 
 import mnsl.parser.MNSLNode;
 import mnsl.analysis.MNSLType;
 import mnsl.analysis.MNSLAnalyser;
 import haxe.EnumTools.EnumValueTools;
 
-class MNSLOptimizerPlugin {
+class MNSLOptimiserPlugin {
 
     private var _on: MNSLNode;
 
@@ -22,7 +22,7 @@ class MNSLOptimizerPlugin {
      * @param node The node to optimize
      * @return The optimized node
      */
-    private function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimizer): MNSLNode {
+    private function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimiser): MNSLNode {
         return node;
     }
 
@@ -64,7 +64,7 @@ class MNSLOptimizerPlugin {
      * Check if the optimizer is applicable to the given node.
      * @param node The node to check
      */
-    public function canOptimize(node: MNSLNode, optimizer: MNSLOptimizer): Bool {
+    public function canOptimise(node: MNSLNode, optimizer: MNSLOptimiser): Bool {
         return EnumValueTools.getName(node) == EnumValueTools.getName(_on);
     }
 
@@ -73,7 +73,7 @@ class MNSLOptimizerPlugin {
      * @param node The node to optimize
      * @return The optimized node
      */
-    public function optimize(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimizer): MNSLNode {
+    public function optimise(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimiser): MNSLNode {
         return onRun(node, params, optimizer);
     }
 

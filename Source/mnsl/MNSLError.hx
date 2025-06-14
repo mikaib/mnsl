@@ -29,6 +29,7 @@ enum MNSLError {
     AnalyserInvalidAssignment(on: MNSLNode);
     AnalyserInvalidAccess(on: MNSLNode);
     AnalyserInvalidVectorComponent(comp: Int, info: MNSLNodeInfo);
+    AnalyserRecursiveFunction(functionName: String, recursionChain: Array<String>, info: MNSLNodeInfo);
     AnalyserUnknownVectorComponent(node: MNSLNode, info: MNSLNodeInfo);
     AnalyserInvalidBinop(tLeft: MNSLType, tRight: MNSLType, op: String, constraint: MNSLConstraint);
     AnalyserInvalidUnaryOp(op: MNSLToken, info: MNSLNodeInfo);

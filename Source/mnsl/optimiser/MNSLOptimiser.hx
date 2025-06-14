@@ -1,13 +1,13 @@
-package mnsl.optimizer;
+package mnsl.optimiser;
 
 import mnsl.parser.MNSLNodeChildren;
 import mnsl.parser.MNSLNode;
 import haxe.EnumTools.EnumValueTools;
 import haxe.EnumTools;
 
-class MNSLOptimizer {
+class MNSLOptimiser {
 
-    public var plugins: Array<MNSLOptimizerPlugin>;
+    public var plugins: Array<MNSLOptimiserPlugin>;
     public var context: MNSLContext;
     public var ast: MNSLNodeChildren;
 
@@ -26,7 +26,7 @@ class MNSLOptimizer {
      * Add a plugin to the optimizer.
      * @param plugin The plugin to add.
      */
-    public function addPlugin(plugin: MNSLOptimizerPlugin): Void {
+    public function addPlugin(plugin: MNSLOptimiserPlugin): Void {
         this.plugins.push(plugin);
     }
 
@@ -57,8 +57,8 @@ class MNSLOptimizer {
         var params = EnumValueTools.getParameters(node);
 
         for (plugin in this.plugins) {
-            if (plugin.canOptimize(node, this)) {
-                var result = plugin.optimize(node, params, this);
+            if (plugin.canOptimise(node, this)) {
+                var result = plugin.optimise(node, params, this);
                 if (result != null) {
                     node = result;
                     params = EnumValueTools.getParameters(node);
