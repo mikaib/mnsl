@@ -25,6 +25,11 @@ class MNSLGLSLPrinter extends MNSLPrinter {
         "CubeSampler" => "samplerCube",
     ];
 
+    private var _defaultPrecision: Map<String, String> = [
+        "float" => "mediump",
+        "int"   => "mediump"
+    ];
+
     private var _internalOutputStruct: Map<String, String> = [
         "Position" => "gl_Position",
         "PointSize" => "gl_PointSize",
@@ -51,6 +56,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
         var versionInt: Int = config.version;
         config.useAttributeAndVaryingKeywords = config.useAttributeAndVaryingKeywords ?? (versionInt < 130);
+        config.usePrecision = config.usePrecision ?? (config.versionDirective == GLSL_ES);
     }
 
     /**
@@ -394,8 +400,19 @@ class MNSLGLSLPrinter extends MNSLPrinter {
      * Runs the printer.
      */
     override public function run():Void {
-        println("#version {0} core", _config.version);
+        println("#version {0} {1}", _config.version, _config.versionDirective);
         println("");
+
+        if (_config.usePrecision) {
+            var printed: Map<String, Bool> = new Map();
+            for (type in _types.iterator()) {
+                if (_defaultPrecision.exists(type) && !printed.exists(type)) {
+                    println("precision {0} {1};", _defaultPrecision.get(type), type);
+                    printed.set(type, true);
+                }
+            }
+            println("");
+        }
 
         for (data in _context.getShaderData()) {
             switch (data.kind) {

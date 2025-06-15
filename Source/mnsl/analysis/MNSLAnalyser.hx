@@ -21,7 +21,7 @@ class MNSLAnalyser {
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
         "Vec2", "Vec3", "Vec4", "Mat2", "Mat3", "Mat4",
-        "Sampler"
+        "Sampler", "CTValue"
     ];
     private var _deferPostType: Array<Void -> Void> = [];
     private var _vectorAccess: Map<String, { comp: Int, char: String }> = [
@@ -228,11 +228,11 @@ class MNSLAnalyser {
                name: "smoothstep",
                remap: "__mnsl_smoothstep",
                args: [
-                   { name: "edge0", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "edge1", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "edge0", type: MNSLType.Template("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "edge1", type: MNSLType.Template("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "x", type: MNSLType.Template("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.Template("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "max",
@@ -251,6 +251,56 @@ class MNSLAnalyser {
                    { name: "y", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+                name: "atan",
+                remap: "__mnsl_atan",
+                args: [
+                     { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                     { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "acos",
+               remap: "__mnsl_acos",
+                args: [
+                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+                name: "asin",
+                remap: "__mnsl_asin",
+                args: [
+                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+                name: "mod",
+                remap: "__mnsl_mod",
+                args: [
+                    { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                    { name: "y", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "fract",
+               remap: "__mnsl_fract",
+                args: [
+                     { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+                name: "floor",
+                remap: "__mnsl_floor",
+                args: [
+                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                ],
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            }
        ];
 
@@ -559,7 +609,7 @@ class MNSLAnalyser {
                 var componentOrder = ['x', 'y', 'z', 'w'];
 
                 for (cIdx in 0...values.length) {
-                    blockBody.push(VariableAssign(values[cIdx], StructAccess(value, componentOrder[cIdx], MNSLType.fromString('Vec$comp'), info), info));
+                    blockBody.push(VariableAssign(values[cIdx], StructAccess(SubExpression(value, info), componentOrder[cIdx], MNSLType.fromString('Vec$comp'), info), info));
                 }
 
                 return Block(blockBody, info);
@@ -1088,16 +1138,19 @@ class MNSLAnalyser {
     private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>): MNSLNode {
         exceptions = exceptions.copy();
 
+        var checkReplacement = true;
         for (e in exceptions) {
-            if (Type.enumEq(e, node)) return node;
+            if (Type.enumEq(e, node)) checkReplacement = false;
         }
 
-         for (r in replacements) {
-            if (r.node == node) {
-                exceptions.push(node);
-                node = r.to;
-            }
-         }
+        if (checkReplacement) {
+             for (r in replacements) {
+                if (r.node == node) {
+                    exceptions.push(node);
+                    node = r.to;
+                }
+             }
+        }
 
         if (node == null) {
             checkTypeValidity(node);

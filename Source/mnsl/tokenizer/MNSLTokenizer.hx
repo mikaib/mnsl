@@ -237,18 +237,9 @@ class MNSLTokenizer {
                     }
 
                 case '*':
-                    if (source.charAt(position + 1) == '*') {
-                        while (position < length && !(source.charAt(position) == '*' && source.charAt(position + 1) == '/')) {
-                            position++;
-                            column++;
-                        }
-                        position += 2;
-                        column += 2;
-                    } else {
-                        appendToken(MNSLToken.Star({ line: line, column: column, length: 1, position: initialPosition }));
-                        position++;
-                        column++;
-                    }
+                    appendToken(MNSLToken.Star({ line: line, column: column, length: 1, position: initialPosition }));
+                    position++;
+                    column++;
 
                 case '%':
                     appendToken(MNSLToken.Percent({ line: line, column: column, length: 1, position: initialPosition }));

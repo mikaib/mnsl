@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNSL Demo</title>
+    <title>MNSL Shadertoy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
     <script src="mnsl.js"></script>
@@ -57,6 +57,7 @@
             flex-direction: column;
             gap: 12px;
             padding: 16px;
+            overflow-y: auto;
         }
 
         .panel-header {
@@ -87,6 +88,124 @@
             bottom: 0;
             width: 100%;
             height: 100%;
+        }
+
+        /* Tab System */
+        .tab-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tab-headers {
+            display: flex;
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+            flex-shrink: 0;
+        }
+
+        .tab-header {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-right: 1px solid #30363d;
+            transition: all 0.15s ease;
+            font-size: 13px;
+            font-weight: 600;
+            color: #8b949e;
+            background: #21262d;
+        }
+
+        .tab-header:hover {
+            background: #30363d;
+            color: #e6edf3;
+        }
+
+        .tab-header.active {
+            background: #0d1117;
+            color: #e6edf3;
+            border-bottom: 2px solid #238636;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tab-pane {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Preview Canvas */
+        #preview-canvas {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            image-rendering: pixelated;
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #e6edf3;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .preview-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .preview-btn {
+            background: rgba(35, 134, 54, 0.9);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+
+        .preview-btn:hover {
+            background: rgba(35, 134, 54, 1);
+        }
+
+        .preview-btn:disabled {
+            background: rgba(139, 148, 158, 0.5);
+            cursor: not-allowed;
         }
 
         /* CodeMirror customization */
@@ -210,74 +329,58 @@
             font-weight: 500;
         }
 
-        .defines-section {
-            margin-top: 8px;
-        }
-
-        .define-item {
+        /* Channel Configuration */
+        .channel-item {
             display: flex;
-            gap: 6px;
-            margin-bottom: 8px;
             align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #0d1117;
+            border-radius: 4px;
+            border: 1px solid #30363d;
         }
 
-        .define-item input[type="text"] {
-            background: #0d1117;
+        .channel-label {
+            font-weight: 600;
+            color: #e6edf3;
+            min-width: 80px;
+        }
+
+        .channel-select {
+            flex: 1;
+            background: #21262d;
             border: 1px solid #30363d;
             border-radius: 4px;
             padding: 6px 8px;
             color: #e6edf3;
             font-size: 12px;
             outline: none;
-            transition: border-color 0.15s ease;
-            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
         }
 
-        .define-item input[type="text"]:focus {
+        .channel-select:focus {
             border-color: #1f6feb;
             box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.3);
         }
 
-        .define-key {
-            flex: 1;
-        }
-
-        .define-value {
-            flex: 1;
-        }
-
-        .add-define-btn {
-            background: linear-gradient(90deg, #238636, #2ea043);
-            color: #ffffff;
-            border: none;
+        .upload-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
             border-radius: 4px;
-            padding: 8px 12px;
+            padding: 6px 12px;
+            color: #e6edf3;
             cursor: pointer;
             font-size: 12px;
-            font-weight: 600;
-            margin-top: 8px;
             transition: all 0.15s ease;
         }
 
-        .add-define-btn:hover {
-            background: linear-gradient(90deg, #2ea043, #238636);
-            transform: translateY(-1px);
+        .upload-btn:hover {
+            background: #30363d;
         }
 
-        .remove-define-btn {
-            background: #da3633;
-            color: #ffffff;
-            border: none;
-            border-radius: 3px;
-            padding: 4px 6px;
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: 600;
-            transition: all 0.15s ease;
-        }
-
-        .remove-define-btn:hover {
-            background: #f85149;
+        .file-input {
+            display: none;
         }
 
         .output-error {
@@ -287,13 +390,33 @@
         .output-success {
             color: #238636;
         }
+
+        .shader-error {
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.1);
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px;
+            font-size: 12px;
+            border-left: 4px solid #f85149;
+        }
+
+        .time-display {
+            font-size: 11px;
+            color: #8b949e;
+        }
+
+        .resolution-display {
+            font-size: 11px;
+            color: #8b949e;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="left-panel panel">
         <div class="panel-header">
-            MNSL Editor
+            MNSL Shader Editor
         </div>
         <div class="panel-content">
             <div class="editor-container">
@@ -307,13 +430,38 @@
             Output
         </div>
         <div class="panel-content">
-            <textarea id="output-display" readonly placeholder="Compilation output will appear here..."></textarea>
+            <div class="tab-container">
+                <div class="tab-headers">
+                    <div class="tab-header active" data-tab="preview">Preview</div>
+                    <div class="tab-header" data-tab="glsl">GLSL Output</div>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="preview-tab">
+                        <div class="preview-container">
+                            <canvas id="preview-canvas"></canvas>
+                            <div class="preview-overlay">
+                                <div class="time-display">Time: <span id="time-value">0.00</span></div>
+                                <div class="resolution-display">Resolution: <span id="resolution-value">512x512</span></div>
+                            </div>
+                            <div class="preview-controls">
+                                <button class="preview-btn" id="play-btn">Play</button>
+                                <button class="preview-btn" id="pause-btn">Pause</button>
+                                <button class="preview-btn" id="reset-btn">Reset</button>
+                            </div>
+                            <div id="shader-error" class="shader-error" style="display: none;"></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="glsl-tab">
+                        <textarea id="output-display" readonly placeholder="GLSL compilation output will appear here..."></textarea>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="config-panel panel">
         <div class="panel-header">
-            Config
+            Configuration
         </div>
 
         <div class="config-section">
@@ -322,12 +470,77 @@
                 <input type="checkbox" id="optimizer-enabled" checked>
                 <label for="optimizer-enabled">Enable Optimizer</label>
             </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="auto-compile" checked>
+                <label for="auto-compile">Auto Compile</label>
+            </div>
         </div>
 
-        <div class="config-section" style="display: none;">
-            <h3>Defines</h3>
-            <div id="defines-container"></div>
-            <button class="add-define-btn" onclick="addDefine()">+ Add Define</button>
+        <div class="config-section">
+            <h3>Channels</h3>
+            <div class="channel-item">
+                <div class="channel-label">Channel 0:</div>
+                <select class="channel-select" id="channel0">
+                    <option value="none">None</option>
+                    <option value="noise">Noise Texture</option>
+                    <option value="checker">Checker Pattern</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="upload">Upload Image</option>
+                </select>
+                <button class="upload-btn" onclick="document.getElementById('file0').click()">Upload</button>
+                <input type="file" id="file0" class="file-input" accept="image/*">
+            </div>
+
+            <div class="channel-item">
+                <div class="channel-label">Channel 1:</div>
+                <select class="channel-select" id="channel1">
+                    <option value="none">None</option>
+                    <option value="noise">Noise Texture</option>
+                    <option value="checker">Checker Pattern</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="upload">Upload Image</option>
+                </select>
+                <button class="upload-btn" onclick="document.getElementById('file1').click()">Upload</button>
+                <input type="file" id="file1" class="file-input" accept="image/*">
+            </div>
+
+            <div class="channel-item">
+                <div class="channel-label">Channel 2:</div>
+                <select class="channel-select" id="channel2">
+                    <option value="none">None</option>
+                    <option value="noise">Noise Texture</option>
+                    <option value="checker">Checker Pattern</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="upload">Upload Image</option>
+                </select>
+                <button class="upload-btn" onclick="document.getElementById('file2').click()">Upload</button>
+                <input type="file" id="file2" class="file-input" accept="image/*">
+            </div>
+
+            <div class="channel-item">
+                <div class="channel-label">Channel 3:</div>
+                <select class="channel-select" id="channel3">
+                    <option value="none">None</option>
+                    <option value="noise">Noise Texture</option>
+                    <option value="checker">Checker Pattern</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="upload">Upload Image</option>
+                </select>
+                <button class="upload-btn" onclick="document.getElementById('file3').click()">Upload</button>
+                <input type="file" id="file3" class="file-input" accept="image/*">
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>Render Settings</h3>
+            <div class="checkbox-group">
+                <input type="checkbox" id="show-fps" checked>
+                <label for="show-fps">Show FPS</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="high-quality">
+                <label for="high-quality">High Quality (1024x1024)</label>
+            </div>
         </div>
     </div>
 </div>
@@ -335,6 +548,354 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
 <script>
+    class ShaderToy {
+        constructor(canvas) {
+            this.canvas = canvas;
+            this.gl = canvas.getContext('webgl2');
+            this.program = null;
+            this.time = 0;
+            this.isPlaying = true;
+            this.channels = [null, null, null, null];
+            this.animationId = null;
+            this.lastFrameTime = 0;
+            this.startTime = 0;
+            this.fps = 0;
+            this.fpsStartTime = 0;
+            this.frameCount = 0;
+
+            if (!this.gl) {
+                console.error('WebGL not supported');
+                return;
+            }
+
+            this.initGL();
+            this.createDefaultTextures();
+            this.resizeCanvas();
+        }
+
+        initGL() {
+            const gl = this.gl;
+
+            const vertexShaderSource = `#version 300 es
+                precision mediump int;
+                precision mediump float;
+
+                in vec2 position;
+                out vec4 in_FragCoord;
+                out vec2 in_TexCoord;
+
+                void main() {
+                    in_TexCoord = position * 0.5 + 0.5;
+                    in_FragCoord = vec4(position * 0.5 + 0.5, 0.0, 1.0);
+                    gl_Position = vec4(position, 0.0, 1.0);
+                }
+        `;
+
+            this.vertexShader = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
+
+            this.quadBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                -1, -1, 1, -1, -1, 1, 1, 1
+            ]), gl.STATIC_DRAW);
+        }
+
+        createShader(type, source) {
+            const gl = this.gl;
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        resizeCanvas() {
+            const canvas = this.canvas;
+            const parent = canvas.parentElement;
+            const highQuality = document.getElementById('high-quality').checked;
+
+            const displayWidth = parent.clientWidth;
+            const displayHeight = parent.clientHeight;
+
+            if (highQuality) {
+                canvas.width = 1024;
+                canvas.height = 1024;
+            } else {
+                canvas.width = Math.min(displayWidth, 512);
+                canvas.height = Math.min(displayHeight, 512);
+            }
+
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+
+            if (this.gl) {
+                this.gl.viewport(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        createDefaultTextures() {
+            const gl = this.gl;
+
+            for (let i = 0; i < 4; i++) {
+                this.channels[i] = this.createTexture(this.generateDefaultTexture(i));
+            }
+        }
+
+        generateDefaultTexture(channel) {
+            const size = 256;
+            const data = new Uint8Array(size * size * 4);
+
+            for (let i = 0; i < size * size; i++) {
+                const x = i % size;
+                const y = Math.floor(i / size);
+                const idx = i * 4;
+
+                switch (channel) {
+                    case 0:
+                        const checker = ((x / 16) ^ (y / 16)) & 1;
+                        data[idx] = data[idx + 1] = data[idx + 2] = checker * 255;
+                        break;
+                    case 1:
+                        data[idx] = Math.random() * 255;
+                        data[idx + 1] = Math.random() * 255;
+                        data[idx + 2] = Math.random() * 255;
+                        break;
+                    case 2:
+                        data[idx] = (x / size) * 255;
+                        data[idx + 1] = (y / size) * 255;
+                        data[idx + 2] = 128;
+                        break;
+                    default:
+                        data[idx] = data[idx + 1] = data[idx + 2] = 0;
+                }
+                data[idx + 3] = 255;
+            }
+
+            return data;
+        }
+
+        createTexture(data, width = 256, height = 256) {
+            const gl = this.gl;
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            return texture;
+        }
+
+        loadImageTexture(image, channel) {
+            const gl = this.gl;
+            if (this.channels[channel]) {
+                gl.deleteTexture(this.channels[channel]);
+            }
+
+            this.channels[channel] = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.channels[channel]);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        }
+
+        updateShader(fragmentSource) {
+            const gl = this.gl;
+
+            try {
+                const fragmentShader = this.createShader(gl.FRAGMENT_SHADER, fragmentSource);
+                if (!fragmentShader) {
+                    throw new Error('Fragment shader compilation failed');
+                }
+
+                const newProgram = gl.createProgram();
+                if (!this.vertexShader || !fragmentShader) {
+                    console.error('Shader creation failed. Vertex Shader:', this.vertexShader, 'Fragment Shader:', fragmentShader);
+                    return;
+                }
+                gl.attachShader(newProgram, this.vertexShader);
+                gl.attachShader(newProgram, fragmentShader);
+                gl.linkProgram(newProgram);
+
+                if (!gl.getProgramParameter(newProgram, gl.LINK_STATUS)) {
+                    throw new Error('Program linking failed: ' + gl.getProgramInfoLog(newProgram));
+                }
+
+                if (this.program) {
+                    gl.deleteProgram(this.program);
+                }
+
+                this.program = newProgram;
+                this.setupUniforms();
+                this.hideError();
+
+                if (!this.animationId && this.isPlaying) {
+                    this.animate();
+                }
+
+            } catch (error) {
+                this.showError(error.message);
+            }
+        }
+
+        setupUniforms() {
+            const gl = this.gl;
+            gl.useProgram(this.program);
+
+            console.log("set uniforms", this.program);
+
+            const numUniforms = gl.getProgramParameter(this.program, gl.ACTIVE_UNIFORMS);
+            console.log('Number of active uniforms:', numUniforms);
+
+            for (let i = 0; i < numUniforms; i++) {
+                const uniformInfo = gl.getActiveUniform(this.program, i);
+                console.log(`Uniform ${i}: ${uniformInfo.name}, type: ${uniformInfo.type}`);
+            }
+
+
+            this.uniforms = {
+                iTime: gl.getUniformLocation(this.program, 'u_iTime'),
+                iResolution: gl.getUniformLocation(this.program, 'u_iResolution'),
+                iChannel0: gl.getUniformLocation(this.program, 'u_iChannel0'),
+                iChannel1: gl.getUniformLocation(this.program, 'u_iChannel1'),
+                iChannel2: gl.getUniformLocation(this.program, 'u_iChannel2'),
+                iChannel3: gl.getUniformLocation(this.program, 'u_iChannel3'),
+            };
+
+            console.log("uniforms", this.uniforms);
+
+            this.attributes = {
+                position: gl.getAttribLocation(this.program, 'position')
+            };
+        }
+
+        render(currentTime = 0) {
+            if (!this.program) return;
+
+            const gl = this.gl;
+            const canvas = this.canvas;
+
+            if (this.lastFrameTime > 0) {
+                const deltaTime = currentTime - this.lastFrameTime;
+                this.fps = 1000 / deltaTime;
+            }
+            this.lastFrameTime = currentTime;
+
+            gl.useProgram(this.program);
+
+            if (this.uniforms.iTime) gl.uniform1f(this.uniforms.iTime, this.time);
+            if (this.uniforms.iResolution) gl.uniform2f(this.uniforms.iResolution, canvas.width, canvas.height);
+
+            for (let i = 0; i < 4; i++) {
+                gl.activeTexture(gl.TEXTURE0 + i);
+                gl.bindTexture(gl.TEXTURE_2D, this.channels[i]);
+                if (this.uniforms[`iChannel${i}`]) {
+                    gl.uniform1i(this.uniforms[`iChannel${i}`], i);
+                }
+            }
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+            gl.enableVertexAttribArray(this.attributes.position);
+            gl.vertexAttribPointer(this.attributes.position, 2, gl.FLOAT, false, 0, 0);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            this.updateDisplays();
+        }
+
+        updateDisplays() {
+            const timeValue = document.getElementById('time-value');
+            const resolutionValue = document.getElementById('resolution-value');
+            const showFps = document.getElementById('show-fps').checked;
+
+            if (timeValue) {
+                if (showFps && this.fps > 0) {
+                    timeValue.textContent = `${this.time.toFixed(2)}s (${this.fps.toFixed(0)} FPS)`;
+                } else {
+                    timeValue.textContent = `${this.time.toFixed(2)}s`;
+                }
+            }
+
+            if (resolutionValue) {
+                resolutionValue.textContent = `${this.canvas.width}x${this.canvas.height}`;
+            }
+        }
+
+        play() {
+            this.isPlaying = true;
+            if (!this.animationId) {
+                this.animate();
+            }
+        }
+
+        pause() {
+            this.isPlaying = false;
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        }
+
+        reset() {
+            this.time = 0;
+            this.startTime = 0;
+            this.fpsStartTime = 0;
+            this.frameCount = 0;
+            this.lastFrameTime = 0;
+            this.render();
+        }
+
+        animate(currentTime = 0) {
+            if (!this.isPlaying) {
+                this.animationId = null;
+                return;
+            }
+
+            if (this.startTime === 0) {
+                this.startTime = currentTime;
+                this.lastFrameTime = currentTime;
+                this.fpsStartTime = currentTime;
+            }
+
+            this.time = (currentTime - this.startTime) / 1000;
+
+            this.frameCount++;
+            if (this.frameCount >= 10) {
+                const fpsElapsed = currentTime - this.fpsStartTime;
+                if (fpsElapsed > 0) {
+                    this.fps = (this.frameCount * 1000) / fpsElapsed;
+                }
+                this.frameCount = 0;
+                this.fpsStartTime = currentTime;
+            }
+
+            this.render(currentTime);
+            this.animationId = requestAnimationFrame((time) => this.animate(time));
+        }
+
+        showError(message) {
+            const errorDiv = document.getElementById('shader-error');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        hideError() {
+            const errorDiv = document.getElementById('shader-error');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+        }
+    }
+
     CodeMirror.defineMode("mnsl", function(config, parserConfig) {
         var keywords = {
             "while": true, "for": true, "return": true, "break": true, "continue": true,
@@ -400,32 +961,16 @@
         };
     });
 
-    let defines = {};
-    let codeChangeTimeout;
     let editor;
-
-    defines['DEBUG'] = '1';
-    defines['VERSION'] = '100';
-
-    window.onCodeEnter = (content) => {
-        var conf = window.getConfig();
-
-        try {
-            var res = window.compile(content, conf.optimizerEnabled);
-            window.setOutputCode(res);
-        } catch(e) {
-            console.error(e);
-            window.setOutputErrors(`Something went wrong: \n\n${e.message}`);
-        }
-
-    }
-    window.setOutputCode = setOutputCode;
-    window.setOutputErrors = setOutputErrors;
-    window.getConfig = getConfig;
+    let shaderToy;
+    let codeChangeTimeout;
 
     document.addEventListener('DOMContentLoaded', function() {
         setupCodeEditor();
-        renderDefines();
+        setupTabs();
+        setupPreview();
+        setupChannels();
+        setupControls();
     });
 
     function setupCodeEditor() {
@@ -438,108 +983,218 @@
             indentWithTabs: false,
             lineWrapping: false,
             value: `// inputs
-@input(Colour: Vec4)
+@input(FragCoord: Vec4)
 @input(TexCoord: Vec2)
 
 // outputs
 @output(FragColour: Vec4)
 
 // uniforms
-@uniform(Texture: Sampler)
+@uniform(iTime: Float)
+@uniform(iResolution: Vec2)
+@uniform(iChannel0: Sampler)
+@uniform(iChannel1: Sampler)
+@uniform(iChannel2: Sampler)
+@uniform(iChannel3: Sampler)
 
-// functions
+// main function
 func main() {
-    output.FragColour = texture(uniform.Texture, input.TexCoord) * input.Colour;
+    output.FragColour = input.TexCoord;
 }`
         });
 
         editor.on('change', function() {
-            clearTimeout(codeChangeTimeout);
-            codeChangeTimeout = setTimeout(() => {
-                if (window.onCodeEnter && typeof window.onCodeEnter === 'function') {
-                    window.onCodeEnter(editor.getValue());
-                }
-            }, 300);
+            if (document.getElementById('auto-compile').checked) {
+                clearTimeout(codeChangeTimeout);
+                codeChangeTimeout = setTimeout(() => {
+                    compileAndUpdate();
+                }, 500);
+            }
         });
     }
 
-    function setOutputCode(code) {
+    function setupTabs() {
+        const tabHeaders = document.querySelectorAll('.tab-header');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        tabHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const targetTab = header.dataset.tab;
+
+                tabHeaders.forEach(h => h.classList.remove('active'));
+                header.classList.add('active');
+
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                document.getElementById(targetTab + '-tab').classList.add('active');
+
+                if (targetTab === 'preview' && shaderToy) {
+                    setTimeout(() => {
+                        shaderToy.resizeCanvas();
+                        shaderToy.render();
+                    }, 10);
+                }
+            });
+        });
+    }
+
+    function setupPreview() {
+        const canvas = document.getElementById('preview-canvas');
+        shaderToy = new ShaderToy(canvas);
+
+        setTimeout(() => {
+            compileAndUpdate();
+            shaderToy.play();
+        }, 100);
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (shaderToy) {
+                shaderToy.resizeCanvas();
+                shaderToy.render();
+            }
+        });
+        resizeObserver.observe(canvas.parentElement);
+    }
+
+    function setupChannels() {
+        for (let i = 0; i < 4; i++) {
+            const select = document.getElementById(`channel${i}`);
+            const fileInput = document.getElementById(`file${i}`);
+
+            select.addEventListener('change', () => {
+                updateChannel(i, select.value);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    loadImageForChannel(file, i);
+                }
+            });
+        }
+
+        updateChannel(0, 'checker');
+        updateChannel(1, 'noise');
+    }
+
+    function setupControls() {
+        document.getElementById('play-btn').addEventListener('click', () => {
+            shaderToy.play();
+        });
+
+        document.getElementById('pause-btn').addEventListener('click', () => {
+            shaderToy.pause();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            shaderToy.reset();
+        });
+
+        document.getElementById('optimizer-enabled').addEventListener('change', () => {
+            if (document.getElementById('auto-compile').checked) {
+                compileAndUpdate();
+            }
+        });
+
+        document.getElementById('high-quality').addEventListener('change', (e) => {
+            if (shaderToy) {
+                shaderToy.resizeCanvas();
+                shaderToy.render();
+            }
+        });
+
+        document.getElementById('show-fps').addEventListener('change', () => {
+            if (shaderToy) {
+                shaderToy.updateDisplays();
+            }
+        });
+    }
+
+    function updateChannel(channel, type) {
+        if (!shaderToy) return;
+
+        switch (type) {
+            case 'checker':
+                shaderToy.channels[channel] = shaderToy.createTexture(shaderToy.generateDefaultTexture(0));
+                break;
+            case 'noise':
+                shaderToy.channels[channel] = shaderToy.createTexture(shaderToy.generateDefaultTexture(1));
+                break;
+            case 'gradient':
+                shaderToy.channels[channel] = shaderToy.createTexture(shaderToy.generateDefaultTexture(2));
+                break;
+            case 'none':
+            default:
+                shaderToy.channels[channel] = shaderToy.createTexture(shaderToy.generateDefaultTexture(3));
+                break;
+        }
+
+        shaderToy.render();
+    }
+
+    function loadImageForChannel(file, channel) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                shaderToy.loadImageTexture(img, channel);
+                document.getElementById(`channel${channel}`).value = 'upload';
+                shaderToy.render();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function compileAndUpdate() {
+        const code = editor.getValue();
+        const optimized = document.getElementById('optimizer-enabled').checked;
+
+        try {
+            const glslCode = window.compile ? window.compile(code, optimized) : generateDefaultShader(code);
+
+            const output = document.getElementById('output-display');
+            output.value = glslCode;
+            output.className = 'output-success';
+
+            shaderToy.updateShader(glslCode);
+
+        } catch (error) {
+            const output = document.getElementById('output-display');
+            output.value = `Compilation Error:\n\n${error.message}`;
+            output.className = 'output-error';
+
+            shaderToy.showError(error.message);
+        }
+    }
+
+    window.compileAndUpdate = compileAndUpdate;
+    window.updateChannel = updateChannel;
+
+    window.onCodeEnter = function(content) {
+        compileAndUpdate();
+    };
+
+    window.setOutputCode = function(code) {
         const output = document.getElementById('output-display');
         output.value = code;
         output.className = 'output-success';
-    }
+        shaderToy.updateShader(code);
+    };
 
-    function setOutputErrors(errors) {
+    window.setOutputErrors = function(errors) {
         const output = document.getElementById('output-display');
         output.value = errors;
         output.className = 'output-error';
-    }
+        shaderToy.showError(errors);
+    };
 
-    function getConfig() {
-        const optimizerEnabled = document.getElementById('optimizer-enabled').checked;
-
+    window.getConfig = function() {
         return {
-            optimizerEnabled: optimizerEnabled,
-            defines: { ...defines }
+            optimizerEnabled: document.getElementById('optimizer-enabled').checked,
+            autoCompile: document.getElementById('auto-compile').checked,
+            highQuality: document.getElementById('high-quality').checked
         };
-    }
-
-    function renderDefines() {
-        const container = document.getElementById('defines-container');
-        container.innerHTML = '';
-
-        Object.keys(defines).forEach(key => {
-            const defineItem = document.createElement('div');
-            defineItem.className = 'define-item';
-            defineItem.innerHTML = `
-                    <input type="text" class="define-key" value="${key}" onchange="updateDefineKey('${key}', this.value)">
-                    <input type="text" class="define-value" value="${defines[key]}" onchange="updateDefineValue('${key}', this.value)">
-                    <button class="remove-define-btn" onclick="removeDefine('${key}')">×</button>
-                `;
-            container.appendChild(defineItem);
-        });
-    }
-
-    function addDefine() {
-        const key = `DEFINE_${Object.keys(defines).length + 1}`;
-        defines[key] = '';
-        renderDefines();
-        triggerCodeChange();
-    }
-
-    function removeDefine(key) {
-        delete defines[key];
-        renderDefines();
-        triggerCodeChange();
-    }
-
-    function updateDefineKey(oldKey, newKey) {
-        if (newKey && newKey !== oldKey) {
-            defines[newKey] = defines[oldKey];
-            delete defines[oldKey];
-            renderDefines();
-            triggerCodeChange();
-        }
-    }
-
-    function updateDefineValue(key, value) {
-        defines[key] = value;
-        triggerCodeChange();
-    }
-
-    function triggerCodeChange() {
-        if (window.onCodeEnter && typeof window.onCodeEnter === 'function') {
-            window.onCodeEnter(editor.getValue());
-        }
-    }
-
-    document.getElementById('optimizer-enabled').addEventListener('change', triggerCodeChange);
-    setTimeout(() => {
-        if (window.onCodeEnter && typeof window.onCodeEnter === 'function') {
-            window.onCodeEnter(editor.getValue());
-        }
-    }, 100);
-
+    };
 </script>
 </body>
 </html>

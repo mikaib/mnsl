@@ -22,9 +22,10 @@ class MNSLOptimiseScalarVectorInit extends MNSLOptimiserPlugin {
     override public function onRun(node: MNSLNode, params: Array<Dynamic>, optimizer: MNSLOptimiser): MNSLNode {
         var components: Int = params[0];
         var values: MNSLNodeChildren = params[1];
+        var valuesString: Array<String> = [for (v in values) Std.string(v)];
 
         // check if all values are the same.
-        if (allMatchValue(values) && values.length > 1) {
+        if (allMatchValue(valuesString) && values.length > 1) {
             return VectorCreation(components, [values[0]], null);
         }
 

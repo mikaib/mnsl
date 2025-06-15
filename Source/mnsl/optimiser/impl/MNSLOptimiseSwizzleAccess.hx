@@ -45,6 +45,11 @@ class MNSLOptimiseSwizzleAccess extends MNSLOptimiserPlugin {
             return Std.string(on) == Std.string(firstOn);
         })) return node;
 
+        // ensure all fields are either x, y, z or w
+        if (!allMatchFunction(fields, function(field: String) {
+            return field == "x" || field == "y" || field == "z" || field == "w";
+        })) return node;
+
         // optimize it
         return StructAccess(firstOn, fields.join(''), firstType, firstInfo);
     }

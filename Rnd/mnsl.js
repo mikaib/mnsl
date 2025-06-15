@@ -19,7 +19,7 @@ Demo.compile = function(code,optimize) {
 	} else {
 		shader = mnsl_MNSL.fromSource(code,new mnsl_MNSLContextOptions(null,null,[],null,null));
 	}
-	var glsl = shader.emitGLSL(new mnsl_glsl_MNSLGLSLConfig(300,null));
+	var glsl = shader.emitGLSL(new mnsl_glsl_MNSLGLSLConfig(300,"es",null,null));
 	return glsl;
 };
 var HxOverrides = function() { };
@@ -627,7 +627,7 @@ var mnsl_MNSLContext = function(source,options) {
 	var analyser = new mnsl_analysis_MNSLAnalyser(this,res.ast);
 	var output = analyser.run();
 	this._finalAst = output;
-	var optimizer = new mnsl_optimizer_MNSLOptimizer(this,output);
+	var optimizer = new mnsl_optimiser_MNSLOptimiser(this,output);
 	var _g = 0;
 	var _g1 = this._options.optimizerPlugins;
 	while(_g < _g1.length) {
@@ -793,31 +793,31 @@ mnsl_MNSLContext.prototype = {
 				this.log(indentStr + name + ("[" + Std.string(from) + " -> " + Std.string(to) + "]"));
 				this.printAST([on],indent + 1);
 				break;
-			case 21:
+			case 22:
 				var comp = node.components;
 				var values = node.nodes;
 				var info17 = node.info;
 				this.log(indentStr + name + ("[Vec" + comp + "]"));
 				this.printAST(values,indent + 1);
 				break;
-			case 22:
+			case 23:
 				var on1 = node.on;
 				var fromComp = node.fromComponents;
 				var toComp = node.toComponents;
 				this.log(indentStr + name + ("[" + fromComp + " -> " + toComp + "]"));
 				this.printAST([on1],indent + 1);
 				break;
-			case 23:
+			case 24:
 				var value5 = node.value;
 				var info18 = node.info;
 				this.log(indentStr + name + ("[" + value5 + "]"));
 				break;
-			case 24:
+			case 25:
 				var value6 = node.value;
 				var info19 = node.info;
 				this.log(indentStr + name + ("[" + value6 + "]"));
 				break;
-			case 25:
+			case 26:
 				var value7 = node.value;
 				var info20 = node.info;
 				this.log(indentStr + name + ("[" + value7 + "]"));
@@ -903,40 +903,63 @@ mnsl_MNSLContext.prototype = {
 			var pos = error.pos;
 			return "Return statement outside of function at " + Std.string(pos);
 		case 12:
-			var constraint = error.constraint;
-			return "Expected " + Std.string(constraint.mustBe) + " but got " + Std.string(constraint.type) + " at " + Std.string(constraint.ofNode);
+			var func = error.func;
+			var node = error.node;
+			return "Missing return statement in function: " + Std.string(func) + " at " + Std.string(node);
 		case 13:
 			var constraint = error.constraint;
-			return "Unresolved constraint: " + Std.string(constraint);
+			return "Expected " + Std.string(constraint.mustBe) + " but got " + Std.string(constraint.type) + " at " + Std.string(constraint.ofNode);
 		case 14:
+			var type = error.type;
+			var node = error.node;
+			return "Unknown type: " + Std.string(type) + " at " + Std.string(node);
+		case 15:
+			var constraint = error.constraint;
+			return "Unresolved constraint: " + Std.string(constraint);
+		case 16:
 			var on = error.on;
 			return "Cannot assign to " + Std.string(on);
-		case 15:
+		case 17:
 			var on = error.on;
 			return "Cannot access on " + Std.string(on);
-		case 16:
+		case 18:
 			var comp = error.comp;
 			var info = error.info;
 			return "Invalid amount of vector components: " + comp + " at " + Std.string(info);
-		case 17:
+		case 19:
+			var func = error.functionName;
+			var chain = error.recursionChain;
+			var info = error.info;
+			var chainStr = "";
+			var _g = 0;
+			var _g1 = chain.length;
+			while(_g < _g1) {
+				var i = _g++;
+				if(i > 0) {
+					chainStr += " -> ";
+				}
+				chainStr += chain[i];
+			}
+			return "Recursive function detected: " + func + " in chain: " + chainStr + " at " + Std.string(info);
+		case 20:
 			var node = error.node;
 			var info = error.info;
 			return "Type of vector component is unknown: " + Std.string(node) + " at vector " + Std.string(info);
-		case 18:
+		case 21:
 			var tLeft = error.tLeft;
 			var tRight = error.tRight;
 			var op = error.op;
 			var constraint = error.constraint;
 			return "Invalid binary operation: " + Std.string(tLeft) + " " + op + " " + Std.string(tRight) + " at " + Std.string(constraint.ofNode);
-		case 19:
+		case 22:
 			var op = error.op;
 			var info = error.info;
 			return "Invalid unary operation: " + Std.string(op) + " at " + Std.string(info);
-		case 20:
+		case 23:
 			var node = error.node;
 			var info = error.info;
 			return $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name + " outside of loop at " + Std.string(info);
-		case 21:
+		case 24:
 			var limits = error.limits;
 			var node = error.node;
 			var limitStr = "";
@@ -959,7 +982,7 @@ var mnsl_MNSLContextOptions = function(defines,rootPath,optimizerPlugins,preproc
 		return null;
 	};
 	this.preprocessorDefines = [];
-	this.optimizerPlugins = [new mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit(),new mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess(),new mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign()];
+	this.optimizerPlugins = [new mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign()];
 	this.rootPath = null;
 	this.defines = new haxe_ds_StringMap();
 	if(defines != null) {
@@ -995,18 +1018,21 @@ var mnsl_MNSLError = $hxEnums["mnsl.MNSLError"] = { __ename__:true,__constructs_
 	,AnalyserDuplicateVariable: ($_=function(name,pos) { return {_hx_index:9,name:name,pos:pos,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserDuplicateVariable",$_.__params__ = ["name","pos"],$_)
 	,AnalyserUndeclaredVariable: ($_=function(name,pos) { return {_hx_index:10,name:name,pos:pos,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUndeclaredVariable",$_.__params__ = ["name","pos"],$_)
 	,AnalyserReturnOutsideFunction: ($_=function(pos) { return {_hx_index:11,pos:pos,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserReturnOutsideFunction",$_.__params__ = ["pos"],$_)
-	,AnalyserMismatchingType: ($_=function(constraint) { return {_hx_index:12,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingType",$_.__params__ = ["constraint"],$_)
-	,AnalyserUnresolvedConstraint: ($_=function(constraint) { return {_hx_index:13,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnresolvedConstraint",$_.__params__ = ["constraint"],$_)
-	,AnalyserInvalidAssignment: ($_=function(on) { return {_hx_index:14,on:on,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidAssignment",$_.__params__ = ["on"],$_)
-	,AnalyserInvalidAccess: ($_=function(on) { return {_hx_index:15,on:on,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidAccess",$_.__params__ = ["on"],$_)
-	,AnalyserInvalidVectorComponent: ($_=function(comp,info) { return {_hx_index:16,comp:comp,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidVectorComponent",$_.__params__ = ["comp","info"],$_)
-	,AnalyserUnknownVectorComponent: ($_=function(node,info) { return {_hx_index:17,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnknownVectorComponent",$_.__params__ = ["node","info"],$_)
-	,AnalyserInvalidBinop: ($_=function(tLeft,tRight,op,constraint) { return {_hx_index:18,tLeft:tLeft,tRight:tRight,op:op,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidBinop",$_.__params__ = ["tLeft","tRight","op","constraint"],$_)
-	,AnalyserInvalidUnaryOp: ($_=function(op,info) { return {_hx_index:19,op:op,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidUnaryOp",$_.__params__ = ["op","info"],$_)
-	,AnalyserLoopKeywordOutsideLoop: ($_=function(node,info) { return {_hx_index:20,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserLoopKeywordOutsideLoop",$_.__params__ = ["node","info"],$_)
-	,AnalyserMismatchingEitherType: ($_=function(limits,node) { return {_hx_index:21,limits:limits,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingEitherType",$_.__params__ = ["limits","node"],$_)
+	,AnalyserMissingReturn: ($_=function(func,node) { return {_hx_index:12,func:func,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMissingReturn",$_.__params__ = ["func","node"],$_)
+	,AnalyserMismatchingType: ($_=function(constraint) { return {_hx_index:13,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingType",$_.__params__ = ["constraint"],$_)
+	,AnalyserUnknownType: ($_=function(type,node) { return {_hx_index:14,type:type,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnknownType",$_.__params__ = ["type","node"],$_)
+	,AnalyserUnresolvedConstraint: ($_=function(constraint) { return {_hx_index:15,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnresolvedConstraint",$_.__params__ = ["constraint"],$_)
+	,AnalyserInvalidAssignment: ($_=function(on) { return {_hx_index:16,on:on,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidAssignment",$_.__params__ = ["on"],$_)
+	,AnalyserInvalidAccess: ($_=function(on) { return {_hx_index:17,on:on,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidAccess",$_.__params__ = ["on"],$_)
+	,AnalyserInvalidVectorComponent: ($_=function(comp,info) { return {_hx_index:18,comp:comp,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidVectorComponent",$_.__params__ = ["comp","info"],$_)
+	,AnalyserRecursiveFunction: ($_=function(functionName,recursionChain,info) { return {_hx_index:19,functionName:functionName,recursionChain:recursionChain,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserRecursiveFunction",$_.__params__ = ["functionName","recursionChain","info"],$_)
+	,AnalyserUnknownVectorComponent: ($_=function(node,info) { return {_hx_index:20,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnknownVectorComponent",$_.__params__ = ["node","info"],$_)
+	,AnalyserInvalidBinop: ($_=function(tLeft,tRight,op,constraint) { return {_hx_index:21,tLeft:tLeft,tRight:tRight,op:op,constraint:constraint,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidBinop",$_.__params__ = ["tLeft","tRight","op","constraint"],$_)
+	,AnalyserInvalidUnaryOp: ($_=function(op,info) { return {_hx_index:22,op:op,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidUnaryOp",$_.__params__ = ["op","info"],$_)
+	,AnalyserLoopKeywordOutsideLoop: ($_=function(node,info) { return {_hx_index:23,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserLoopKeywordOutsideLoop",$_.__params__ = ["node","info"],$_)
+	,AnalyserMismatchingEitherType: ($_=function(limits,node) { return {_hx_index:24,limits:limits,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingEitherType",$_.__params__ = ["limits","node"],$_)
 };
-mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType];
+mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMissingReturn,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnknownType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserRecursiveFunction,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType];
 var mnsl_MNSLPrinter = function(context) {
 	this._output = "";
 	this._indent = 0;
@@ -1116,6 +1142,7 @@ var mnsl_analysis_MNSLAnalyser = function(context,ast) {
 	_g.h["a"] = { comp : 3, char : "w"};
 	this._vectorAccess = _g;
 	this._deferPostType = [];
+	this._types = ["Void","Int","Float","Bool","Vec2","Vec3","Vec4","Mat2","Mat3","Mat4","Sampler","CTValue"];
 	this._cpyStck = ["FunctionDecl","WhileLoop","ForLoop"];
 	this._context = context;
 	this._ast = ast;
@@ -1123,7 +1150,7 @@ var mnsl_analysis_MNSLAnalyser = function(context,ast) {
 	this._inputs = new mnsl_analysis_MNSLAnalyserVariable("input",new mnsl_analysis_MNSLType("CTValue"),true,[]);
 	this._outputs = new mnsl_analysis_MNSLAnalyserVariable("output",new mnsl_analysis_MNSLType("CTValue"),true,[new mnsl_analysis_MNSLAnalyserVariable("Position",new mnsl_analysis_MNSLType("Vec4"),null,null)]);
 	this._uniforms = new mnsl_analysis_MNSLAnalyserVariable("uniform",new mnsl_analysis_MNSLType("CTValue"),true,[]);
-	this._functions = [new mnsl_analysis_MNSLAnalyserFunction("texture",[new mnsl_analysis_MNSLFuncArg("sampler",new mnsl_analysis_MNSLType("Sampler")),new mnsl_analysis_MNSLFuncArg("texCoord",new mnsl_analysis_MNSLType("Vec2"))],new mnsl_analysis_MNSLType("Vec4"),null,"__mnsl_texture"),new mnsl_analysis_MNSLAnalyserFunction("sin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_sin"),new mnsl_analysis_MNSLAnalyserFunction("cos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_cos"),new mnsl_analysis_MNSLAnalyserFunction("tan",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_tan"),new mnsl_analysis_MNSLAnalyserFunction("normalize",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_normalize"),new mnsl_analysis_MNSLAnalyserFunction("dot",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_dot"),new mnsl_analysis_MNSLAnalyserFunction("cross",[new mnsl_analysis_MNSLFuncArg("x",new mnsl_analysis_MNSLType("Vec3")),new mnsl_analysis_MNSLFuncArg("y",new mnsl_analysis_MNSLType("Vec3"))],new mnsl_analysis_MNSLType("Vec3"),null,"__mnsl_cross"),new mnsl_analysis_MNSLAnalyserFunction("length",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_length"),new mnsl_analysis_MNSLAnalyserFunction("reflect",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_reflect"),new mnsl_analysis_MNSLAnalyserFunction("refract",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("eta",new mnsl_analysis_MNSLType("Float"))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_refract"),new mnsl_analysis_MNSLAnalyserFunction("pow",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]),null,"__mnsl_pow"),new mnsl_analysis_MNSLAnalyserFunction("exp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_exp"),new mnsl_analysis_MNSLAnalyserFunction("log",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_log"),new mnsl_analysis_MNSLAnalyserFunction("sqrt",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_sqrt"),new mnsl_analysis_MNSLAnalyserFunction("abs",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_abs"),new mnsl_analysis_MNSLAnalyserFunction("clamp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("minVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("maxVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_clamp"),new mnsl_analysis_MNSLAnalyserFunction("mix",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("a",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mix"),new mnsl_analysis_MNSLAnalyserFunction("step",[new mnsl_analysis_MNSLFuncArg("edge",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_step"),new mnsl_analysis_MNSLAnalyserFunction("smoothstep",[new mnsl_analysis_MNSLFuncArg("edge0",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("edge1",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_smoothstep"),new mnsl_analysis_MNSLAnalyserFunction("max",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_max"),new mnsl_analysis_MNSLAnalyserFunction("min",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_min")];
+	this._functions = [new mnsl_analysis_MNSLAnalyserFunction("texture",[new mnsl_analysis_MNSLFuncArg("sampler",new mnsl_analysis_MNSLType("Sampler")),new mnsl_analysis_MNSLFuncArg("texCoord",new mnsl_analysis_MNSLType("Vec2"))],new mnsl_analysis_MNSLType("Vec4"),null,"__mnsl_texture"),new mnsl_analysis_MNSLAnalyserFunction("sin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_sin"),new mnsl_analysis_MNSLAnalyserFunction("cos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_cos"),new mnsl_analysis_MNSLAnalyserFunction("tan",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_tan"),new mnsl_analysis_MNSLAnalyserFunction("normalize",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_normalize"),new mnsl_analysis_MNSLAnalyserFunction("dot",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_dot"),new mnsl_analysis_MNSLAnalyserFunction("cross",[new mnsl_analysis_MNSLFuncArg("x",new mnsl_analysis_MNSLType("Vec3")),new mnsl_analysis_MNSLFuncArg("y",new mnsl_analysis_MNSLType("Vec3"))],new mnsl_analysis_MNSLType("Vec3"),null,"__mnsl_cross"),new mnsl_analysis_MNSLAnalyserFunction("length",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_length"),new mnsl_analysis_MNSLAnalyserFunction("reflect",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_reflect"),new mnsl_analysis_MNSLAnalyserFunction("refract",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("eta",new mnsl_analysis_MNSLType("Float"))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_refract"),new mnsl_analysis_MNSLAnalyserFunction("pow",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]),null,"__mnsl_pow"),new mnsl_analysis_MNSLAnalyserFunction("exp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_exp"),new mnsl_analysis_MNSLAnalyserFunction("log",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_log"),new mnsl_analysis_MNSLAnalyserFunction("sqrt",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_sqrt"),new mnsl_analysis_MNSLAnalyserFunction("abs",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_abs"),new mnsl_analysis_MNSLAnalyserFunction("clamp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("minVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("maxVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_clamp"),new mnsl_analysis_MNSLAnalyserFunction("mix",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("a",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mix"),new mnsl_analysis_MNSLAnalyserFunction("step",[new mnsl_analysis_MNSLFuncArg("edge",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_step"),new mnsl_analysis_MNSLAnalyserFunction("smoothstep",[new mnsl_analysis_MNSLFuncArg("edge0",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("edge1",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_smoothstep"),new mnsl_analysis_MNSLAnalyserFunction("max",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_max"),new mnsl_analysis_MNSLAnalyserFunction("min",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_min"),new mnsl_analysis_MNSLAnalyserFunction("atan",[new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_atan"),new mnsl_analysis_MNSLAnalyserFunction("acos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_acos"),new mnsl_analysis_MNSLAnalyserFunction("asin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_asin"),new mnsl_analysis_MNSLAnalyserFunction("mod",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mod"),new mnsl_analysis_MNSLAnalyserFunction("fract",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_fract"),new mnsl_analysis_MNSLAnalyserFunction("floor",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_floor")];
 	var _g = new haxe_ds_EnumValueMap();
 	_g.set(mnsl_parser_MNSLShaderDataKind.Input,this._inputs);
 	_g.set(mnsl_parser_MNSLShaderDataKind.Output,this._outputs);
@@ -1210,28 +1237,35 @@ mnsl_analysis_MNSLAnalyser.getType = function(node) {
 		var from = node.from;
 		var to = node.to;
 		return to;
-	case 21:
+	case 20:
+		var _g = node.info;
+		return new mnsl_analysis_MNSLType("Void");
+	case 22:
 		var _g = node.info;
 		var comp = node.components;
 		var values = node.nodes;
 		return new mnsl_analysis_MNSLType("Vec" + comp);
-	case 22:
+	case 23:
 		var on = node.on;
 		var fromComp = node.fromComponents;
 		var toComp = node.toComponents;
 		return new mnsl_analysis_MNSLType("Vec" + toComp);
-	case 23:
-		var _g = node.info;
-		var value = node.value;
-		return new mnsl_analysis_MNSLType("Int");
 	case 24:
 		var _g = node.info;
 		var value = node.value;
-		return new mnsl_analysis_MNSLType("Float");
+		return new mnsl_analysis_MNSLType("Int");
 	case 25:
 		var _g = node.info;
 		var value = node.value;
+		return new mnsl_analysis_MNSLType("Float");
+	case 26:
+		var _g = node.info;
+		var value = node.value;
 		return new mnsl_analysis_MNSLType("String");
+	case 27:
+		var _g = node.info;
+		var value = node.value;
+		return new mnsl_analysis_MNSLType("Int");
 	default:
 		return new mnsl_analysis_MNSLType("Unknown");
 	}
@@ -1417,7 +1451,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				}
 			}
 			break;
-		case 21:
+		case 22:
 			var _g = on.info;
 			var comp = on.components;
 			var values = on.nodes;
@@ -1428,7 +1462,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			var _g1 = values.length;
 			while(_g < _g1) {
 				var cIdx = _g++;
-				blockBody.push(mnsl_parser_MNSLNode.VariableAssign(values[cIdx],mnsl_parser_MNSLNode.StructAccess(value,componentOrder[cIdx],new mnsl_analysis_MNSLType("Vec" + comp),info),info));
+				blockBody.push(mnsl_parser_MNSLNode.VariableAssign(values[cIdx],mnsl_parser_MNSLNode.StructAccess(mnsl_parser_MNSLNode.SubExpression(value,info),componentOrder[cIdx],new mnsl_analysis_MNSLType("Vec" + comp),info),info));
 			}
 			return mnsl_parser_MNSLNode.Block(blockBody,info);
 		default:
@@ -1906,7 +1940,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			var type = node.type;
 			var info = node.info;
 			return this.analyseStructAccessPost(node,on,field,type,ctx,info);
-		case 21:
+		case 22:
 			var comp = node.components;
 			var nodes = node.nodes;
 			var info = node.info;
@@ -1935,26 +1969,37 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		}
 		return body;
 	}
+	,checkTypeValidity: function(node) {
+		var t = mnsl_analysis_MNSLAnalyser.getType(node);
+		if(t._type != "Unknown" && !t._tempType && this._types.indexOf(t.toString()) == -1) {
+			this._context.emitError(mnsl_MNSLError.AnalyserUnknownType(t,node));
+			return;
+		}
+	}
 	,applyReplacementsToNode: function(node,replacements,exceptions) {
 		exceptions = exceptions.slice();
+		var checkReplacement = true;
 		var _g = 0;
 		while(_g < exceptions.length) {
 			var e = exceptions[_g];
 			++_g;
 			if(Type.enumEq(e,node)) {
-				return node;
+				checkReplacement = false;
 			}
 		}
-		var _g = 0;
-		while(_g < replacements.length) {
-			var r = replacements[_g];
-			++_g;
-			if(r.node == node) {
-				exceptions.push(node);
-				node = r.to;
+		if(checkReplacement) {
+			var _g = 0;
+			while(_g < replacements.length) {
+				var r = replacements[_g];
+				++_g;
+				if(r.node == node) {
+					exceptions.push(node);
+					node = r.to;
+				}
 			}
 		}
 		if(node == null) {
+			this.checkTypeValidity(node);
 			return null;
 		}
 		var e = Type.getEnum(node);
@@ -1974,10 +2019,225 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				params[i] = this.applyReplacementsToNode(p,replacements,exceptions);
 			}
 		}
-		return Type.createEnum(e,name,params);
+		var resNode = Type.createEnum(e,name,params);
+		this.checkTypeValidity(resNode);
+		return resNode;
 	}
 	,deferPostType: function(f) {
 		this._deferPostType.push(f);
+	}
+	,checkBranchesOnBody: function(body,inFunction) {
+		if(inFunction == null) {
+			var _g = 0;
+			while(_g < body.length) {
+				var node = body[_g];
+				++_g;
+				this.checkBranchesOnNode(node,inFunction);
+			}
+			return;
+		}
+		if(inFunction.returnType.equals(new mnsl_analysis_MNSLType("Void"))) {
+			var _g = 0;
+			while(_g < body.length) {
+				var node = body[_g];
+				++_g;
+				this.checkBranchesOnNode(node,inFunction);
+			}
+			return;
+		}
+		var _g = 0;
+		while(_g < body.length) {
+			var node = body[_g];
+			++_g;
+			this.checkBranchesOnNode(node,inFunction);
+		}
+	}
+	,checkBranchesOnNode: function(node,inFunction) {
+		if(node == null) {
+			return;
+		}
+		switch(node._hx_index) {
+		case 0:
+			var name = node.name;
+			var returnType = node.returnType;
+			var args = node.$arguments;
+			var body = node.body;
+			var info = node.info;
+			var func = new mnsl_analysis_MNSLAnalyserFunction(name,args,returnType,true,null);
+			if(!func.returnType.equals(new mnsl_analysis_MNSLType("Void")) && !this.bodyHasReturn(body)) {
+				this._context.emitError(mnsl_MNSLError.AnalyserMissingReturn(func,body));
+			}
+			this.checkBranchesOnBody(body,func);
+			break;
+		case 6:
+			var cond = node.condition;
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		case 7:
+			var cond = node.condition;
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		case 8:
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		case 11:
+			var cond = node.condition;
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		case 12:
+			var init = node.init;
+			var condition = node.condition;
+			var increment = node.increment;
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		case 16:
+			var body = node.body;
+			var info = node.info;
+			this.checkBranchesOnBody(body,inFunction);
+			break;
+		default:
+			var params = Type.enumParameters(node);
+			var _g = 0;
+			var _g1 = params.length;
+			while(_g < _g1) {
+				var p = _g++;
+				var pNode = params[p];
+				if(pNode == null) {
+					continue;
+				}
+				if(((pNode) instanceof Array) && pNode[0] != null && js_Boot.__instanceof(pNode[0],mnsl_parser_MNSLNode)) {
+					this.checkBranchesOnBody(pNode,inFunction);
+				} else if(js_Boot.__instanceof(pNode,mnsl_parser_MNSLNode)) {
+					this.checkBranchesOnNode(pNode,inFunction);
+				}
+			}
+		}
+	}
+	,bodyHasReturn: function(body) {
+		var i = 0;
+		while(i < body.length) {
+			var node = body[i];
+			switch(node._hx_index) {
+			case 2:
+				var _g = node.value;
+				var _g1 = node.type;
+				var _g2 = node.info;
+				return true;
+			case 6:
+				var cond = node.condition;
+				var ifBody = node.body;
+				var info = node.info;
+				var ifHasReturn = this.bodyHasReturn(ifBody);
+				var hasElse = false;
+				var allBranchesReturn = ifHasReturn;
+				var j = i + 1;
+				_hx_loop2: while(j < body.length) {
+					var _g3 = body[j];
+					switch(_g3._hx_index) {
+					case 7:
+						var _g4 = _g3.info;
+						var elseCond = _g3.condition;
+						var elseIfBody = _g3.body;
+						var elseIfHasReturn = this.bodyHasReturn(elseIfBody);
+						allBranchesReturn = allBranchesReturn && elseIfHasReturn;
+						++j;
+						break;
+					case 8:
+						var _g5 = _g3.info;
+						var elseBody = _g3.body;
+						hasElse = true;
+						var elseHasReturn = this.bodyHasReturn(elseBody);
+						allBranchesReturn = allBranchesReturn && elseHasReturn;
+						++j;
+						break _hx_loop2;
+					default:
+						break _hx_loop2;
+					}
+				}
+				if(hasElse && allBranchesReturn) {
+					return true;
+				}
+				i = j;
+				continue;
+			case 7:
+				var _g6 = node.condition;
+				var _g7 = node.body;
+				var _g8 = node.info;
+				++i;
+				continue;
+			case 8:
+				var _g9 = node.body;
+				var _g10 = node.info;
+				++i;
+				continue;
+			case 16:
+				var _g11 = node.info;
+				var blockBody = node.body;
+				if(this.bodyHasReturn(blockBody)) {
+					return true;
+				}
+				break;
+			default:
+			}
+			++i;
+		}
+		return false;
+	}
+	,checkForRecursion: function(body,inFunction) {
+		var _g = 0;
+		while(_g < body.length) {
+			var node = body[_g];
+			++_g;
+			switch(node._hx_index) {
+			case 0:
+				var name = node.name;
+				var returnType = node.returnType;
+				var args = node.$arguments;
+				var body1 = node.body;
+				var info = node.info;
+				if(inFunction != null && name == inFunction.name) {
+					this._context.emitError(mnsl_MNSLError.AnalyserRecursiveFunction(name,[name],info));
+				} else {
+					this.checkForRecursion(body1,new mnsl_analysis_MNSLAnalyserFunction(name,args,returnType,true,null));
+				}
+				break;
+			case 1:
+				var name1 = node.name;
+				var args1 = node.args;
+				var returnType1 = node.returnType;
+				var info1 = node.info;
+				if(inFunction != null && name1 == inFunction.name) {
+					this._context.emitError(mnsl_MNSLError.AnalyserRecursiveFunction(name1,[name1,name1],info1));
+				}
+				break;
+			default:
+				var params = Type.enumParameters(node);
+				var _g1 = 0;
+				var _g2 = params.length;
+				while(_g1 < _g2) {
+					var p = _g1++;
+					var pNode = params[p];
+					if(pNode == null) {
+						continue;
+					}
+					if(((pNode) instanceof Array) && pNode[0] != null && js_Boot.__instanceof(pNode[0],mnsl_parser_MNSLNode)) {
+						this.checkForRecursion(pNode,inFunction);
+					} else if(js_Boot.__instanceof(pNode,mnsl_parser_MNSLNode)) {
+						this.checkForRecursion([pNode],inFunction);
+					}
+				}
+			}
+		}
 	}
 	,run: function() {
 		var res = this.execAtBody(this._ast,this._globalCtx);
@@ -1990,6 +2250,8 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				this._context.emitError(mnsl_MNSLError.AnalyserUnresolvedConstraint(c));
 			}
 		}
+		var replacements = this._solver.getReplacements();
+		res = this.applyReplacements(res,replacements,[]);
 		var _g = 0;
 		var _g1 = this._deferPostType;
 		while(_g < _g1.length) {
@@ -1997,8 +2259,8 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			++_g;
 			f();
 		}
-		var replacements = this._solver.getReplacements();
-		res = this.applyReplacements(res,replacements,[]);
+		this.checkBranchesOnBody(res,null);
+		this.checkForRecursion(res,null);
 		return res;
 	}
 	,__class__: mnsl_analysis_MNSLAnalyser
@@ -2618,11 +2880,16 @@ mnsl_analysis_MNSLType.prototype = {
 	}
 	,__class__: mnsl_analysis_MNSLType
 };
-var mnsl_glsl_MNSLGLSLConfig = function(version,useAttributeAndVaryingKeywords) {
+var mnsl_glsl_MNSLGLSLConfig = function(version,versionDirective,useAttributeAndVaryingKeywords,usePrecision) {
+	this.usePrecision = null;
 	this.useAttributeAndVaryingKeywords = null;
 	this.version = version;
+	this.versionDirective = versionDirective;
 	if(useAttributeAndVaryingKeywords != null) {
 		this.useAttributeAndVaryingKeywords = useAttributeAndVaryingKeywords;
+	}
+	if(usePrecision != null) {
+		this.usePrecision = usePrecision;
 	}
 };
 mnsl_glsl_MNSLGLSLConfig.__name__ = true;
@@ -2644,6 +2911,10 @@ var mnsl_glsl_MNSLGLSLPrinter = function(context,config) {
 	_g.h["PointSize"] = "gl_PointSize";
 	this._internalOutputStruct = _g;
 	var _g = new haxe_ds_StringMap();
+	_g.h["float"] = "mediump";
+	_g.h["int"] = "mediump";
+	this._defaultPrecision = _g;
+	var _g = new haxe_ds_StringMap();
 	_g.h["Void"] = "void";
 	_g.h["Int"] = "int";
 	_g.h["Float"] = "float";
@@ -2662,6 +2933,8 @@ var mnsl_glsl_MNSLGLSLPrinter = function(context,config) {
 	var versionInt = config.version;
 	var tmp = config.useAttributeAndVaryingKeywords;
 	config.useAttributeAndVaryingKeywords = tmp != null ? tmp : versionInt < 130;
+	var tmp = config.usePrecision;
+	config.usePrecision = tmp != null ? tmp : config.versionDirective == "es";
 };
 mnsl_glsl_MNSLGLSLPrinter.__name__ = true;
 mnsl_glsl_MNSLGLSLPrinter.__super__ = mnsl_MNSLPrinter;
@@ -2726,7 +2999,18 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var node1 = node.value;
 			var type = node.type;
 			var info = node.info;
-			this.printIndented("return ");
+			var nodeIsVoid;
+			if(node1 != null) {
+				if(node1._hx_index == 20) {
+					var _g = node1.info;
+					nodeIsVoid = true;
+				} else {
+					nodeIsVoid = false;
+				}
+			} else {
+				nodeIsVoid = true;
+			}
+			this.printIndented("return" + (nodeIsVoid ? "" : " "));
 			if(node1 != null) {
 				this.enableInline();
 				this.printNode(node1);
@@ -2997,7 +3281,10 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			this.disableInline();
 			this.print(")");
 			break;
-		case 21:
+		case 20:
+			var info = node.info;
+			return;
+		case 22:
 			var components = node.components;
 			var nodes = node.nodes;
 			var info = node.info;
@@ -3017,7 +3304,7 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			}
 			this.print(")");
 			break;
-		case 22:
+		case 23:
 			var node1 = node.on;
 			var fromComp = node.fromComponents;
 			var toComp = node.toComponents;
@@ -3054,15 +3341,20 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				this.print(")");
 			}
 			break;
-		case 23:
-			var value = node.value;
-			var info = node.info;
-			this.print(value);
-			break;
 		case 24:
 			var value = node.value;
 			var info = node.info;
 			this.print(value);
+			break;
+		case 25:
+			var value = node.value;
+			var info = node.info;
+			this.print(value);
+			break;
+		case 27:
+			var value = node.value;
+			var info = node.info;
+			this.print(value ? "1" : "0");
 			break;
 		default:
 			throw haxe_Exception.thrown("Unknown node type: " + Std.string(node));
@@ -3117,8 +3409,24 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		}
 	}
 	,run: function() {
-		this.println("#version {0} core",this._config.version);
+		this.println("#version {0} {1}",this._config.version,this._config.versionDirective);
 		this.println("");
+		if(this._config.usePrecision) {
+			var printed_h = Object.create(null);
+			var h = this._types.h;
+			var type_h = h;
+			var type_keys = Object.keys(h);
+			var type_length = type_keys.length;
+			var type_current = 0;
+			while(type_current < type_length) {
+				var type = type_h[type_keys[type_current++]];
+				if(Object.prototype.hasOwnProperty.call(this._defaultPrecision.h,type) && !Object.prototype.hasOwnProperty.call(printed_h,type)) {
+					this.println("precision {0} {1};",this._defaultPrecision.h[type],type);
+					printed_h[type] = true;
+				}
+			}
+			this.println("");
+		}
 		var _g = 0;
 		var _g1 = this._context.getShaderData();
 		while(_g < _g1.length) {
@@ -3167,13 +3475,13 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 	}
 	,__class__: mnsl_glsl_MNSLGLSLPrinter
 });
-var mnsl_optimizer_MNSLOptimizer = function(context,ast) {
+var mnsl_optimiser_MNSLOptimiser = function(context,ast) {
 	this.plugins = [];
 	this.context = context;
 	this.ast = ast;
 };
-mnsl_optimizer_MNSLOptimizer.__name__ = true;
-mnsl_optimizer_MNSLOptimizer.prototype = {
+mnsl_optimiser_MNSLOptimiser.__name__ = true;
+mnsl_optimiser_MNSLOptimiser.prototype = {
 	addPlugin: function(plugin) {
 		this.plugins.push(plugin);
 	}
@@ -3197,8 +3505,8 @@ mnsl_optimizer_MNSLOptimizer.prototype = {
 		while(_g < _g1.length) {
 			var plugin = _g1[_g];
 			++_g;
-			if(plugin.canOptimize(node,this)) {
-				var result = plugin.optimize(node,params,this);
+			if(plugin.canOptimise(node,this)) {
+				var result = plugin.optimise(node,params,this);
 				if(result != null) {
 					node = result;
 					params = Type.enumParameters(node);
@@ -3218,13 +3526,13 @@ mnsl_optimizer_MNSLOptimizer.prototype = {
 		}
 		return Type.createEnum(Type.getEnum(node),$hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name,params);
 	}
-	,__class__: mnsl_optimizer_MNSLOptimizer
+	,__class__: mnsl_optimiser_MNSLOptimiser
 };
-var mnsl_optimizer_MNSLOptimizerPlugin = function(onNode) {
+var mnsl_optimiser_MNSLOptimiserPlugin = function(onNode) {
 	this._on = onNode;
 };
-mnsl_optimizer_MNSLOptimizerPlugin.__name__ = true;
-mnsl_optimizer_MNSLOptimizerPlugin.prototype = {
+mnsl_optimiser_MNSLOptimiserPlugin.__name__ = true;
+mnsl_optimiser_MNSLOptimiserPlugin.prototype = {
 	onRun: function(node,params,optimizer) {
 		return node;
 	}
@@ -3250,37 +3558,45 @@ mnsl_optimizer_MNSLOptimizerPlugin.prototype = {
 		}
 		return true;
 	}
-	,canOptimize: function(node,optimizer) {
+	,canOptimise: function(node,optimizer) {
 		var e = this._on;
 		return $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name == $hxEnums[e.__enum__].__constructs__[e._hx_index]._hx_name;
 	}
-	,optimize: function(node,params,optimizer) {
+	,optimise: function(node,params,optimizer) {
 		return this.onRun(node,params,optimizer);
 	}
-	,__class__: mnsl_optimizer_MNSLOptimizerPlugin
+	,__class__: mnsl_optimiser_MNSLOptimiserPlugin
 };
-var mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit = function() {
-	mnsl_optimizer_MNSLOptimizerPlugin.call(this,mnsl_parser_MNSLNode.VectorCreation(0,null,null));
+var mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit = function() {
+	mnsl_optimiser_MNSLOptimiserPlugin.call(this,mnsl_parser_MNSLNode.VectorCreation(0,null,null));
 };
-mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit.__name__ = true;
-mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit.__super__ = mnsl_optimizer_MNSLOptimizerPlugin;
-mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit.prototype = $extend(mnsl_optimizer_MNSLOptimizerPlugin.prototype,{
+mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit.__name__ = true;
+mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit.__super__ = mnsl_optimiser_MNSLOptimiserPlugin;
+mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit.prototype = $extend(mnsl_optimiser_MNSLOptimiserPlugin.prototype,{
 	onRun: function(node,params,optimizer) {
 		var components = params[0];
 		var values = params[1];
-		if(this.allMatchValue(values) && values.length > 1) {
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < values.length) {
+			var v = values[_g1];
+			++_g1;
+			_g.push(Std.string(v));
+		}
+		var valuesString = _g;
+		if(this.allMatchValue(valuesString) && values.length > 1) {
 			return mnsl_parser_MNSLNode.VectorCreation(components,[values[0]],null);
 		}
 		return node;
 	}
-	,__class__: mnsl_optimizer_impl_MNSLOptimizeScalarVectorInit
+	,__class__: mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit
 });
-var mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess = function() {
-	mnsl_optimizer_MNSLOptimizerPlugin.call(this,mnsl_parser_MNSLNode.VectorCreation(0,null,null));
+var mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess = function() {
+	mnsl_optimiser_MNSLOptimiserPlugin.call(this,mnsl_parser_MNSLNode.VectorCreation(0,null,null));
 };
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess.__name__ = true;
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess.__super__ = mnsl_optimizer_MNSLOptimizerPlugin;
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess.prototype = $extend(mnsl_optimizer_MNSLOptimizerPlugin.prototype,{
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess.__name__ = true;
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess.__super__ = mnsl_optimiser_MNSLOptimiserPlugin;
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess.prototype = $extend(mnsl_optimiser_MNSLOptimiserPlugin.prototype,{
 	onRun: function(node,params,optimizer) {
 		var components = params[0];
 		var values = params[1];
@@ -3302,26 +3618,35 @@ mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess.prototype = $extend(mnsl_optimizer
 		})) {
 			return node;
 		}
+		if(!this.allMatchFunction(fields,function(field) {
+			if(!(field == "x" || field == "y" || field == "z")) {
+				return field == "w";
+			} else {
+				return true;
+			}
+		})) {
+			return node;
+		}
 		return mnsl_parser_MNSLNode.StructAccess(firstOn,fields.join(""),firstType,firstInfo);
 	}
-	,__class__: mnsl_optimizer_impl_MNSLOptimizeSwizzleAccess
+	,__class__: mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess
 });
-var mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign = function() {
-	mnsl_optimizer_MNSLOptimizerPlugin.call(this,mnsl_parser_MNSLNode.Block(null,null));
+var mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign = function() {
+	mnsl_optimiser_MNSLOptimiserPlugin.call(this,mnsl_parser_MNSLNode.Block(null,null));
 };
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign.__name__ = true;
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign.__super__ = mnsl_optimizer_MNSLOptimizerPlugin;
-mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign.prototype = $extend(mnsl_optimizer_MNSLOptimizerPlugin.prototype,{
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.__name__ = true;
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.__super__ = mnsl_optimiser_MNSLOptimiserPlugin;
+mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.prototype = $extend(mnsl_optimiser_MNSLOptimiserPlugin.prototype,{
 	onRun: function(node,params,optimizer) {
 		if(!this.allMatchFunction(params[0],function(node) {
 			return $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name == "VariableAssign";
 		})) {
 			return node;
 		}
-		console.log("mnsl/optimizer/impl/MNSLOptimizeSwizzleAssign.hx:29:","can optim");
+		console.log("mnsl/optimiser/impl/MNSLOptimiseSwizzleAssign.hx:29:","can optim");
 		return node;
 	}
-	,__class__: mnsl_optimizer_impl_MNSLOptimizeSwizzleAssign
+	,__class__: mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign
 });
 var mnsl_parser_MNSLNode = $hxEnums["mnsl.parser.MNSLNode"] = { __ename__:true,__constructs__:null
 	,FunctionDecl: ($_=function(name,returnType,$arguments,body,info) { return {_hx_index:0,name:name,returnType:returnType,$arguments:$arguments,body:body,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="FunctionDecl",$_.__params__ = ["name","returnType","$arguments","body","info"],$_)
@@ -3344,14 +3669,16 @@ var mnsl_parser_MNSLNode = $hxEnums["mnsl.parser.MNSLNode"] = { __ename__:true,_
 	,StructAccess: ($_=function(on,field,type,info) { return {_hx_index:17,on:on,field:field,type:type,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="StructAccess",$_.__params__ = ["on","field","type","info"],$_)
 	,ArrayAccess: ($_=function(on,index,info) { return {_hx_index:18,on:on,index:index,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="ArrayAccess",$_.__params__ = ["on","index","info"],$_)
 	,TypeCast: ($_=function(on,from,to) { return {_hx_index:19,on:on,from:from,to:to,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="TypeCast",$_.__params__ = ["on","from","to"],$_)
-	,TypeWrapper: ($_=function(type) { return {_hx_index:20,type:type,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="TypeWrapper",$_.__params__ = ["type"],$_)
-	,VectorCreation: ($_=function(components,nodes,info) { return {_hx_index:21,components:components,nodes:nodes,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="VectorCreation",$_.__params__ = ["components","nodes","info"],$_)
-	,VectorConversion: ($_=function(on,fromComponents,toComponents) { return {_hx_index:22,on:on,fromComponents:fromComponents,toComponents:toComponents,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="VectorConversion",$_.__params__ = ["on","fromComponents","toComponents"],$_)
-	,IntegerLiteralNode: ($_=function(value,info) { return {_hx_index:23,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="IntegerLiteralNode",$_.__params__ = ["value","info"],$_)
-	,FloatLiteralNode: ($_=function(value,info) { return {_hx_index:24,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="FloatLiteralNode",$_.__params__ = ["value","info"],$_)
-	,StringLiteralNode: ($_=function(value,info) { return {_hx_index:25,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="StringLiteralNode",$_.__params__ = ["value","info"],$_)
+	,VoidNode: ($_=function(info) { return {_hx_index:20,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="VoidNode",$_.__params__ = ["info"],$_)
+	,TypeWrapper: ($_=function(type) { return {_hx_index:21,type:type,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="TypeWrapper",$_.__params__ = ["type"],$_)
+	,VectorCreation: ($_=function(components,nodes,info) { return {_hx_index:22,components:components,nodes:nodes,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="VectorCreation",$_.__params__ = ["components","nodes","info"],$_)
+	,VectorConversion: ($_=function(on,fromComponents,toComponents) { return {_hx_index:23,on:on,fromComponents:fromComponents,toComponents:toComponents,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="VectorConversion",$_.__params__ = ["on","fromComponents","toComponents"],$_)
+	,IntegerLiteralNode: ($_=function(value,info) { return {_hx_index:24,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="IntegerLiteralNode",$_.__params__ = ["value","info"],$_)
+	,FloatLiteralNode: ($_=function(value,info) { return {_hx_index:25,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="FloatLiteralNode",$_.__params__ = ["value","info"],$_)
+	,StringLiteralNode: ($_=function(value,info) { return {_hx_index:26,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="StringLiteralNode",$_.__params__ = ["value","info"],$_)
+	,BooleanLiteralNode: ($_=function(value,info) { return {_hx_index:27,value:value,info:info,__enum__:"mnsl.parser.MNSLNode",toString:$estr}; },$_._hx_name="BooleanLiteralNode",$_.__params__ = ["value","info"],$_)
 };
-mnsl_parser_MNSLNode.__constructs__ = [mnsl_parser_MNSLNode.FunctionDecl,mnsl_parser_MNSLNode.FunctionCall,mnsl_parser_MNSLNode.Return,mnsl_parser_MNSLNode.VariableDecl,mnsl_parser_MNSLNode.VariableAssign,mnsl_parser_MNSLNode.Identifier,mnsl_parser_MNSLNode.IfStatement,mnsl_parser_MNSLNode.ElseIfStatement,mnsl_parser_MNSLNode.ElseStatement,mnsl_parser_MNSLNode.BinaryOp,mnsl_parser_MNSLNode.UnaryOp,mnsl_parser_MNSLNode.WhileLoop,mnsl_parser_MNSLNode.ForLoop,mnsl_parser_MNSLNode.Break,mnsl_parser_MNSLNode.Continue,mnsl_parser_MNSLNode.SubExpression,mnsl_parser_MNSLNode.Block,mnsl_parser_MNSLNode.StructAccess,mnsl_parser_MNSLNode.ArrayAccess,mnsl_parser_MNSLNode.TypeCast,mnsl_parser_MNSLNode.TypeWrapper,mnsl_parser_MNSLNode.VectorCreation,mnsl_parser_MNSLNode.VectorConversion,mnsl_parser_MNSLNode.IntegerLiteralNode,mnsl_parser_MNSLNode.FloatLiteralNode,mnsl_parser_MNSLNode.StringLiteralNode];
+mnsl_parser_MNSLNode.__constructs__ = [mnsl_parser_MNSLNode.FunctionDecl,mnsl_parser_MNSLNode.FunctionCall,mnsl_parser_MNSLNode.Return,mnsl_parser_MNSLNode.VariableDecl,mnsl_parser_MNSLNode.VariableAssign,mnsl_parser_MNSLNode.Identifier,mnsl_parser_MNSLNode.IfStatement,mnsl_parser_MNSLNode.ElseIfStatement,mnsl_parser_MNSLNode.ElseStatement,mnsl_parser_MNSLNode.BinaryOp,mnsl_parser_MNSLNode.UnaryOp,mnsl_parser_MNSLNode.WhileLoop,mnsl_parser_MNSLNode.ForLoop,mnsl_parser_MNSLNode.Break,mnsl_parser_MNSLNode.Continue,mnsl_parser_MNSLNode.SubExpression,mnsl_parser_MNSLNode.Block,mnsl_parser_MNSLNode.StructAccess,mnsl_parser_MNSLNode.ArrayAccess,mnsl_parser_MNSLNode.TypeCast,mnsl_parser_MNSLNode.VoidNode,mnsl_parser_MNSLNode.TypeWrapper,mnsl_parser_MNSLNode.VectorCreation,mnsl_parser_MNSLNode.VectorConversion,mnsl_parser_MNSLNode.IntegerLiteralNode,mnsl_parser_MNSLNode.FloatLiteralNode,mnsl_parser_MNSLNode.StringLiteralNode,mnsl_parser_MNSLNode.BooleanLiteralNode];
 var mnsl_parser_MNSLNodeInfo = function(fromLine,fromColumn,toLine,toColumn) {
 	this.fromLine = fromLine;
 	this.fromColumn = fromColumn;
@@ -3736,6 +4063,18 @@ mnsl_parser_MNSLParser.prototype = {
 			this.parseFunctionCall(value,info);
 			return;
 		}
+		if(value == "true") {
+			this.append(mnsl_parser_MNSLNode.BooleanLiteralNode(true,mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)));
+			return;
+		}
+		if(value == "false") {
+			this.append(mnsl_parser_MNSLNode.BooleanLiteralNode(false,mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)));
+			return;
+		}
+		if(this.keywords.indexOf(value) != -1) {
+			this.context.emitError(mnsl_MNSLError.ParserInvalidKeyword(value,info));
+			return;
+		}
 		this.append(mnsl_parser_MNSLNode.Identifier(value,new mnsl_analysis_MNSLType("Unknown"),mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)));
 	}
 	,parseKeyword: function(value,info) {
@@ -3921,13 +4260,26 @@ mnsl_parser_MNSLParser.prototype = {
 		var tmp;
 		if(last != null) {
 			var tmp1;
+			var tmp2;
 			if(last._hx_index == 6) {
 				var _g = last.condition;
 				var _g = last.body;
 				var _g = last.info;
-				tmp1 = true;
+				tmp2 = true;
 			} else {
-				tmp1 = false;
+				tmp2 = false;
+			}
+			if(!tmp2) {
+				if(last._hx_index == 7) {
+					var _g = last.condition;
+					var _g = last.body;
+					var _g = last.info;
+					tmp1 = true;
+				} else {
+					tmp1 = false;
+				}
+			} else {
+				tmp1 = true;
 			}
 			tmp = !tmp1;
 		} else {
@@ -3998,6 +4350,10 @@ mnsl_parser_MNSLParser.prototype = {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(valueBlock[1],info));
 				return;
 			}
+			if(this.keywords.indexOf(name) != -1) {
+				this.context.emitError(mnsl_MNSLError.ParserInvalidKeyword(name,info));
+				return;
+			}
 			this.append(mnsl_parser_MNSLNode.VariableDecl(name,type,value[0],mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(valueBlock[valueBlock.length - 1])])));
 			return;
 		}
@@ -4064,6 +4420,10 @@ mnsl_parser_MNSLParser.prototype = {
 		this.append(mnsl_parser_MNSLNode.VariableAssign(left,mnsl_parser_MNSLNode.BinaryOp(left,oper,right[0],new mnsl_analysis_MNSLType("Unknown"),mnsl_parser_MNSLNodeInfo.fromTokenInfos([this.getTokenInfo(oper),this.getTokenInfo(rightTokens[rightTokens.length - 1])])),mnsl_parser_MNSLNodeInfo.fromTokenInfos([this.getTokenInfo(oper),this.getTokenInfo(rightTokens[rightTokens.length - 1])])));
 	}
 	,parseReturnStmt: function(value,info) {
+		if(this.peekCurrentTokenType(0) == "Semicolon") {
+			this.append(mnsl_parser_MNSLNode.Return(mnsl_parser_MNSLNode.VoidNode(mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)),new mnsl_analysis_MNSLType("Unknown"),mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(this.tokens[this.currentIndex - 1])])));
+			return;
+		}
 		var returnBlock = this.getBlock(mnsl_tokenizer_MNSLToken.None,mnsl_tokenizer_MNSLToken.Semicolon(null),1);
 		var c = new mnsl_parser_MNSLParser(this.context,returnBlock);
 		var ret = c._runInternal();
@@ -4705,18 +5065,9 @@ mnsl_tokenizer_MNSLTokenizer.prototype = {
 				++column;
 				break;
 			case "*":
-				if(this.source.charAt(this.position + 1) == "*") {
-					while(this.position < this.length && !(this.source.charAt(this.position) == "*" && this.source.charAt(this.position + 1) == "/")) {
-						this.position++;
-						++column;
-					}
-					this.position += 2;
-					column += 2;
-				} else {
-					appendToken(mnsl_tokenizer_MNSLToken.Star(new mnsl_tokenizer_MNSLTokenInfo(line,column,initialPosition,1)));
-					this.position++;
-					++column;
-				}
+				appendToken(mnsl_tokenizer_MNSLToken.Star(new mnsl_tokenizer_MNSLTokenInfo(line,column,initialPosition,1)));
+				this.position++;
+				++column;
 				break;
 			case "+":
 				appendToken(mnsl_tokenizer_MNSLToken.Plus(new mnsl_tokenizer_MNSLTokenInfo(line,column,initialPosition,1)));

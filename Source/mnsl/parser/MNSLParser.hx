@@ -651,7 +651,7 @@ class MNSLParser {
      */
     public function parseElseIfStmt(value: String, info: MNSLTokenInfo): Void {
         var last = peekLast();
-        if (last == null || !last.match(IfStatement(_, _, _))) {
+        if (last == null || !(last.match(IfStatement(_, _, _)) || last.match(ElseIfStatement(_, _, _)))) {
             context.emitError(ParserConditionalWithoutIf(info));
             return;
         }

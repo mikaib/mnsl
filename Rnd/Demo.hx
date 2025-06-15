@@ -14,7 +14,8 @@ class Demo {
         else shader = MNSL.fromSource(code, { optimizerPlugins: [] });
 
         var glsl: String = shader.emitGLSL({
-            version: GLSL_VER_300_ES,
+            version: GLSL_VER_300,
+            versionDirective: GLSL_ES
         });
 
         return glsl;
