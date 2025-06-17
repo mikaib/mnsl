@@ -19,6 +19,9 @@ Demo.compile = function(code,optimize) {
 	} else {
 		shader = mnsl_MNSL.fromSource(code,new mnsl_MNSLContextOptions(null,null,[],null,null));
 	}
+	if(shader.hasErrors()) {
+		throw haxe_Exception.thrown(shader.errorToString(shader.getErrors()[0]));
+	}
 	var glsl = shader.emitGLSL(new mnsl_glsl_MNSLGLSLConfig(300,"es",null,null));
 	return glsl;
 };
@@ -607,6 +610,8 @@ mnsl_MNSL.fromFile = function(file,options) {
 var mnsl_MNSLContext = function(source,options) {
 	this._defines = options.defines;
 	this._options = options;
+	this._errors = [];
+	this._warnings = [];
 	if(this._options.rootPath == null) {
 		this._options.rootPath = "./";
 	}
@@ -637,7 +642,6 @@ var mnsl_MNSLContext = function(source,options) {
 	}
 	var optimized = optimizer.run();
 	this._finalAst = optimized;
-	this.printAST(this._finalAst);
 };
 mnsl_MNSLContext.__name__ = true;
 mnsl_MNSLContext.prototype = {
@@ -645,7 +649,7 @@ mnsl_MNSLContext.prototype = {
 		return this._options;
 	}
 	,log: function(message) {
-		console.log("mnsl/MNSLContext.hx:73:",message);
+		console.log("mnsl/MNSLContext.hx:75:",message);
 	}
 	,printAST: function(ast,indent) {
 		if(indent == null) {
@@ -854,7 +858,46 @@ mnsl_MNSLContext.prototype = {
 		return this._finalData;
 	}
 	,emitError: function(error) {
-		throw haxe_Exception.thrown(this.errorToString(error));
+		var _g = 0;
+		var _g1 = this._errors;
+		while(_g < _g1.length) {
+			var e = _g1[_g];
+			++_g;
+			if(Std.string(e) == Std.string(error)) {
+				return;
+			}
+		}
+		this._errors.push(error);
+	}
+	,emitWarning: function(warning) {
+		var _g = 0;
+		var _g1 = this._warnings;
+		while(_g < _g1.length) {
+			var w = _g1[_g];
+			++_g;
+			if(Std.string(w) == Std.string(warning)) {
+				return;
+			}
+		}
+		this._warnings.push(warning);
+	}
+	,getErrors: function() {
+		return this._errors;
+	}
+	,getWarnings: function() {
+		return this._warnings;
+	}
+	,hasErrors: function() {
+		return this._errors.length > 0;
+	}
+	,hasWarnings: function() {
+		return this._warnings.length > 0;
+	}
+	,warningToString: function(warning) {
+		var node = warning.node;
+		var from = warning.from;
+		var to = warning.to;
+		return "ImplicitVectorTrunaction: Vec" + from + " to Vec" + to + " at " + Std.string(node);
 	}
 	,errorToString: function(error) {
 		switch(error._hx_index) {
@@ -982,7 +1025,7 @@ var mnsl_MNSLContextOptions = function(defines,rootPath,optimizerPlugins,preproc
 		return null;
 	};
 	this.preprocessorDefines = [];
-	this.optimizerPlugins = [new mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign()];
+	this.optimizerPlugins = [new mnsl_optimiser_impl_MNSLOptimiseScalarVectorInit(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign(),new mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess()];
 	this.rootPath = null;
 	this.defines = new haxe_ds_StringMap();
 	if(defines != null) {
@@ -1130,6 +1173,10 @@ mnsl_MNSLPrinter.prototype = {
 	}
 	,__class__: mnsl_MNSLPrinter
 };
+var mnsl_MNSLWarning = $hxEnums["mnsl.MNSLWarning"] = { __ename__:true,__constructs__:null
+	,ImplicitVectorTruncation: ($_=function(node,from,to) { return {_hx_index:0,node:node,from:from,to:to,__enum__:"mnsl.MNSLWarning",toString:$estr}; },$_._hx_name="ImplicitVectorTruncation",$_.__params__ = ["node","from","to"],$_)
+};
+mnsl_MNSLWarning.__constructs__ = [mnsl_MNSLWarning.ImplicitVectorTruncation];
 var mnsl_analysis_MNSLAnalyser = function(context,ast) {
 	var _g = new haxe_ds_StringMap();
 	_g.h["x"] = { comp : 0, char : "x"};
@@ -1143,14 +1190,14 @@ var mnsl_analysis_MNSLAnalyser = function(context,ast) {
 	this._vectorAccess = _g;
 	this._deferPostType = [];
 	this._types = ["Void","Int","Float","Bool","Vec2","Vec3","Vec4","Mat2","Mat3","Mat4","Sampler","CTValue"];
-	this._cpyStck = ["FunctionDecl","WhileLoop","ForLoop"];
+	this._cpyStck = ["FunctionDecl","WhileLoop","ForLoop","IfStatement","ElseIfStatement","ElseStatement"];
 	this._context = context;
 	this._ast = ast;
 	this._globalCtx = new mnsl_analysis_MNSLAnalyserContext();
 	this._inputs = new mnsl_analysis_MNSLAnalyserVariable("input",new mnsl_analysis_MNSLType("CTValue"),true,[]);
 	this._outputs = new mnsl_analysis_MNSLAnalyserVariable("output",new mnsl_analysis_MNSLType("CTValue"),true,[new mnsl_analysis_MNSLAnalyserVariable("Position",new mnsl_analysis_MNSLType("Vec4"),null,null)]);
 	this._uniforms = new mnsl_analysis_MNSLAnalyserVariable("uniform",new mnsl_analysis_MNSLType("CTValue"),true,[]);
-	this._functions = [new mnsl_analysis_MNSLAnalyserFunction("texture",[new mnsl_analysis_MNSLFuncArg("sampler",new mnsl_analysis_MNSLType("Sampler")),new mnsl_analysis_MNSLFuncArg("texCoord",new mnsl_analysis_MNSLType("Vec2"))],new mnsl_analysis_MNSLType("Vec4"),null,"__mnsl_texture"),new mnsl_analysis_MNSLAnalyserFunction("sin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_sin"),new mnsl_analysis_MNSLAnalyserFunction("cos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_cos"),new mnsl_analysis_MNSLAnalyserFunction("tan",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_tan"),new mnsl_analysis_MNSLAnalyserFunction("normalize",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_normalize"),new mnsl_analysis_MNSLAnalyserFunction("dot",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_dot"),new mnsl_analysis_MNSLAnalyserFunction("cross",[new mnsl_analysis_MNSLFuncArg("x",new mnsl_analysis_MNSLType("Vec3")),new mnsl_analysis_MNSLFuncArg("y",new mnsl_analysis_MNSLType("Vec3"))],new mnsl_analysis_MNSLType("Vec3"),null,"__mnsl_cross"),new mnsl_analysis_MNSLAnalyserFunction("length",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_length"),new mnsl_analysis_MNSLAnalyserFunction("reflect",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_reflect"),new mnsl_analysis_MNSLAnalyserFunction("refract",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("eta",new mnsl_analysis_MNSLType("Float"))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_refract"),new mnsl_analysis_MNSLAnalyserFunction("pow",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]),null,"__mnsl_pow"),new mnsl_analysis_MNSLAnalyserFunction("exp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_exp"),new mnsl_analysis_MNSLAnalyserFunction("log",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_log"),new mnsl_analysis_MNSLAnalyserFunction("sqrt",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_sqrt"),new mnsl_analysis_MNSLAnalyserFunction("abs",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_abs"),new mnsl_analysis_MNSLAnalyserFunction("clamp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("minVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("maxVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_clamp"),new mnsl_analysis_MNSLAnalyserFunction("mix",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("a",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mix"),new mnsl_analysis_MNSLAnalyserFunction("step",[new mnsl_analysis_MNSLFuncArg("edge",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_step"),new mnsl_analysis_MNSLAnalyserFunction("smoothstep",[new mnsl_analysis_MNSLFuncArg("edge0",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("edge1",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_smoothstep"),new mnsl_analysis_MNSLAnalyserFunction("max",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_max"),new mnsl_analysis_MNSLAnalyserFunction("min",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_min"),new mnsl_analysis_MNSLAnalyserFunction("atan",[new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_atan"),new mnsl_analysis_MNSLAnalyserFunction("acos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_acos"),new mnsl_analysis_MNSLAnalyserFunction("asin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_asin"),new mnsl_analysis_MNSLAnalyserFunction("mod",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Int"),new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mod"),new mnsl_analysis_MNSLAnalyserFunction("fract",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_fract"),new mnsl_analysis_MNSLAnalyserFunction("floor",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_floor")];
+	this._functions = [new mnsl_analysis_MNSLAnalyserFunction("texture",[new mnsl_analysis_MNSLFuncArg("sampler",new mnsl_analysis_MNSLType("Sampler")),new mnsl_analysis_MNSLFuncArg("texCoord",new mnsl_analysis_MNSLType("Vec2"))],new mnsl_analysis_MNSLType("Vec4"),null,"__mnsl_texture"),new mnsl_analysis_MNSLAnalyserFunction("sin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_sin"),new mnsl_analysis_MNSLAnalyserFunction("cos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_cos"),new mnsl_analysis_MNSLAnalyserFunction("tan",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Mat2"),new mnsl_analysis_MNSLType("Mat3"),new mnsl_analysis_MNSLType("Mat4")]),null,"__mnsl_tan"),new mnsl_analysis_MNSLAnalyserFunction("normalize",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_normalize"),new mnsl_analysis_MNSLAnalyserFunction("dot",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_dot"),new mnsl_analysis_MNSLAnalyserFunction("cross",[new mnsl_analysis_MNSLFuncArg("x",new mnsl_analysis_MNSLType("Vec3")),new mnsl_analysis_MNSLFuncArg("y",new mnsl_analysis_MNSLType("Vec3"))],new mnsl_analysis_MNSLType("Vec3"),null,"__mnsl_cross"),new mnsl_analysis_MNSLAnalyserFunction("length",[new mnsl_analysis_MNSLFuncArg("v",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],new mnsl_analysis_MNSLType("Float"),null,"__mnsl_length"),new mnsl_analysis_MNSLAnalyserFunction("reflect",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_reflect"),new mnsl_analysis_MNSLAnalyserFunction("refract",[new mnsl_analysis_MNSLFuncArg("I",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("N",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("eta",new mnsl_analysis_MNSLType("Float"))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_refract"),new mnsl_analysis_MNSLAnalyserFunction("pow",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4"),new mnsl_analysis_MNSLType("Float")]),null,"__mnsl_pow"),new mnsl_analysis_MNSLAnalyserFunction("exp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_exp"),new mnsl_analysis_MNSLAnalyserFunction("log",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_log"),new mnsl_analysis_MNSLAnalyserFunction("sqrt",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_sqrt"),new mnsl_analysis_MNSLAnalyserFunction("abs",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_abs"),new mnsl_analysis_MNSLAnalyserFunction("clamp",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("minVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("maxVal",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_clamp"),new mnsl_analysis_MNSLAnalyserFunction("mix",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("a",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mix"),new mnsl_analysis_MNSLAnalyserFunction("step",[new mnsl_analysis_MNSLFuncArg("edge",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_step"),new mnsl_analysis_MNSLAnalyserFunction("smoothstep",[new mnsl_analysis_MNSLFuncArg("edge0",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("edge1",mnsl_analysis_MNSLType.Template("E",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("X",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_smoothstep"),new mnsl_analysis_MNSLAnalyserFunction("max",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_max"),new mnsl_analysis_MNSLAnalyserFunction("min",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_min"),new mnsl_analysis_MNSLAnalyserFunction("atan",[new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_atan"),new mnsl_analysis_MNSLAnalyserFunction("acos",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_acos"),new mnsl_analysis_MNSLAnalyserFunction("asin",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_asin"),new mnsl_analysis_MNSLAnalyserFunction("mod",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")])),new mnsl_analysis_MNSLFuncArg("y",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_mod"),new mnsl_analysis_MNSLAnalyserFunction("fract",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_fract"),new mnsl_analysis_MNSLAnalyserFunction("floor",[new mnsl_analysis_MNSLFuncArg("x",mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]))],mnsl_analysis_MNSLType.Template("T",[new mnsl_analysis_MNSLType("Float"),new mnsl_analysis_MNSLType("Vec2"),new mnsl_analysis_MNSLType("Vec3"),new mnsl_analysis_MNSLType("Vec4")]),null,"__mnsl_floor")];
 	var _g = new haxe_ds_EnumValueMap();
 	_g.set(mnsl_parser_MNSLShaderDataKind.Input,this._inputs);
 	_g.set(mnsl_parser_MNSLShaderDataKind.Output,this._outputs);
@@ -2278,6 +2325,7 @@ mnsl_analysis_MNSLAnalyserContext.prototype = {
 		x.functions = this.functions.slice();
 		x.variables = this.variables.slice();
 		x.currentFunction = this.currentFunction;
+		x.currentIsLoop = this.currentIsLoop;
 		return x;
 	}
 	,findFunction: function(name,args,hasImpl) {
@@ -2572,6 +2620,9 @@ mnsl_analysis_MNSLSolver.prototype = {
 			}
 			if(componentsOfType > componentsOfMustBe && c._isBinaryOp) {
 				return true;
+			}
+			if(componentsOfMustBe < componentsOfType) {
+				this._context.emitWarning(mnsl_MNSLWarning.ImplicitVectorTruncation(c.ofNode,componentsOfType,componentsOfMustBe));
 			}
 			this.addReplacement(new mnsl_analysis_MNSLReplaceCmd(c.ofNode,mnsl_parser_MNSLNode.VectorConversion(c.ofNode,componentsOfType,componentsOfMustBe)));
 			return true;
@@ -3609,6 +3660,9 @@ mnsl_optimiser_impl_MNSLOptimiseSwizzleAccess.prototype = $extend(mnsl_optimiser
 		var firstOn = Type.enumParameters(firstNode)[0];
 		var firstType = Type.enumParameters(firstNode)[2];
 		var firstInfo = Type.enumParameters(firstNode)[3];
+		if(values.length < 2) {
+			return node;
+		}
 		var fields = [];
 		if(!this.allMatchFunction(values,function(node) {
 			var params = Type.enumParameters(node);
@@ -3638,13 +3692,79 @@ mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.__name__ = true;
 mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.__super__ = mnsl_optimiser_MNSLOptimiserPlugin;
 mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign.prototype = $extend(mnsl_optimiser_MNSLOptimiserPlugin.prototype,{
 	onRun: function(node,params,optimizer) {
+		var onArr = [];
+		var vOnArr = [];
+		var fieldLeftArr = [];
+		var fieldRightArr = [];
+		var optimInfo = null;
 		if(!this.allMatchFunction(params[0],function(node) {
-			return $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name == "VariableAssign";
+			if(node._hx_index == 4) {
+				var _g = node.name;
+				if(_g._hx_index == 17) {
+					var on = _g.on;
+					var field = _g.field;
+					var type = _g.type;
+					var stuctInfo = _g.info;
+					var value = node.value;
+					var info = node.info;
+					if(optimInfo == null) {
+						optimInfo = info;
+					}
+					onArr.push(on);
+					fieldLeftArr.push(field);
+					if(field != "x" && field != "y" && field != "z" && field != "w") {
+						return false;
+					}
+					var _this = mnsl_analysis_MNSLAnalyser.getType(on);
+					if(!(_this._type == "Vec" + 2 || _this._type == "Vec" + 3 || _this._type == "Vec" + 4)) {
+						return false;
+					}
+					if(value._hx_index == 17) {
+						var vOn = value.on;
+						var vField = value.field;
+						var vType = value.type;
+						var vInfo = value.info;
+						if(vField != "x" && vField != "y" && vField != "z" && vField != "w") {
+							return false;
+						}
+						var _this = mnsl_analysis_MNSLAnalyser.getType(vOn);
+						if(!(_this._type == "Vec" + 2 || _this._type == "Vec" + 3 || _this._type == "Vec" + 4)) {
+							return false;
+						}
+						vOnArr.push(vOn);
+						fieldRightArr.push(vField);
+					} else {
+						return false;
+					}
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
 		})) {
 			return node;
 		}
-		console.log("mnsl/optimiser/impl/MNSLOptimiseSwizzleAssign.hx:29:","can optim");
-		return node;
+		if(onArr.length == 0) {
+			return node;
+		}
+		var firstOn = onArr[0];
+		if(!this.allMatchFunction(onArr,function(node) {
+			return Std.string(firstOn) == Std.string(node);
+		})) {
+			return node;
+		}
+		if(vOnArr.length == 0) {
+			return node;
+		}
+		var firstVOn = vOnArr[0];
+		if(!this.allMatchFunction(vOnArr,function(node) {
+			return Std.string(firstVOn) == Std.string(node);
+		})) {
+			return node;
+		}
+		return mnsl_parser_MNSLNode.VariableAssign(mnsl_parser_MNSLNode.StructAccess(firstOn,fieldLeftArr.join(""),mnsl_analysis_MNSLAnalyser.getType(firstOn),null),firstVOn,optimInfo);
 	}
 	,__class__: mnsl_optimiser_impl_MNSLOptimiseSwizzleAssign
 });

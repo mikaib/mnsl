@@ -13,6 +13,12 @@ class Demo {
         if (optimize) shader = MNSL.fromSource(code, {});
         else shader = MNSL.fromSource(code, { optimizerPlugins: [] });
 
+        if (shader.hasErrors()) {
+            throw shader.errorToString(
+                shader.getErrors()[0]
+            );
+        }
+
         var glsl: String = shader.emitGLSL({
             version: GLSL_VER_300,
             versionDirective: GLSL_ES

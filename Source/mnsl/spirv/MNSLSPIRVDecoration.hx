@@ -1,0 +1,48 @@
+package mnsl.spirv;
+
+enum abstract MNSLSPIRVDecoration(Int) to Int {
+    var RelaxedPrecision = 0;
+    var SpecId = 1;
+    var Block = 2;
+    var BufferBlock = 3;
+    var RowMajor = 4;
+    var ColMajor = 5;
+    var ArrayStride = 6;
+    var MatrixStride = 7;
+    var GLSLShared = 8;
+    var GLSLPacked = 9;
+    var CPacked = 10;
+    var BuiltIn = 11;
+    var NoPerspective = 13;
+    var Flat = 14;
+    var Patch = 15;
+    var Centroid = 16;
+    var Sample = 17;
+    var Invariant = 18;
+    var Restrict = 19;
+    var Aliased = 20;
+    var Volatile = 21;
+    var Constant = 22;
+    var Coherent = 23;
+    var NonWritable = 24;
+    var NonReadable = 25;
+    var Uniform = 26;
+    var UniformId = 27;
+    var SaturatedConversion = 28;
+    var Stream = 29;
+    var Location = 30;
+    var Component = 31;
+    var Index = 32;
+    var Binding = 33;
+    var DescriptorSet = 34;
+    var Offset = 35;
+    var XfbBuffer = 36;
+    var XfbStride = 37;
+    var FuncParamAttr = 38;
+    var FPRoundingMode = 39;
+    var FPFastMathMode = 40;
+    var LinkageAttributes = 41;
+    var NoContraction = 42;
+    var InputAttachmentIndex = 43;
+    var Alignment = 44;
+}

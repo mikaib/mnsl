@@ -1,0 +1,68 @@
+; SPIR-V
+; Version: 1.0
+; Generator: Khronos; 0
+; Bound: 32
+; Schema: 0
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+       %void = OpTypeVoid
+       %bool = OpTypeBool
+        %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v3float = OpTypeVector %float 3
+    %v4float = OpTypeVector %float 4
+%mat2v2float = OpTypeMatrix %v2float 2
+%mat3v3float = OpTypeMatrix %v3float 3
+%mat4v4float = OpTypeMatrix %v4float 4
+         %11 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %12 = OpTypeSampledImage %11
+         %13 = OpTypeImage %float Cube 0 0 0 1 Unknown
+         %14 = OpTypeSampledImage %13
+    %float_1 = OpConstant %float 1
+    %float_2 = OpConstant %float 2
+    %float_3 = OpConstant %float 3
+         %18 = OpTypeFunction %float %float
+         %19 = OpFunction %float None %18
+         %20 = OpFunctionParameter %float
+         %21 = OpLabel
+         %22 = OpFNegate %float %float_1
+         %23 = OpFAdd %float %22 %float_2
+         %24 = OpFNegate %float %float_3
+         %25 = OpFMul %float %23 %24
+               OpReturnValue %25
+               OpFunctionEnd
+         %26 = OpTypeFunction %float %float %v2float
+         %27 = OpFunction %float None %26
+         %28 = OpFunctionParameter %float
+         %29 = OpFunctionParameter %v2float
+         %30 = OpLabel
+         %31 = OpFunctionCall %float %19 %float_3
+               OpReturnValue %31
+               OpFunctionEnd
+               OpEntryPoint Vertex %27 "main"
+               OpName %28 "Parameter(x: TFloat)"
+               OpName %v4float "Type(TVec4)"
+               OpName %29 "Parameter(y: TVec2)"
+               OpName %22 "UnaryOp(Minus(2:12 ))"
+               OpName %float_1 "Constant(1: TFloat)"
+               OpName %mat2v2float "Type(TMat2)"
+               OpName %void "Type(TVoid)"
+               OpName %23 "BinaryOp(Plus(2:17 ))"
+               OpName %float_2 "Constant(2: TFloat)"
+               OpName %mat3v3float "Type(TMat3)"
+               OpName %bool "Type(TBool)"
+               OpName %31 "Call(test)"
+               OpName %24 "UnaryOp(Minus(2:26 ))"
+               OpName %float_3 "Constant(3: TFloat)"
+               OpName %mat4v4float "Type(TMat4)"
+               OpName %int "Type(TInt)"
+               OpName %25 "BinaryOp(Star(2:24 ))"
+               OpName %11 "Image(Sampler)"
+               OpName %float "Type(TFloat)"
+               OpName %19 "Function(test)"
+               OpName %v2float "Type(TVec2)"
+               OpName %27 "Function(main)"
+               OpName %20 "Parameter(x: TFloat)"
+               OpName %13 "Image(CubeSampler)"
+               OpName %v3float "Type(TVec3)"

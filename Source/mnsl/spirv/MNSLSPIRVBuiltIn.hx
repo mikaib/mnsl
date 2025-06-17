@@ -1,0 +1,47 @@
+package mnsl.spirv;
+
+enum abstract MNSLSPIRVBuiltIn(Int) to Int {
+    var Position = 0;
+    var PointSize = 1;
+    var ClipDistance = 3;
+    var CullDistance = 4;
+    var VertexId = 5;
+    var InstanceId = 6;
+    var PrimitiveId = 7;
+    var InvocationId = 8;
+    var Layer = 9;
+    var ViewportIndex = 10;
+    var TessLevelOuter = 11;
+    var TessLevelInner = 12;
+    var TessCoord = 13;
+    var PatchVertices = 14;
+    var FragCoord = 15;
+    var PointCoord = 16;
+    var FrontFacing = 17;
+    var SampleId = 18;
+    var SamplePosition = 19;
+    var SampleMask = 20;
+    var FragDepth = 22;
+    var HelperInvocation = 23;
+    var NumWorkgroups = 24;
+    var WorkgroupSize = 25;
+    var WorkgroupId = 26;
+    var LocalInvocationId = 27;
+    var GlobalInvocationId = 28;
+    var LocalInvocationIndex = 29;
+    var WorkDim = 30;
+    var GlobalSize = 31;
+    var EnqueuedWorkgroupSize = 32;
+    var GlobalOffset = 33;
+    var GlobalLinearId = 34;
+    var SubgroupSize = 36;
+    var SubgroupMaxSize = 37;
+    var NumSubgroups = 38;
+    var NumEnqueuedSubgroups = 39;
+    var SubgroupId = 40;
+    var SubgroupLocalInvocationId = 41;
+    var VertexIndex = 42;
+    var InstanceIndex = 43;
+    var BaseVertex = 4424;
+    var BaseInstance = 4425;
+}

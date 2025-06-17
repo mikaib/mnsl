@@ -17,7 +17,7 @@ class MNSLAnalyser {
     private var _functions: Array<MNSLAnalyserFunction>;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
-    private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop"];
+    private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop", "IfStatement", "ElseIfStatement", "ElseStatement"];
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
         "Vec2", "Vec3", "Vec4", "Mat2", "Mat3", "Mat4",
@@ -81,25 +81,25 @@ class MNSLAnalyser {
                name: "sin",
                remap: "__mnsl_sin",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "cos",
                remap: "__mnsl_cos",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "tan",
                remap: "__mnsl_tan",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "normalize",
@@ -191,19 +191,19 @@ class MNSLAnalyser {
                name: "abs",
                remap: "__mnsl_abs",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "clamp",
                remap: "__mnsl_clamp",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "minVal", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "maxVal", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "minVal", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "maxVal", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "mix",
@@ -238,19 +238,19 @@ class MNSLAnalyser {
                name: "max",
                remap: "__mnsl_max",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "min",
                remap: "__mnsl_min",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                 name: "atan",
@@ -281,10 +281,10 @@ class MNSLAnalyser {
                 name: "mod",
                 remap: "__mnsl_mod",
                 args: [
-                    { name: "x", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                    { name: "y", type: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                    { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TInt, MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "fract",
@@ -757,6 +757,8 @@ class MNSLAnalyser {
             }, info));
             return node;
         }
+
+        node = FunctionCall(name, args, f.returnType, info);
 
         var templates: Map<String, MNSLType> = [];
         for (i in 0...args.length) {

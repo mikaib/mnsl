@@ -35,6 +35,9 @@ class MNSLOptimiseSwizzleAccess extends MNSLOptimiserPlugin {
         var firstType = EnumValueTools.getParameters(firstNode)[2];
         var firstInfo = EnumValueTools.getParameters(firstNode)[3];
 
+        // must be more than one value
+        if (values.length < 2) return node;
+
         // check if all values have the same struct "on" node.
         var fields: Array<String> = [];
         if (!allMatchFunction(values, function(node: MNSLNode) {

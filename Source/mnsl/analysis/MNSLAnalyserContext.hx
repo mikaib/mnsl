@@ -19,6 +19,7 @@ class MNSLAnalyserContext {
         x.functions = functions.copy();
         x.variables = variables.copy();
         x.currentFunction = currentFunction;
+        x.currentIsLoop = currentIsLoop;
 
         return x;
     }

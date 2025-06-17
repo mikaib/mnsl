@@ -10,6 +10,9 @@ import mnsl.glsl.MNSLGLSLPrinter;
 import mnsl.analysis.MNSLAnalyser;
 import haxe.EnumTools.EnumValueTools;
 import mnsl.optimiser.MNSLOptimiser;
+import haxe.io.Bytes;
+import mnsl.spirv.MNSLSPIRVPrinter;
+import mnsl.spirv.MNSLSPIRVConfig;
 
 class MNSLContext {
 
@@ -17,6 +20,8 @@ class MNSLContext {
     private var _finalData: Array<MNSLShaderData>;
     private var _defines: Map<String, Array<MNSLToken>>;
     private var _options: MNSLContextOptions;
+    private var _errors: Array<MNSLError>;
+    private var _warnings: Array<MNSLWarning>;
 
     /**
      * Creates a new MNSLContext instance.
@@ -25,6 +30,8 @@ class MNSLContext {
     public function new(source: String, options: MNSLContextOptions) {
         _defines = options.defines;
         _options = options;
+        _errors = [];
+        _warnings = [];
 
         if (_options.rootPath == null) {
             _options.rootPath = "./";
@@ -54,8 +61,6 @@ class MNSLContext {
 
         var optimized = optimizer.run();
         _finalAst = optimized;
-
-        printAST(_finalAst);
     }
 
     /**
@@ -206,13 +211,24 @@ class MNSLContext {
 
     /**
      * Emit GLSL source code.
-     * @param source The GLSL source code to be emitted.
+     * @param config The configuration for the GLSL emitter.
      */
     public function emitGLSL(config: MNSLGLSLConfig): String {
         var p = new MNSLGLSLPrinter(this, config);
         p.run();
 
         return p.getOutput();
+    }
+
+    /**
+     * Emit SPIRV binary.
+     * @param config The configuration for the SPIRV emitter.
+     */
+    public function emitSPIRV(config: MNSLSPIRVConfig): Bytes {
+        var p = new MNSLSPIRVPrinter(this, config);
+        p.run();
+
+        return p.getBytes();
     }
 
     /**
@@ -236,7 +252,70 @@ class MNSLContext {
      * @param error The error to be emitted.
      */
     public function emitError(error: MNSLError): Void {
-        throw errorToString(error);
+        for (e in _errors) {
+            if (Std.string(e) == Std.string(error)) {
+                return;
+            }
+        }
+
+        _errors.push(error);
+    }
+
+    /**
+     * Emits a warning in the context of the MNSLContext.
+     * @param warning The warning to be emitted.
+     */
+    public function emitWarning(warning: MNSLWarning): Void {
+        for (w in _warnings) {
+            if (Std.string(w) == Std.string(warning)) {
+                return;
+            }
+        }
+
+        _warnings.push(warning);
+    }
+
+    /**
+     * Get the errors emitted in the context of the MNSLContext.
+     * @return The errors emitted.
+     */
+    public function getErrors(): Array<MNSLError> {
+        return _errors;
+    }
+
+    /**
+     * Get the warnings emitted in the context of the MNSLContext.
+     * @return The warnings emitted.
+     */
+    public function getWarnings(): Array<MNSLWarning> {
+        return _warnings;
+    }
+
+    /**
+     * Check if any errors were emitted in the context of the MNSLContext.
+     * @return True if there are errors, false otherwise.
+     */
+    public function hasErrors(): Bool {
+        return _errors.length > 0;
+    }
+
+    /**
+     * Check if any warnings were emitted in the context of the MNSLContext.
+     * @return True if there are warnings, false otherwise.
+     */
+    public function hasWarnings(): Bool {
+        return _warnings.length > 0;
+    }
+
+    /**
+     * Convert a warning to a human-readable string.
+     * @param warning The warning to be converted.
+     */
+    public function warningToString(warning: MNSLWarning): String {
+        switch (warning) {
+            case ImplicitVectorTruncation(node, from, to):
+                return "ImplicitVectorTrunation: Vec" + from + " to Vec" + to + " at " + node;
+        }
     }
 
     /**

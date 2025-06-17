@@ -2,8 +2,8 @@ package mnsl.analysis;
 
 import mnsl.parser.MNSLNode;
 import mnsl.tokenizer.MNSLToken;
+import mnsl.MNSLWarning;
 import haxe.EnumTools.EnumValueTools;
-import mnsl.parser.MNSLNodeChildren;
 
 class MNSLSolver {
 
@@ -133,6 +133,10 @@ class MNSLSolver {
             // this will ensure that in the case we *can* cast, we will prefer casting up instead of down (regarding component count)
             if (componentsOfType > componentsOfMustBe && c._isBinaryOp) {
                 return true;
+            }
+
+            if (componentsOfMustBe < componentsOfType) {
+                _context.emitWarning(ImplicitVectorTruncation(c.ofNode, componentsOfType, componentsOfMustBe));
             }
 
             addReplacement({
