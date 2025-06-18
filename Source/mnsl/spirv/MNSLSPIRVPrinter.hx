@@ -10,14 +10,16 @@ import mnsl.parser.MNSLNodeInfo;
 import haxe.io.FPHelper;
 import haxe.EnumTools.EnumValueTools;
 import mnsl.tokenizer.MNSLToken;
+import mnsl.analysis.MNSLAnalyser;
 
 class MNSLSPIRVPrinter extends MNSLPrinter {
 
     private var _bin: BytesOutput;
     private var _config: MNSLSPIRVConfig;
     private var _types: Map<MNSLType, Int>;
-    private var _variables: Map<String, Int>;
     private var _functions: Map<String, Int>;
+    private var _functionTypes: Map<String, Int>;
+    private var _ptrTypes: Map<String, Int>;
     private var _constants: Map<String, { id: Int, op: MNSLSPIRVOpCode, oper: Array<Int> }>;
     private var _entry: Int;
 
@@ -32,11 +34,13 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         this._bin = new BytesOutput();
 
         this._types = [];
-        this._variables = [];
+
         this._functions = [];
         this._constants = [];
         this._instructions = [];
         this._debugLabels = [];
+        this._functionTypes = [];
+        this._ptrTypes = [];
 
         this._idCount = 1;
     }
@@ -139,22 +143,86 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         throw "Unhandled constant type: " + type + " with value: " + v;
     }
 
+    public function getPtr(id: Int, storageClass: MNSLSPIRVStorageClass): Int {
+        var key = '${id}:${storageClass}';
+        if (_ptrTypes.exists(key)) {
+            return _ptrTypes.get(key);
+        }
+
+        var typeId = assignId();
+
+        emitInstruction(MNSLSPIRVOpCode.OpTypePointer, [typeId, storageClass, id]);
+        _ptrTypes.set(key, typeId);
+
+        return typeId;
+    }
+
+    public function getFunctionType(ret: MNSLType, params: Array<MNSLType>): Int {
+        var key = ret.toString() + ":" + params.map(t -> t.toString()).join(",");
+        if (_functionTypes.exists(key)) {
+            return _functionTypes.get(key);
+        }
+
+        var paramTypes = [for (p in params) getType(p)];
+        var retTypeId = getType(ret);
+        var typeId = assignId();
+
+        emitInstruction(MNSLSPIRVOpCode.OpTypeFunction, [typeId, retTypeId].concat(paramTypes));
+        _functionTypes.set(key, typeId);
+
+        return typeId;
+    }
+
+    public function getVarBase(on: MNSLNode): String {
+        switch (on) {
+            case Identifier(name, type, info):
+                return name;
+            case StructAccess(on, field, type, info):
+                return getVarBase(on);
+            case ArrayAccess(on, index, info):
+                return getVarBase(on);
+            default:
+                throw "Invalid node for variable base: " + on;
+        }
+    }
+
     public function assignId(): Int {
         return _idCount++;
     }
 
-    public function emitInstruction(op: MNSLSPIRVOpCode, operands: Array<Int>): Void {
+    public function emitInstruction(op: MNSLSPIRVOpCode, operands: Array<Int>): Int {
         _instructions.push(
             [((operands.length + 1) << 16) | op]
             .concat(operands)
         );
+
+        return _instructions.length - 1;
+    }
+
+    public function insertInstruction(index: Int, op: MNSLSPIRVOpCode, operands: Array<Int>): Int {
+        if (index < 0 || index > _instructions.length) {
+            throw "Index out of bounds for instruction insertion: " + index;
+        }
+
+        var instruction = [((operands.length + 1) << 16) | op].concat(operands);
+        _instructions.insert(index, instruction);
+
+        return index;
+    }
+
+    public function editInstruction(index: Int, op: MNSLSPIRVOpCode, operands: Array<Int>): Void {
+        if (index < 0 || index >= _instructions.length) {
+            throw "Index out of bounds for instruction edit: " + index;
+        }
+
+        _instructions[index] = [((operands.length + 1) << 16) | op].concat(operands);
     }
 
     public function emitDebugLabel(id: Int, name: String): Void {
         _debugLabels.set(id, name);
     }
 
-    public function emitConstants(ast: MNSLNodeChildren): Void {
+    public function preEmit(ast: MNSLNodeChildren, scope: Null<MNSLSPIRVScope> = null): Void {
         for (node in ast) {
             switch (node) {
                 case FloatLiteralNode(value, info):
@@ -163,42 +231,73 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     getConst(Std.parseInt(value), MNSLType.TInt);
                 case BooleanLiteralNode(value, info):
                     getConst(value, MNSLType.TBool);
+                case FunctionDecl(name, returnType, arguments, body, info):
+                    getFunctionType(returnType, [for (arg in arguments) arg.type]);
+                case VariableDecl(name, type, value, info):
+                    getPtr(getType(type), MNSLSPIRVStorageClass.Function);
+                    if (scope != null) {
+                        var varId = assignId();
+                        var ptrId = getPtr(getType(type), MNSLSPIRVStorageClass.Function);
+                        emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
+                        emitDebugLabel(varId, name);
+                        scope.setVariable(name, varId);
+                    }
+                case VariableAssign(name, value, info):
+                    if (scope != null &&
+                        scope.variables.exists(getVarBase(name)) &&
+                        scope.variables.get(getVarBase(name)).isParam &&
+                        !scope.variables.exists("__mnsl_param_" + getVarBase(name))
+                    ) {
+
+                        // this is a parameter assignment, we need to create a temporary variable
+                        var varId = assignId();
+                        var ptrId = getPtr(getType(MNSLAnalyser.getType(value)), MNSLSPIRVStorageClass.Function);
+                        emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
+                        emitDebugLabel(varId, "__mnsl_param_" + getVarBase(name));
+                        scope.setVariable("__mnsl_param_" + getVarBase(name), varId);
+                    }
                 default:
             }
 
             var params = EnumValueTools.getParameters(node);
             for (p in params) {
                 if (p is MNSLNodeChildren && p[0] != null && p[0] is MNSLNode) {
-                    emitConstants(p);
+                    preEmit(p, scope);
                 } else if (p is MNSLNode) {
-                    emitConstants([p]);
+                    preEmit([p], scope);
                 }
             }
         }
     }
 
-    public function emitBody(body: MNSLNodeChildren): Void {
+    public function emitBody(body: MNSLNodeChildren, scope: MNSLSPIRVScope): Void {
         for (node in body) {
-            emitNode(node);
+            emitNode(node, scope);
         }
     }
 
-    public function emitNode(node: MNSLNode): Int {
+    public function emitNode(node: MNSLNode, scope: MNSLSPIRVScope): Int {
         switch (node) {
+            case VariableDecl(name, type, value, info):
+                return emitVariableDecl(name, type, value, info, scope);
+            case VariableAssign(name, value, info):
+                return emitVariableAssign(name, value, info, scope);
+            case Identifier(name, type, info):
+                return emitIdentifier(name, type, info, scope);
             case FunctionDecl(name, returnType, arguments, body, info):
-                return emitFunctionDecl(name, returnType, arguments, body, info);
+                return emitFunctionDecl(name, returnType, arguments, body, info, scope);
             case FunctionCall(name, args, returnType, info):
-                return emitFunctionCall(name, args, returnType, info);
+                return emitFunctionCall(name, args, returnType, info, scope);
             case BinaryOp(left, op, right, type, info):
-                return emitBinaryOp(left, op, right, type, info);
+                return emitBinaryOp(left, op, right, type, info, scope);
             case UnaryOp(op, right, info):
-                return emitUnaryOp(op, right, info);
+                return emitUnaryOp(op, right, info, scope);
             case Return(value, type, info):
-                return emitReturn(value, type, info);
+                return emitReturn(value, type, info, scope);
             case VectorCreation(comp, nodes, info):
-                return emitVectorCreation(comp, nodes, info);
+                return emitVectorCreation(comp, nodes, info, scope);
             case VectorConversion(on, from, to):
-                return emitVectorConversion(on, from, to);
+                return emitVectorConversion(on, from, to, scope);
             case FloatLiteralNode(value, info):
                 return getConst(Std.parseFloat(value), MNSLType.TFloat);
             case IntegerLiteralNode(value, info):
@@ -206,11 +305,11 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             case BooleanLiteralNode(value, info):
                 return getConst(value, MNSLType.TBool);
             case TypeCast(on, from, to):
-                return emitTypeCast(on, from, to);
+                return emitTypeCast(on, from, to, scope);
             case SubExpression(node, info):
-                return emitNode(node);
+                return emitNode(node, scope);
             case Block(body, info):
-                emitBody(body);
+                emitBody(body, scope);
                 return 0;
             default:
                 trace("Unhandled node", node);
@@ -218,8 +317,69 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function emitVectorConversion(on: MNSLNode, fromComp: Int, toComp: Int): Int {
-        var onId = emitNode(on);
+    public function emitIdentifier(name: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        if (!scope.variables.exists(name)) {
+            throw "Variable not found in scope: " + name;
+        }
+
+        var varId = scope.variables.get(name);
+        if (varId.isParam) {
+            return varId.id;
+        }
+
+        var typeId = getType(type);
+        var resultId = assignId();
+
+        emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varId.id]);
+
+        return resultId;
+    }
+
+    public function emitVariableAssign(on: MNSLNode, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var name = getVarBase(on);
+        if (!scope.variables.exists(name)) {
+            throw "Variable not found in scope: " + name;
+        }
+
+        var varId = scope.variables.get(name);
+        var valueId = emitNode(value, scope);
+
+        if (varId.isParam) {
+            // this is a small hack to handle assignments to parameters
+            // it first loads the parameter into a temporary variable, then updates the scope to use the temporary variable from now on
+            if (!scope.variables.exists("__mnsl_param_" + name)) {
+                throw "Parameter variable not found in scope: " + name;
+            }
+
+            var paramVarId = scope.variables.get("__mnsl_param_" + name);
+            emitInstruction(MNSLSPIRVOpCode.OpStore, [paramVarId.id, valueId]);
+
+            scope.setVariable(name, paramVarId.id);
+
+            return paramVarId.id;
+        }
+
+        emitInstruction(MNSLSPIRVOpCode.OpStore, [varId.id, valueId]);
+
+        return varId.id;
+    }
+
+    public function emitVariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        if (!scope.variables.exists(name)) {
+            throw "Pre-emit error: Variable not found in scope: " + name;
+        }
+
+        var varId = scope.variables.get(name);
+        if (value != null) {
+            var valueId = emitNode(value, scope);
+            emitInstruction(MNSLSPIRVOpCode.OpStore, [varId.id, valueId]);
+        }
+
+        return varId.id;
+    }
+
+    public function emitVectorConversion(on: MNSLNode, fromComp: Int, toComp: Int, scope: MNSLSPIRVScope): Int {
+        var onId = emitNode(on, scope);
         var fromType = MNSLType.fromString('Vec$fromComp');
         var toType = MNSLType.fromString('Vec$toComp');
 
@@ -260,7 +420,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
     }
 
-    public function emitVectorCreation(comp: Int, nodes: Array<MNSLNode>, info: MNSLNodeInfo): Int {
+    public function emitVectorCreation(comp: Int, nodes: Array<MNSLNode>, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
         if (nodes.length != comp && nodes.length != 1) {
             throw 'Vector creation expects ${comp} components, but got ${nodes.length}';
         }
@@ -270,30 +430,31 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var resId = assignId();
 
         if (nodes.length == 1) {
-            var scalarId = emitNode(nodes[0]);
+            var scalarId = emitNode(nodes[0], scope);
             var componentIds = [for (i in 0...comp) scalarId];
 
             emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat(componentIds));
             return resId;
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitNode(n)]));
+        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitNode(n, scope)]));
 
         return resId;
     }
 
-    public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType): Int {
-        var onId = emitNode(on);
+    public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType, scope: MNSLSPIRVScope): Int {
+        var onId = emitNode(on, scope);
         var resId = assignId();
         var targetType = getType(to);
 
         if (from.isFloat() && to.isInt()) {
-            emitInstruction(MNSLSPIRVOpCode.OpSConvert, [targetType, resId, onId]);
+            emitInstruction(MNSLSPIRVOpCode.OpConvertFToS, [targetType, resId, onId]);
             return resId;
         }
 
         if (from.isInt() && to.isFloat()) {
-            emitInstruction(MNSLSPIRVOpCode.OpFConvert, [targetType, resId, onId]);
+            trace(on);
+            emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [targetType, resId, onId]);
             return resId;
         }
 
@@ -301,8 +462,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resId;
     }
 
-    public function emitUnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo): Int {
-        var rightId = emitNode(right);
+    public function emitUnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var rightId = emitNode(right, scope);
         var resultId = assignId();
 
         switch (op) {
@@ -310,7 +471,14 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 _idCount--; // unary plus doesn't do anything, we undo the ID increment
                 return rightId; // just return the value
             case MNSLToken.Minus(_):
-                emitInstruction(MNSLSPIRVOpCode.OpFNegate, [getType(MNSLType.TFloat), resultId, rightId]);
+                var type = MNSLAnalyser.getType(right);
+                if (type.isFloat() || type.isVector()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpFNegate, [getType(type), resultId, rightId]);
+                } else if (type.isInt()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpSNegate, [getType(type), resultId, rightId]);
+                } else {
+                    throw "Unsupported type for unary minus: " + type.toHumanString();
+                }
             case MNSLToken.Not(_):
                 emitInstruction(MNSLSPIRVOpCode.OpLogicalNot, [getType(MNSLType.TBool), resultId, rightId]);
             default:
@@ -320,9 +488,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo): Int {
-        var leftId = emitNode(left);
-        var rightId = emitNode(right);
+    public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var leftId = emitNode(left, scope);
+        var rightId = emitNode(right, scope);
         var resultId = assignId();
 
         switch (op) {
@@ -382,12 +550,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo): Int {
-        var paramTypes = [for (arg in arguments) getType(arg.type)];
-        var typeId = assignId();
+    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        scope = scope.copy();
+
+        var typeId = getFunctionType(returnType, [for (arg in arguments) arg.type]);
         var id = assignId();
 
-        emitInstruction(MNSLSPIRVOpCode.OpTypeFunction, [typeId, getType(returnType)].concat(paramTypes));
         emitInstruction(MNSLSPIRVOpCode.OpFunction, [getType(returnType), id, 0, typeId]);
         emitDebugLabel(id, name);
 
@@ -396,13 +564,14 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             emitInstruction(MNSLSPIRVOpCode.OpFunctionParameter, [getType(arg.type), paramId]);
             emitDebugLabel(paramId, arg.name);
 
-            _variables.set(arg.name, paramId);
+            scope.setParameter(arg.name, paramId);
         }
 
         _functions.set(name, id);
 
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [assignId()]);
-        emitBody(body);
+        preEmit(body, scope);
+        emitBody(body, scope);
 
         if (returnType.equals(MNSLType.TVoid)) {
             emitInstruction(MNSLSPIRVOpCode.OpReturn, []);
@@ -417,13 +586,13 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return id;
     }
 
-    public function emitFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo): Int {
+    public function emitFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
         if (!_functions.exists(name)) {
             throw "Function not found: " + name;
         }
 
         var funcId: Int = _functions.get(name);
-        var argIds = [for (arg in args) emitNode(arg)];
+        var argIds = [for (arg in args) emitNode(arg, scope)];
         var retId = assignId();
 
         emitDebugLabel(retId, name);
@@ -432,12 +601,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return retId;
     }
 
-    public function emitReturn(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo): Int {
+    public function emitReturn(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
         switch(value) {
             case VoidNode(_):
                 emitInstruction(MNSLSPIRVOpCode.OpReturn, []);
             default:
-                emitInstruction(MNSLSPIRVOpCode.OpReturnValue, [emitNode(value)]);
+                emitInstruction(MNSLSPIRVOpCode.OpReturnValue, [emitNode(value, scope)]);
         }
 
         return 0;
@@ -451,6 +620,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         // caps
         emitInstruction(MNSLSPIRVOpCode.OpCapability, [MNSLSPIRVCapability.Shader]);
         emitInstruction(MNSLSPIRVOpCode.OpMemoryModel, [0, 1]);
+        var entryInst = emitInstruction(MNSLSPIRVOpCode.OpEntryPoint, []);
 
         // types
         getType(MNSLType.TVoid);
@@ -469,7 +639,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         // find/create all constants and assign IDs
         getConst(0.0, MNSLType.TFloat);
         getConst(1.0, MNSLType.TFloat);
-        emitConstants(_ast);
+        preEmit(_ast);
 
         // constants
         for (constKey in _constants.keys()) {
@@ -478,7 +648,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         // ast
-        emitBody(_ast);
+        emitBody(_ast, {});
 
         // entry point
         if (_entry == 0) {
@@ -491,12 +661,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             default: throw "Unsupported shader type: " + _config.shaderType;
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpEntryPoint, [execModel, _entry].concat(convString("main")));
+        editInstruction(entryInst, MNSLSPIRVOpCode.OpEntryPoint, [execModel, _entry].concat(convString("main")));
 
         // debug
         for (label in _debugLabels.keys()) {
             var name = _debugLabels.get(label);
-            emitInstruction(MNSLSPIRVOpCode.OpName, [label].concat(convString(name)));
+            insertInstruction(entryInst + 1, MNSLSPIRVOpCode.OpName, [label].concat(convString(name)));
         }
 
         // header

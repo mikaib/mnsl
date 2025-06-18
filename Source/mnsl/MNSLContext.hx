@@ -315,6 +315,8 @@ class MNSLContext {
         switch (warning) {
             case ImplicitVectorTruncation(node, from, to):
                 return "ImplicitVectorTrunation: Vec" + from + " to Vec" + to + " at " + node;
+            case ImplicitFloatToInt(node):
+                return "Implicit conversion from float to int at " + node;
         }
     }
 

@@ -1,7 +1,18 @@
-func test() {
+func test(x: Float) {
+    return 2.0 * 3 + -1 * x;
+}
 
+func cool(x: Float) {
+    x *= 2;
+    x += 5.0;
+    return test(x);
 }
 
 func main() {
+    var test = 1.2;
 
+    var someVar = cool(test);
+    someVar += 1;
+
+    var q = 3;
 }

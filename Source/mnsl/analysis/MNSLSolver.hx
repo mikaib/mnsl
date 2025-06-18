@@ -172,6 +172,10 @@ class MNSLSolver {
                 return true;
             }
 
+            if (c.type.isFloat() && c.mustBe.isInt()) {
+                _context.emitWarning(ImplicitFloatToInt(c.ofNode));
+            }
+
             addReplacement({
                 node: c.ofNode,
                 to: TypeCast(c.ofNode, c.type, c.mustBe)
