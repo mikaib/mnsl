@@ -222,11 +222,42 @@ haxe_Exception.thrown = function(value) {
 };
 haxe_Exception.__super__ = Error;
 haxe_Exception.prototype = $extend(Error.prototype,{
-	get_native: function() {
+	toString: function() {
+		return this.get_message();
+	}
+	,get_message: function() {
+		return this.message;
+	}
+	,get_native: function() {
 		return this.__nativeException;
 	}
 	,__class__: haxe_Exception
 });
+var haxe_Log = function() { };
+haxe_Log.__name__ = true;
+haxe_Log.formatOutput = function(v,infos) {
+	var str = Std.string(v);
+	if(infos == null) {
+		return str;
+	}
+	var pstr = infos.fileName + ":" + infos.lineNumber;
+	if(infos.customParams != null) {
+		var _g = 0;
+		var _g1 = infos.customParams;
+		while(_g < _g1.length) {
+			var v = _g1[_g];
+			++_g;
+			str += ", " + Std.string(v);
+		}
+	}
+	return pstr + ": " + str;
+};
+haxe_Log.trace = function(v,infos) {
+	var str = haxe_Log.formatOutput(v,infos);
+	if(typeof(console) != "undefined" && console.log != null) {
+		console.log(str);
+	}
+};
 var haxe_ValueException = function(value,previous,native) {
 	haxe_Exception.call(this,String(value),previous,native);
 	this.value = value;
@@ -376,6 +407,44 @@ haxe_ds_EnumValueMap.prototype = $extend(haxe_ds_BalancedTree.prototype,{
 	}
 	,__class__: haxe_ds_EnumValueMap
 });
+var haxe_ds_IntMap = function() {
+	this.h = { };
+};
+haxe_ds_IntMap.__name__ = true;
+haxe_ds_IntMap.__interfaces__ = [haxe_IMap];
+haxe_ds_IntMap.prototype = {
+	keys: function() {
+		var a = [];
+		for( var key in this.h ) if(this.h.hasOwnProperty(key)) a.push(+key);
+		return new haxe_iterators_ArrayIterator(a);
+	}
+	,__class__: haxe_ds_IntMap
+};
+var haxe_ds_ObjectMap = function() {
+	this.h = { __keys__ : { }};
+};
+haxe_ds_ObjectMap.__name__ = true;
+haxe_ds_ObjectMap.__interfaces__ = [haxe_IMap];
+haxe_ds_ObjectMap.prototype = {
+	set: function(key,value) {
+		var id = key.__id__;
+		if(id == null) {
+			id = (key.__id__ = $global.$haxeUID++);
+		}
+		this.h[id] = value;
+		this.h.__keys__[id] = key;
+	}
+	,keys: function() {
+		var a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) {
+			a.push(this.h.__keys__[key]);
+		}
+		}
+		return new haxe_iterators_ArrayIterator(a);
+	}
+	,__class__: haxe_ds_ObjectMap
+};
 var haxe_ds_StringMap = function() {
 	this.h = Object.create(null);
 };
@@ -383,6 +452,164 @@ haxe_ds_StringMap.__name__ = true;
 haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
 haxe_ds_StringMap.prototype = {
 	__class__: haxe_ds_StringMap
+};
+var haxe_exceptions_PosException = function(message,previous,pos) {
+	haxe_Exception.call(this,message,previous);
+	if(pos == null) {
+		this.posInfos = { fileName : "(unknown)", lineNumber : 0, className : "(unknown)", methodName : "(unknown)"};
+	} else {
+		this.posInfos = pos;
+	}
+};
+haxe_exceptions_PosException.__name__ = true;
+haxe_exceptions_PosException.__super__ = haxe_Exception;
+haxe_exceptions_PosException.prototype = $extend(haxe_Exception.prototype,{
+	toString: function() {
+		return "" + haxe_Exception.prototype.toString.call(this) + " in " + this.posInfos.className + "." + this.posInfos.methodName + " at " + this.posInfos.fileName + ":" + this.posInfos.lineNumber;
+	}
+	,__class__: haxe_exceptions_PosException
+});
+var haxe_exceptions_NotImplementedException = function(message,previous,pos) {
+	if(message == null) {
+		message = "Not implemented";
+	}
+	haxe_exceptions_PosException.call(this,message,previous,pos);
+};
+haxe_exceptions_NotImplementedException.__name__ = true;
+haxe_exceptions_NotImplementedException.__super__ = haxe_exceptions_PosException;
+haxe_exceptions_NotImplementedException.prototype = $extend(haxe_exceptions_PosException.prototype,{
+	__class__: haxe_exceptions_NotImplementedException
+});
+var haxe_io_Bytes = function(data) {
+	this.length = data.byteLength;
+	this.b = new Uint8Array(data);
+	this.b.bufferValue = data;
+	data.hxBytes = this;
+	data.bytes = this.b;
+};
+haxe_io_Bytes.__name__ = true;
+haxe_io_Bytes.ofString = function(s,encoding) {
+	if(encoding == haxe_io_Encoding.RawNative) {
+		var buf = new Uint8Array(s.length << 1);
+		var _g = 0;
+		var _g1 = s.length;
+		while(_g < _g1) {
+			var i = _g++;
+			var c = s.charCodeAt(i);
+			buf[i << 1] = c & 255;
+			buf[i << 1 | 1] = c >> 8;
+		}
+		return new haxe_io_Bytes(buf.buffer);
+	}
+	var a = [];
+	var i = 0;
+	while(i < s.length) {
+		var c = s.charCodeAt(i++);
+		if(55296 <= c && c <= 56319) {
+			c = c - 55232 << 10 | s.charCodeAt(i++) & 1023;
+		}
+		if(c <= 127) {
+			a.push(c);
+		} else if(c <= 2047) {
+			a.push(192 | c >> 6);
+			a.push(128 | c & 63);
+		} else if(c <= 65535) {
+			a.push(224 | c >> 12);
+			a.push(128 | c >> 6 & 63);
+			a.push(128 | c & 63);
+		} else {
+			a.push(240 | c >> 18);
+			a.push(128 | c >> 12 & 63);
+			a.push(128 | c >> 6 & 63);
+			a.push(128 | c & 63);
+		}
+	}
+	return new haxe_io_Bytes(new Uint8Array(a).buffer);
+};
+haxe_io_Bytes.prototype = {
+	__class__: haxe_io_Bytes
+};
+var haxe_io_BytesBuffer = function() {
+	this.pos = 0;
+	this.size = 0;
+};
+haxe_io_BytesBuffer.__name__ = true;
+haxe_io_BytesBuffer.prototype = {
+	addByte: function(byte) {
+		if(this.pos == this.size) {
+			this.grow(1);
+		}
+		this.view.setUint8(this.pos++,byte);
+	}
+	,grow: function(delta) {
+		var req = this.pos + delta;
+		var nsize = this.size == 0 ? 16 : this.size;
+		while(nsize < req) nsize = nsize * 3 >> 1;
+		var nbuf = new ArrayBuffer(nsize);
+		var nu8 = new Uint8Array(nbuf);
+		if(this.size > 0) {
+			nu8.set(this.u8);
+		}
+		this.size = nsize;
+		this.buffer = nbuf;
+		this.u8 = nu8;
+		this.view = new DataView(this.buffer);
+	}
+	,getBytes: function() {
+		if(this.size == 0) {
+			return new haxe_io_Bytes(new ArrayBuffer(0));
+		}
+		var b = new haxe_io_Bytes(this.buffer);
+		b.length = this.pos;
+		return b;
+	}
+	,__class__: haxe_io_BytesBuffer
+};
+var haxe_io_Output = function() { };
+haxe_io_Output.__name__ = true;
+haxe_io_Output.prototype = {
+	writeByte: function(c) {
+		throw new haxe_exceptions_NotImplementedException(null,null,{ fileName : "haxe/io/Output.hx", lineNumber : 47, className : "haxe.io.Output", methodName : "writeByte"});
+	}
+	,writeInt32: function(x) {
+		if(this.bigEndian) {
+			this.writeByte(x >>> 24);
+			this.writeByte(x >> 16 & 255);
+			this.writeByte(x >> 8 & 255);
+			this.writeByte(x & 255);
+		} else {
+			this.writeByte(x & 255);
+			this.writeByte(x >> 8 & 255);
+			this.writeByte(x >> 16 & 255);
+			this.writeByte(x >>> 24);
+		}
+	}
+	,__class__: haxe_io_Output
+};
+var haxe_io_BytesOutput = function() {
+	this.b = new haxe_io_BytesBuffer();
+};
+haxe_io_BytesOutput.__name__ = true;
+haxe_io_BytesOutput.__super__ = haxe_io_Output;
+haxe_io_BytesOutput.prototype = $extend(haxe_io_Output.prototype,{
+	writeByte: function(c) {
+		this.b.addByte(c);
+	}
+	,getBytes: function() {
+		return this.b.getBytes();
+	}
+	,__class__: haxe_io_BytesOutput
+});
+var haxe_io_Encoding = $hxEnums["haxe.io.Encoding"] = { __ename__:true,__constructs__:null
+	,UTF8: {_hx_name:"UTF8",_hx_index:0,__enum__:"haxe.io.Encoding",toString:$estr}
+	,RawNative: {_hx_name:"RawNative",_hx_index:1,__enum__:"haxe.io.Encoding",toString:$estr}
+};
+haxe_io_Encoding.__constructs__ = [haxe_io_Encoding.UTF8,haxe_io_Encoding.RawNative];
+var haxe_io_FPHelper = function() { };
+haxe_io_FPHelper.__name__ = true;
+haxe_io_FPHelper.floatToI32 = function(f) {
+	haxe_io_FPHelper.helper.setFloat32(0,f,true);
+	return haxe_io_FPHelper.helper.getInt32(0,true);
 };
 var haxe_iterators_ArrayIterator = function(array) {
 	this.current = 0;
@@ -649,7 +876,7 @@ mnsl_MNSLContext.prototype = {
 		return this._options;
 	}
 	,log: function(message) {
-		console.log("mnsl/MNSLContext.hx:75:",message);
+		haxe_Log.trace(message,{ fileName : "mnsl/MNSLContext.hx", lineNumber : 78, className : "mnsl.MNSLContext", methodName : "log"});
 	}
 	,printAST: function(ast,indent) {
 		if(indent == null) {
@@ -851,6 +1078,11 @@ mnsl_MNSLContext.prototype = {
 		p.run();
 		return p.getOutput();
 	}
+	,emitSPIRV: function(config) {
+		var p = new mnsl_spirv_MNSLSPIRVPrinter(this,config);
+		p.run();
+		return p.getBytes();
+	}
 	,getAST: function() {
 		return this._finalAst;
 	}
@@ -858,16 +1090,7 @@ mnsl_MNSLContext.prototype = {
 		return this._finalData;
 	}
 	,emitError: function(error) {
-		var _g = 0;
-		var _g1 = this._errors;
-		while(_g < _g1.length) {
-			var e = _g1[_g];
-			++_g;
-			if(Std.string(e) == Std.string(error)) {
-				return;
-			}
-		}
-		this._errors.push(error);
+		throw haxe_Exception.thrown(error);
 	}
 	,emitWarning: function(warning) {
 		var _g = 0;
@@ -897,7 +1120,7 @@ mnsl_MNSLContext.prototype = {
 		var node = warning.node;
 		var from = warning.from;
 		var to = warning.to;
-		return "ImplicitVectorTrunaction: Vec" + from + " to Vec" + to + " at " + Std.string(node);
+		return "ImplicitVectorTrunation: Vec" + from + " to Vec" + to + " at " + Std.string(node);
 	}
 	,errorToString: function(error) {
 		switch(error._hx_index) {
@@ -4941,6 +5164,679 @@ var mnsl_parser_MNSLShaderDataKind = $hxEnums["mnsl.parser.MNSLShaderDataKind"] 
 	,Uniform: {_hx_name:"Uniform",_hx_index:2,__enum__:"mnsl.parser.MNSLShaderDataKind",toString:$estr}
 };
 mnsl_parser_MNSLShaderDataKind.__constructs__ = [mnsl_parser_MNSLShaderDataKind.Input,mnsl_parser_MNSLShaderDataKind.Output,mnsl_parser_MNSLShaderDataKind.Uniform];
+var mnsl_spirv_MNSLSPIRVConfig = function(shaderType) {
+	this.shaderType = shaderType;
+};
+mnsl_spirv_MNSLSPIRVConfig.__name__ = true;
+mnsl_spirv_MNSLSPIRVConfig.prototype = {
+	__class__: mnsl_spirv_MNSLSPIRVConfig
+};
+var mnsl_spirv_MNSLSPIRVPrinter = function(context,config) {
+	mnsl_MNSLPrinter.call(this,context);
+	this._config = config;
+	this._bin = new haxe_io_BytesOutput();
+	this._types = new haxe_ds_ObjectMap();
+	this._variables = new haxe_ds_StringMap();
+	this._functions = new haxe_ds_StringMap();
+	this._constants = new haxe_ds_StringMap();
+	this._instructions = [];
+	this._debugLabels = new haxe_ds_IntMap();
+	this._idCount = 1;
+};
+mnsl_spirv_MNSLSPIRVPrinter.__name__ = true;
+mnsl_spirv_MNSLSPIRVPrinter.__super__ = mnsl_MNSLPrinter;
+mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
+	convString: function(str) {
+		var bytes = haxe_io_Bytes.ofString(str + String.fromCodePoint(0));
+		var words = [];
+		var i = 0;
+		while(i < bytes.length) {
+			var word = 0;
+			if(i < bytes.length) {
+				word |= bytes.b[i];
+			}
+			if(i + 1 < bytes.length) {
+				word |= bytes.b[i + 1] << 8;
+			}
+			if(i + 2 < bytes.length) {
+				word |= bytes.b[i + 2] << 16;
+			}
+			if(i + 3 < bytes.length) {
+				word |= bytes.b[i + 3] << 24;
+			}
+			words.push(word);
+			i += 4;
+		}
+		return words;
+	}
+	,getType: function(type) {
+		var t = this._types.keys();
+		while(t.hasNext()) {
+			var t1 = t.next();
+			if(t1.equals(type)) {
+				return this._types.h[t1.__id__];
+			}
+		}
+		var id = this.assignId();
+		this.emitDebugLabel(id,"T" + type.toHumanString());
+		this._types.set(type,id);
+		if(type._type == "Mat" + 2 || type._type == "Mat" + 3 || type._type == "Mat" + 4) {
+			var w;
+			switch(type._type) {
+			case "Mat2":
+				w = 2;
+				break;
+			case "Mat3":
+				w = 3;
+				break;
+			case "Mat4":
+				w = 4;
+				break;
+			default:
+				w = -1;
+			}
+			var h;
+			switch(type._type) {
+			case "Mat2":
+				h = 2;
+				break;
+			case "Mat3":
+				h = 3;
+				break;
+			case "Mat4":
+				h = 4;
+				break;
+			default:
+				h = -1;
+			}
+			this.emitInstruction(24,[id,this.getType(new mnsl_analysis_MNSLType("Vec" + w)),h]);
+			return id;
+		}
+		if(type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4) {
+			var tmp = this.getType(new mnsl_analysis_MNSLType("Float"));
+			var tmp1;
+			switch(type._type) {
+			case "Vec2":
+				tmp1 = 2;
+				break;
+			case "Vec3":
+				tmp1 = 3;
+				break;
+			case "Vec4":
+				tmp1 = 4;
+				break;
+			default:
+				tmp1 = -1;
+			}
+			this.emitInstruction(23,[id,tmp,tmp1]);
+			return id;
+		}
+		var typeStr = type.toString();
+		switch(typeStr) {
+		case "Bool":
+			this.emitInstruction(20,[id]);
+			break;
+		case "CubeSampler":
+			var sampledId = id;
+			this.emitInstruction(25,[id,this.getType(new mnsl_analysis_MNSLType("Float")),3,0,0,0,1,0]);
+			id = this.assignId();
+			this.emitInstruction(27,[id,sampledId]);
+			this.emitDebugLabel(sampledId,"TCubeSamplerImage");
+			break;
+		case "Float":
+			this.emitInstruction(22,[id,32]);
+			break;
+		case "Int":
+			this.emitInstruction(21,[id,32,1]);
+			break;
+		case "Sampler":
+			var sampledId = id;
+			this.emitInstruction(25,[id,this.getType(new mnsl_analysis_MNSLType("Float")),1,0,0,0,1,0]);
+			id = this.assignId();
+			this.emitInstruction(27,[id,sampledId]);
+			this.emitDebugLabel(sampledId,"TSamplerImage");
+			break;
+		case "Void":
+			this.emitInstruction(19,[id]);
+			break;
+		default:
+			throw haxe_Exception.thrown("Invalid type: " + typeStr);
+		}
+		return id;
+	}
+	,getConst: function(v,type) {
+		var key = type.toString() + ":" + Std.string(v);
+		if(Object.prototype.hasOwnProperty.call(this._constants.h,key)) {
+			return this._constants.h[key].id;
+		}
+		var id = this.assignId();
+		this.emitDebugLabel(id,"" + Std.string(v));
+		if(type._type == "Bool") {
+			var this1 = this._constants;
+			var value = { id : id, op : v == true ? 41 : 42, oper : [this.getType(type),id]};
+			this1.h[key] = value;
+			return id;
+		}
+		if(type._type == "Int") {
+			var this1 = this._constants;
+			var value = { id : id, op : 43, oper : [this.getType(type),id,v | 0]};
+			this1.h[key] = value;
+			return id;
+		}
+		if(type._type == "Float") {
+			var this1 = this._constants;
+			var value = { id : id, op : 43, oper : [this.getType(type),id,haxe_io_FPHelper.floatToI32(v)]};
+			this1.h[key] = value;
+			return id;
+		}
+		throw haxe_Exception.thrown("Unhandled constant type: " + Std.string(type) + " with value: " + Std.string(v));
+	}
+	,assignId: function() {
+		return this._idCount++;
+	}
+	,emitInstruction: function(op,operands) {
+		this._instructions.push([operands.length + 1 << 16 | op].concat(operands));
+	}
+	,emitDebugLabel: function(id,name) {
+		this._debugLabels.h[id] = name;
+	}
+	,emitConstants: function(ast) {
+		var _g = 0;
+		while(_g < ast.length) {
+			var node = ast[_g];
+			++_g;
+			switch(node._hx_index) {
+			case 24:
+				var value = node.value;
+				var info = node.info;
+				this.getConst(Std.parseInt(value),new mnsl_analysis_MNSLType("Int"));
+				break;
+			case 25:
+				var value1 = node.value;
+				var info1 = node.info;
+				this.getConst(parseFloat(value1),new mnsl_analysis_MNSLType("Float"));
+				break;
+			case 27:
+				var value2 = node.value;
+				var info2 = node.info;
+				this.getConst(value2,new mnsl_analysis_MNSLType("Bool"));
+				break;
+			default:
+			}
+			var params = Type.enumParameters(node);
+			var _g1 = 0;
+			while(_g1 < params.length) {
+				var p = params[_g1];
+				++_g1;
+				if(((p) instanceof Array) && p[0] != null && js_Boot.__instanceof(p[0],mnsl_parser_MNSLNode)) {
+					this.emitConstants(p);
+				} else if(js_Boot.__instanceof(p,mnsl_parser_MNSLNode)) {
+					this.emitConstants([p]);
+				}
+			}
+		}
+	}
+	,emitBody: function(body) {
+		var _g = 0;
+		while(_g < body.length) {
+			var node = body[_g];
+			++_g;
+			this.emitNode(node);
+		}
+	}
+	,emitNode: function(node) {
+		switch(node._hx_index) {
+		case 0:
+			var name = node.name;
+			var returnType = node.returnType;
+			var $arguments = node.$arguments;
+			var body = node.body;
+			var info = node.info;
+			return this.emitFunctionDecl(name,returnType,$arguments,body,info);
+		case 1:
+			var name = node.name;
+			var args = node.args;
+			var returnType = node.returnType;
+			var info = node.info;
+			return this.emitFunctionCall(name,args,returnType,info);
+		case 2:
+			var value = node.value;
+			var type = node.type;
+			var info = node.info;
+			return this.emitReturn(value,type,info);
+		case 9:
+			var left = node.left;
+			var op = node.op;
+			var right = node.right;
+			var type = node.type;
+			var info = node.info;
+			return this.emitBinaryOp(left,op,right,type,info);
+		case 10:
+			var op = node.op;
+			var right = node.right;
+			var info = node.info;
+			return this.emitUnaryOp(op,right,info);
+		case 15:
+			var node1 = node.node;
+			var info = node.info;
+			return this.emitNode(node1);
+		case 16:
+			var body = node.body;
+			var info = node.info;
+			this.emitBody(body);
+			return 0;
+		case 19:
+			var on = node.on;
+			var from = node.from;
+			var to = node.to;
+			return this.emitTypeCast(on,from,to);
+		case 22:
+			var comp = node.components;
+			var nodes = node.nodes;
+			var info = node.info;
+			return this.emitVectorCreation(comp,nodes,info);
+		case 23:
+			var on = node.on;
+			var from = node.fromComponents;
+			var to = node.toComponents;
+			return this.emitVectorConversion(on,from,to);
+		case 24:
+			var value = node.value;
+			var info = node.info;
+			return this.getConst(Std.parseInt(value),new mnsl_analysis_MNSLType("Int"));
+		case 25:
+			var value = node.value;
+			var info = node.info;
+			return this.getConst(parseFloat(value),new mnsl_analysis_MNSLType("Float"));
+		case 27:
+			var value = node.value;
+			var info = node.info;
+			return this.getConst(value,new mnsl_analysis_MNSLType("Bool"));
+		default:
+			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 216, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
+			return 0;
+		}
+	}
+	,emitVectorConversion: function(on,fromComp,toComp) {
+		var onId = this.emitNode(on);
+		var fromType = new mnsl_analysis_MNSLType("Vec" + fromComp);
+		var toType = new mnsl_analysis_MNSLType("Vec" + toComp);
+		if(fromComp == toComp) {
+			return onId;
+		} else if(fromComp < toComp) {
+			var resultId = this.assignId();
+			var targetTypeId = this.getType(toType);
+			var componentIds = [];
+			var scalarType = this.getType(new mnsl_analysis_MNSLType("Float"));
+			var _g = 0;
+			var _g1 = fromComp;
+			while(_g < _g1) {
+				var i = _g++;
+				var componentId = this.assignId();
+				this.emitInstruction(81,[scalarType,componentId,onId,i]);
+				componentIds.push(componentId);
+			}
+			var _g = fromComp;
+			var _g1 = toComp;
+			while(_g < _g1) {
+				var i = _g++;
+				if(i == toComp - 1) {
+					componentIds.push(this.getConst(1.0,new mnsl_analysis_MNSLType("Float")));
+				} else {
+					componentIds.push(this.getConst(0.0,new mnsl_analysis_MNSLType("Float")));
+				}
+			}
+			this.emitInstruction(80,[targetTypeId,resultId].concat(componentIds));
+			return resultId;
+		} else {
+			var resultId = this.assignId();
+			var targetTypeId = this.getType(toType);
+			var shuffleList = [];
+			var _g = 0;
+			var _g1 = toComp;
+			while(_g < _g1) {
+				var i = _g++;
+				shuffleList.push(i);
+			}
+			this.emitInstruction(79,[targetTypeId,resultId,onId,onId].concat(shuffleList));
+			return resultId;
+		}
+	}
+	,emitVectorCreation: function(comp,nodes,info) {
+		if(nodes.length != comp && nodes.length != 1) {
+			throw haxe_Exception.thrown("Vector creation expects " + comp + " components, but got " + nodes.length);
+		}
+		var type = new mnsl_analysis_MNSLType("Vec" + comp);
+		var typeId = this.getType(type);
+		var resId = this.assignId();
+		if(nodes.length == 1) {
+			var scalarId = this.emitNode(nodes[0]);
+			var _g = [];
+			var _g1 = 0;
+			var _g2 = comp;
+			while(_g1 < _g2) {
+				var i = _g1++;
+				_g.push(scalarId);
+			}
+			var componentIds = _g;
+			this.emitInstruction(80,[typeId,resId].concat(componentIds));
+			return resId;
+		}
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < nodes.length) {
+			var n = nodes[_g1];
+			++_g1;
+			_g.push(this.emitNode(n));
+		}
+		this.emitInstruction(80,[typeId,resId].concat(_g));
+		return resId;
+	}
+	,emitTypeCast: function(on,from,to) {
+		var onId = this.emitNode(on);
+		var resId = this.assignId();
+		var targetType = this.getType(to);
+		if(from._type == "Float" && to._type == "Int") {
+			this.emitInstruction(114,[targetType,resId,onId]);
+			return resId;
+		}
+		if(from._type == "Int" && to._type == "Float") {
+			this.emitInstruction(115,[targetType,resId,onId]);
+			return resId;
+		}
+		this.emitInstruction(124,[targetType,resId,onId]);
+		return resId;
+	}
+	,emitUnaryOp: function(op,right,info) {
+		var rightId = this.emitNode(right);
+		var resultId = this.assignId();
+		switch(op._hx_index) {
+		case 14:
+			var _g = op.info;
+			this.emitInstruction(127,[this.getType(new mnsl_analysis_MNSLType("Float")),resultId,rightId]);
+			break;
+		case 15:
+			var _g = op.info;
+			this._idCount--;
+			return rightId;
+		case 32:
+			var _g = op.info;
+			this.emitInstruction(168,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,rightId]);
+			break;
+		default:
+			throw haxe_Exception.thrown("Unsupported unary operator: " + Std.string(op));
+		}
+		return resultId;
+	}
+	,emitBinaryOp: function(left,op,right,type,info) {
+		var leftId = this.emitNode(left);
+		var rightId = this.emitNode(right);
+		var resultId = this.assignId();
+		switch(op._hx_index) {
+		case 14:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(131,[this.getType(type),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(130,[this.getType(type),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for subtraction: " + type.toHumanString());
+			}
+			break;
+		case 15:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(129,[this.getType(type),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(128,[this.getType(type),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for addition: " + type.toHumanString());
+			}
+			break;
+		case 17:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(136,[this.getType(type),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(135,[this.getType(type),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for division: " + type.toHumanString());
+			}
+			break;
+		case 18:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(133,[this.getType(type),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(132,[this.getType(type),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for multiplication: " + type.toHumanString());
+			}
+			break;
+		case 19:
+			var _g = op.info;
+			if(type._type == "Int") {
+				this.emitInstruction(138,[this.getType(type),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for modulo: " + type.toHumanString());
+			}
+			break;
+		case 22:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(180,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(170,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for equality: " + type.toHumanString());
+			}
+			break;
+		case 25:
+			var _g = op.info;
+			if(type._type == "Bool") {
+				this.emitInstruction(167,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for logical AND: " + type.toHumanString());
+			}
+			break;
+		case 26:
+			var _g = op.info;
+			if(type._type == "Bool") {
+				this.emitInstruction(166,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for logical OR: " + type.toHumanString());
+			}
+			break;
+		case 27:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(184,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(177,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for less than: " + type.toHumanString());
+			}
+			break;
+		case 28:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(186,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(173,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for greater than: " + type.toHumanString());
+			}
+			break;
+		case 29:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(188,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(179,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for less than or equal: " + type.toHumanString());
+			}
+			break;
+		case 30:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(190,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(175,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for greater than or equal: " + type.toHumanString());
+			}
+			break;
+		case 31:
+			var _g = op.info;
+			if(type._type == "Float" || (type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4)) {
+				this.emitInstruction(182,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Int") {
+				this.emitInstruction(171,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else {
+				throw haxe_Exception.thrown("Unsupported type for not equal: " + type.toHumanString());
+			}
+			break;
+		default:
+			throw haxe_Exception.thrown("Unsupported binary operator: " + Std.string(op));
+		}
+		return resultId;
+	}
+	,emitFunctionDecl: function(name,returnType,$arguments,body,info) {
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < $arguments.length) {
+			var arg = $arguments[_g1];
+			++_g1;
+			_g.push(this.getType(arg.type));
+		}
+		var paramTypes = _g;
+		var typeId = this.assignId();
+		var id = this.assignId();
+		this.emitInstruction(33,[typeId,this.getType(returnType)].concat(paramTypes));
+		this.emitInstruction(54,[this.getType(returnType),id,0,typeId]);
+		this.emitDebugLabel(id,name);
+		var _g = 0;
+		while(_g < $arguments.length) {
+			var arg = $arguments[_g];
+			++_g;
+			var paramId = this.assignId();
+			this.emitInstruction(55,[this.getType(arg.type),paramId]);
+			this.emitDebugLabel(paramId,arg.name);
+			this._variables.h[arg.name] = paramId;
+		}
+		this._functions.h[name] = id;
+		this.emitInstruction(248,[this.assignId()]);
+		this.emitBody(body);
+		if(returnType.equals(new mnsl_analysis_MNSLType("Void"))) {
+			this.emitInstruction(253,[]);
+		}
+		this.emitInstruction(56,[]);
+		if(name == "main") {
+			this._entry = id;
+		}
+		return id;
+	}
+	,emitFunctionCall: function(name,args,returnType,info) {
+		if(!Object.prototype.hasOwnProperty.call(this._functions.h,name)) {
+			throw haxe_Exception.thrown("Function not found: " + name);
+		}
+		var funcId = this._functions.h[name];
+		var _g = [];
+		var _g1 = 0;
+		while(_g1 < args.length) {
+			var arg = args[_g1];
+			++_g1;
+			_g.push(this.emitNode(arg));
+		}
+		var argIds = _g;
+		var retId = this.assignId();
+		this.emitDebugLabel(retId,name);
+		this.emitInstruction(57,[this.getType(returnType),retId,funcId].concat(argIds));
+		return retId;
+	}
+	,emitReturn: function(value,type,info) {
+		if(value._hx_index == 20) {
+			var _g = value.info;
+			this.emitInstruction(253,[]);
+		} else {
+			this.emitInstruction(254,[this.emitNode(value)]);
+		}
+		return 0;
+	}
+	,getBytes: function() {
+		return this._bin.getBytes();
+	}
+	,run: function() {
+		this.emitInstruction(17,[1]);
+		this.emitInstruction(14,[0,1]);
+		this.getType(new mnsl_analysis_MNSLType("Void"));
+		this.getType(new mnsl_analysis_MNSLType("Bool"));
+		this.getType(new mnsl_analysis_MNSLType("Int"));
+		this.getType(new mnsl_analysis_MNSLType("Float"));
+		this.getType(new mnsl_analysis_MNSLType("Vec2"));
+		this.getType(new mnsl_analysis_MNSLType("Vec3"));
+		this.getType(new mnsl_analysis_MNSLType("Vec4"));
+		this.getType(new mnsl_analysis_MNSLType("Mat2"));
+		this.getType(new mnsl_analysis_MNSLType("Mat3"));
+		this.getType(new mnsl_analysis_MNSLType("Mat4"));
+		this.getType(new mnsl_analysis_MNSLType("Sampler"));
+		this.getType(new mnsl_analysis_MNSLType("CubeSampler"));
+		this.getConst(0.0,new mnsl_analysis_MNSLType("Float"));
+		this.getConst(1.0,new mnsl_analysis_MNSLType("Float"));
+		this.emitConstants(this._ast);
+		var h = this._constants.h;
+		var constKey_h = h;
+		var constKey_keys = Object.keys(h);
+		var constKey_length = constKey_keys.length;
+		var constKey_current = 0;
+		while(constKey_current < constKey_length) {
+			var constKey = constKey_keys[constKey_current++];
+			var $const = this._constants.h[constKey];
+			this.emitInstruction($const.op,$const.oper);
+		}
+		this.emitBody(this._ast);
+		if(this._entry == 0) {
+			throw haxe_Exception.thrown("No entry point found in the SPIR-V module.");
+		}
+		var execModel;
+		switch(this._config.shaderType) {
+		case 0:
+			execModel = 0;
+			break;
+		case 1:
+			execModel = 4;
+			break;
+		default:
+			throw haxe_Exception.thrown("Unsupported shader type: " + this._config.shaderType);
+		}
+		this.emitInstruction(15,[execModel,this._entry].concat(this.convString("main")));
+		var label = this._debugLabels.keys();
+		while(label.hasNext()) {
+			var label1 = label.next();
+			var name = this._debugLabels.h[label1];
+			this.emitInstruction(5,[label1].concat(this.convString(name)));
+		}
+		this._bin.writeInt32(119734787);
+		this._bin.writeInt32(65536);
+		this._bin.writeInt32(0);
+		this._bin.writeInt32(this._idCount);
+		this._bin.writeInt32(0);
+		var _g = 0;
+		var _g1 = this._instructions;
+		while(_g < _g1.length) {
+			var inst = _g1[_g];
+			++_g;
+			var _g2 = 0;
+			while(_g2 < inst.length) {
+				var word = inst[_g2];
+				++_g2;
+				this._bin.writeInt32(word);
+			}
+		}
+	}
+	,__class__: mnsl_spirv_MNSLSPIRVPrinter
+});
 var mnsl_tokenizer_MNSLToken = $hxEnums["mnsl.tokenizer.MNSLToken"] = { __ename__:true,__constructs__:null
 	,None: {_hx_name:"None",_hx_index:0,__enum__:"mnsl.tokenizer.MNSLToken",toString:$estr}
 	,At: ($_=function(info) { return {_hx_index:1,info:info,__enum__:"mnsl.tokenizer.MNSLToken",toString:$estr}; },$_._hx_name="At",$_.__params__ = ["info"],$_)
@@ -5381,9 +6277,11 @@ mnsl_tokenizer_MNSLTokenizer.prototype = {
 	}
 	,__class__: mnsl_tokenizer_MNSLTokenizer
 };
+$global.$haxeUID |= 0;
 if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) {
 	HxOverrides.now = performance.now.bind(performance);
 }
+if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c < 0x10000 ? String.fromCharCode(c) : String.fromCharCode((c>>10)+0xD7C0)+String.fromCharCode((c&0x3FF)+0xDC00); }
 Object.defineProperty(String.prototype,"__class__",{ value : String, enumerable : false, writable : true});
 String.__name__ = true;
 Array.__name__ = true;
@@ -5394,5 +6292,6 @@ var Bool = Boolean;
 var Class = { };
 var Enum = { };
 js_Boot.__toStr = ({ }).toString;
+haxe_io_FPHelper.helper = new DataView(new ArrayBuffer(8));
 Demo.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);

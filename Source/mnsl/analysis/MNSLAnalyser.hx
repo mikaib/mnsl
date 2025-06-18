@@ -758,8 +758,6 @@ class MNSLAnalyser {
             return node;
         }
 
-        node = FunctionCall(name, args, f.returnType, info);
-
         var templates: Map<String, MNSLType> = [];
         for (i in 0...args.length) {
             var arg = args[i];

@@ -1,7 +1,7 @@
-func test(x: Float): Float {
-    return (-1.0 + 2.0) * -3.0;
+func test() {
+
 }
 
-func main(x: Float, y: Vec2): Float {
-    return test(3.0);
+func main() {
+
 }

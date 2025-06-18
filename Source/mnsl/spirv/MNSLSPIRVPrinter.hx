@@ -66,7 +66,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var id = assignId();
-        emitDebugLabel(id, 'Type(${type.toHumanString()})');
+        emitDebugLabel(id, 'T${type.toHumanString()}');
 
         _types.set(type, id);
 
@@ -98,13 +98,13 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 emitInstruction(MNSLSPIRVOpCode.OpTypeImage, [id, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0]);
                 id = assignId();
                 emitInstruction(MNSLSPIRVOpCode.OpTypeSampledImage, [id, sampledId]);
-                emitDebugLabel(sampledId, 'Image(Sampler)');
+                emitDebugLabel(sampledId, 'TSamplerImage');
             case "CubeSampler":
                 var sampledId = id;
                 emitInstruction(MNSLSPIRVOpCode.OpTypeImage, [id, getType(MNSLType.TFloat), 3, 0, 0, 0, 1, 0]);
                 id = assignId();
                 emitInstruction(MNSLSPIRVOpCode.OpTypeSampledImage, [id, sampledId]);
-                emitDebugLabel(sampledId, 'Image(CubeSampler)');
+                emitDebugLabel(sampledId, 'TCubeSamplerImage');
             default:
                 throw "Invalid type: " + typeStr;
         }
@@ -119,7 +119,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var id = assignId();
-        emitDebugLabel(id, 'Constant(${v}: ${type.toHumanString()})');
+        emitDebugLabel(id, '${v}');
 
         if (type.isBool()) {
             _constants.set(key, { id: id, op: v == true ? MNSLSPIRVOpCode.OpConstantTrue : MNSLSPIRVOpCode.OpConstantFalse, oper: [getType(type), id] });
@@ -195,12 +195,18 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitUnaryOp(op, right, info);
             case Return(value, type, info):
                 return emitReturn(value, type, info);
+            case VectorCreation(comp, nodes, info):
+                return emitVectorCreation(comp, nodes, info);
+            case VectorConversion(on, from, to):
+                return emitVectorConversion(on, from, to);
             case FloatLiteralNode(value, info):
                 return getConst(Std.parseFloat(value), MNSLType.TFloat);
             case IntegerLiteralNode(value, info):
                 return getConst(Std.parseInt(value), MNSLType.TInt);
             case BooleanLiteralNode(value, info):
                 return getConst(value, MNSLType.TBool);
+            case TypeCast(on, from, to):
+                return emitTypeCast(on, from, to);
             case SubExpression(node, info):
                 return emitNode(node);
             case Block(body, info):
@@ -212,11 +218,92 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
+    public function emitVectorConversion(on: MNSLNode, fromComp: Int, toComp: Int): Int {
+        var onId = emitNode(on);
+        var fromType = MNSLType.fromString('Vec$fromComp');
+        var toType = MNSLType.fromString('Vec$toComp');
+
+        if (fromComp == toComp) {
+            return onId;
+        } else if (fromComp < toComp) {
+            var resultId = assignId();
+            var targetTypeId = getType(toType);
+            var componentIds = [];
+            var scalarType = getType(MNSLType.TFloat);
+
+            for (i in 0...fromComp) {
+                var componentId = assignId();
+                emitInstruction(MNSLSPIRVOpCode.OpCompositeExtract, [scalarType, componentId, onId, i]);
+                componentIds.push(componentId);
+            }
+
+            for (i in fromComp...toComp) {
+                if (i == toComp - 1) {
+                    componentIds.push(getConst(1.0, MNSLType.TFloat));
+                } else {
+                    componentIds.push(getConst(0.0, MNSLType.TFloat));
+                }
+            }
+
+            emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [targetTypeId, resultId].concat(componentIds));
+            return resultId;
+        } else {
+            var resultId = assignId();
+            var targetTypeId = getType(toType);
+            var shuffleList = [];
+            for (i in 0...toComp) {
+                shuffleList.push(i);
+            }
+            emitInstruction(MNSLSPIRVOpCode.OpVectorShuffle, [targetTypeId, resultId, onId, onId].concat(shuffleList));
+            return resultId;
+        }
+
+    }
+
+    public function emitVectorCreation(comp: Int, nodes: Array<MNSLNode>, info: MNSLNodeInfo): Int {
+        if (nodes.length != comp && nodes.length != 1) {
+            throw 'Vector creation expects ${comp} components, but got ${nodes.length}';
+        }
+
+        var type = MNSLType.fromString('Vec${comp}');
+        var typeId = getType(type);
+        var resId = assignId();
+
+        if (nodes.length == 1) {
+            var scalarId = emitNode(nodes[0]);
+            var componentIds = [for (i in 0...comp) scalarId];
+
+            emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat(componentIds));
+            return resId;
+        }
+
+        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitNode(n)]));
+
+        return resId;
+    }
+
+    public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType): Int {
+        var onId = emitNode(on);
+        var resId = assignId();
+        var targetType = getType(to);
+
+        if (from.isFloat() && to.isInt()) {
+            emitInstruction(MNSLSPIRVOpCode.OpSConvert, [targetType, resId, onId]);
+            return resId;
+        }
+
+        if (from.isInt() && to.isFloat()) {
+            emitInstruction(MNSLSPIRVOpCode.OpFConvert, [targetType, resId, onId]);
+            return resId;
+        }
+
+        emitInstruction(MNSLSPIRVOpCode.OpBitcast, [targetType, resId, onId]);
+        return resId;
+    }
+
     public function emitUnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo): Int {
         var rightId = emitNode(right);
         var resultId = assignId();
-
-        emitDebugLabel(resultId, 'UnaryOp(${op})');
 
         switch (op) {
             case MNSLToken.Plus(_):
@@ -238,50 +325,48 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var rightId = emitNode(right);
         var resultId = assignId();
 
-        emitDebugLabel(resultId, 'BinaryOp(${op})');
-
         switch (op) {
             case MNSLToken.Plus(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFAdd, [getType(type), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFAdd, [getType(type), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIAdd, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for addition: " + type.toHumanString();
             case MNSLToken.Minus(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFSub, [getType(type), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFSub, [getType(type), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpISub, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for subtraction: " + type.toHumanString();
             case MNSLToken.Star(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFMul, [getType(type), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFMul, [getType(type), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIMul, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for multiplication: " + type.toHumanString();
             case MNSLToken.Slash(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(type), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(type), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSDiv, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for division: " + type.toHumanString();
             case MNSLToken.Percent(_):
                 if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSRem, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for modulo: " + type.toHumanString();
             case MNSLToken.Equal(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for equality: " + type.toHumanString();
             case MNSLToken.Greater(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for greater than: " + type.toHumanString();
             case MNSLToken.GreaterEqual(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for greater than or equal: " + type.toHumanString();
             case MNSLToken.Less(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for less than: " + type.toHumanString();
             case MNSLToken.LessEqual(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for less than or equal: " + type.toHumanString();
             case MNSLToken.NotEqual(_):
-                if (type.isFloat()) emitInstruction(MNSLSPIRVOpCode.OpFOrdNotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdNotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpINotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for not equal: " + type.toHumanString();
             case MNSLToken.And(_):
@@ -304,12 +389,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
         emitInstruction(MNSLSPIRVOpCode.OpTypeFunction, [typeId, getType(returnType)].concat(paramTypes));
         emitInstruction(MNSLSPIRVOpCode.OpFunction, [getType(returnType), id, 0, typeId]);
-        emitDebugLabel(id, 'Function($name)');
+        emitDebugLabel(id, name);
 
         for (arg in arguments) {
             var paramId = assignId();
             emitInstruction(MNSLSPIRVOpCode.OpFunctionParameter, [getType(arg.type), paramId]);
-            emitDebugLabel(paramId, 'Parameter(${arg.name}: ${arg.type.toHumanString()})');
+            emitDebugLabel(paramId, arg.name);
 
             _variables.set(arg.name, paramId);
         }
@@ -341,9 +426,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var argIds = [for (arg in args) emitNode(arg)];
         var retId = assignId();
 
-        trace(returnType);
-
-        emitDebugLabel(retId, 'Call($name)');
+        emitDebugLabel(retId, name);
         emitInstruction(MNSLSPIRVOpCode.OpFunctionCall, [getType(returnType), retId, funcId].concat(argIds));
 
         return retId;
@@ -383,7 +466,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         getType(MNSLType.TSampler);
         getType(MNSLType.TCubeSampler);
 
-        // find all constants and assign IDs
+        // find/create all constants and assign IDs
+        getConst(0.0, MNSLType.TFloat);
+        getConst(1.0, MNSLType.TFloat);
         emitConstants(_ast);
 
         // constants
@@ -401,8 +486,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var execModel = switch (_config.shaderType) {
-            case MNSLSPIRVShaderType.ShaderTypeVertex: MNSLSPIRVExecutionModel.Vertex;
-            case MNSLSPIRVShaderType.ShaderTypeFragment: MNSLSPIRVExecutionModel.Fragment;
+            case MNSLSPIRVShaderType.SPIRV_SHADER_TYPE_VERTEX: MNSLSPIRVExecutionModel.Vertex;
+            case MNSLSPIRVShaderType.SPIRV_SHADER_TYPE_FRAGMENT: MNSLSPIRVExecutionModel.Fragment;
             default: throw "Unsupported shader type: " + _config.shaderType;
         }
 

@@ -15,7 +15,7 @@ class Test {
 
     public static function main() {
         var shader: MNSLContext = MNSL.fromFile("test.mns", {
-            optimizerPlugins: [],
+            // optimizerPlugins: [],
         });
 
         if (shader.hasWarnings()) {
@@ -40,7 +40,7 @@ class Test {
         });
 
         var spirv = shader.emitSPIRV({
-            shaderType: ShaderTypeVertex
+            shaderType: SPIRV_SHADER_TYPE_VERTEX
         });
 
         Sys.println("\n" + GREEN + BOLD + 'Successfully compiled with ' +
@@ -54,6 +54,8 @@ class Test {
         File.saveContent("rnd_glsl.glsl", glsl);
 
         Sys.command('spirv-cross rnd_spirv.spv --version 450 --output rnd_spirv.glsl');
+        Sys.command('spirv-cross rnd_spirv.spv --msl --output rnd_spirv.msl');
+        Sys.command('spirv-cross rnd_spirv.spv --hlsl --output rnd_spirv.hlsl');
         Sys.command('spirv-dis rnd_spirv.spv -o rnd_spirv.spvasm');
 
         Sys.println(MAGENTA + BOLD + "SPIR-V Assembly Output:" + RESET);
