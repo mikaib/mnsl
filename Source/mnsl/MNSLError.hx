@@ -36,4 +36,5 @@ enum MNSLError {
     AnalyserLoopKeywordOutsideLoop(node: MNSLNode, info: MNSLNodeInfo);
     AnalyserMismatchingEitherType(limits: Array<MNSLType>, node: MNSLNode);
     AnalyserUnknownArraySize(type: MNSLType, node: MNSLNode);
+    AnalyserReadOnlyAssignment(node: MNSLNode);
 }

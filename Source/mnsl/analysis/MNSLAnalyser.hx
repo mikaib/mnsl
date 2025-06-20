@@ -597,6 +597,26 @@ class MNSLAnalyser {
      * @param value The value of the variable.
      */
     public function analyseVariableAssignPost(node: MNSLNode, on: MNSLNode, value: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        function findBase(node: MNSLNode) {
+            switch (node) {
+                case Identifier(name, _, _):
+                    return name;
+                case StructAccess(on, field, type, info):
+                    return findBase(on);
+                case ArrayAccess(on, index, info):
+                    return findBase(on);
+                default:
+                    _context.emitError(AnalyserInvalidAccess(node));
+                    return null;
+            }
+        }
+
+        var base = findBase(on);
+        if (base == "uniform" || base == "input") {
+            _context.emitError(AnalyserReadOnlyAssignment(node));
+            return node;
+        }
+
         switch (on) {
             case VectorCreation(comp, values, _):
                 _solver.addConstraint({

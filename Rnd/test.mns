@@ -1,52 +1,7 @@
 @uniform(u_Vec: Vec2)
 @uniform(u_VecList: Vec2[10])
 
-func echo(x) {
-    return x;
-}
-
-func test(x: Float) {
-    x += 1;
-    x *= 2;
-    x = 5;
-    return x;
-}
-
 func main() {
-    var vecA = vec2(1) * uniform.u_Vec;
-    var xA = vecA.x;
-    var yA = vecA.y;
-    var xB = uniform.u_Vec.x;
-    var yB = uniform.u_Vec.y;
-    var vecC = vecA.yx;
-    var vecD = uniform.u_Vec.xy;
-
-    xA = 1;
-    vecA.x = 1;
-    vecA.y = 2;
-    vecA.xy = vecA.xx;
-
-    var vecE = vecA.xyx;
-    var vecF = echo(vecA).xxy;
-
-    var va = 1.0;
-    va += 1;
-    va *= 2;
-    va = test(va);
-
-    var qa = va;
-    qa /= 2;
-
-    var idx = 0;
-    var vecList = uniform.u_VecList;
-    var vecG = vecList[idx];
-    var vecH = uniform.u_VecList[idx];
-    var listX = uniform.u_VecList[idx].x;
-    var listY = uniform.u_VecList[idx].y;
-    var listSwizzle = uniform.u_VecList[idx].xxy;
-    var vecGx = vecG.x;
-    var vecGy = vecG.y;
-    var vecGxyx = vecG.xyx;
-
-    var subswizzle = uniform.u_VecList[idx].xy.yx.x;
+    var x = uniform.u_Vec;
+    x = vec2(1, 2);
 }

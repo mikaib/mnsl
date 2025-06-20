@@ -372,6 +372,8 @@ class MNSLContext {
                 return "Invalid unary operation: " + op + " at " + info;
             case AnalyserUnknownArraySize(type, node):
                 return "Unknown array size for type: " + type + " at " + node;
+            case AnalyserReadOnlyAssignment(node):
+                return "Cannot assign to read-only variable: " + node;
             case AnalyserRecursiveFunction(func, chain, info):
                 var chainStr = "";
                 for (i in 0...chain.length) {

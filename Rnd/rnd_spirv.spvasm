@@ -1,63 +1,37 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 162
+; Bound: 50
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %echo "echo"
-               OpName %u_u_Vec "u_u_Vec"
-               OpName %xB "xB"
-               OpName %vecGxyx "vecGxyx"
-               OpName %yA "yA"
-               OpName %vecGy "vecGy"
-               OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %out_PointSize "out_PointSize"
-               OpName %xA "xA"
-               OpName %vecGx "vecGx"
-               OpName %TArray_Vec2__10_ "TArray<Vec2, 10>"
-               OpName %vecA "vecA"
-               OpName %listSwizzle "listSwizzle"
-               OpName %out_Position "out_Position"
-               OpName %TSamplerImage "TSamplerImage"
-               OpName %listY "listY"
-               OpName %TMat4 "TMat4"
-               OpName %main "main"
-               OpName %listX "listX"
-               OpName %in_FragDepth "in_FragDepth"
-               OpName %TMat3 "TMat3"
-               OpName %vecH "vecH"
-               OpName %TMat2 "TMat2"
-               OpName %vecG "vecG"
-               OpName %in_FrontFacing "in_FrontFacing"
-               OpName %TVec4 "TVec4"
-               OpName %vecList "vecList"
-               OpName %TVec3 "TVec3"
-               OpName %idx "idx"
-               OpName %in_FragCoord "in_FragCoord"
                OpName %TVec2 "TVec2"
-               OpName %qa "qa"
-               OpName %__mnsl_param_x "__mnsl_param_x"
-               OpName %in_InstanceID "in_InstanceID"
+               OpName %out_PointSize "out_PointSize"
                OpName %TFloat "TFloat"
-               OpName %va "va"
+               OpName %TSamplerImage "TSamplerImage"
+               OpName %TArray_Vec2__10_ "TArray<Vec2, 10>"
+               OpName %in_FragCoord "in_FragCoord"
                OpName %TInt "TInt"
-               OpName %vecF "vecF"
-               OpName %in_VertexID "in_VertexID"
+               OpName %TMat4 "TMat4"
+               OpName %in_InstanceID "in_InstanceID"
+               OpName %out_Position "out_Position"
                OpName %TBool "TBool"
+               OpName %TMat3 "TMat3"
+               OpName %u_u_Vec "u_u_Vec"
                OpName %x "x"
-               OpName %vecE "vecE"
                OpName %TVoid "TVoid"
-               OpName %test "test"
-               OpName %vecD "vecD"
+               OpName %TMat2 "TMat2"
+               OpName %in_VertexID "in_VertexID"
+               OpName %in_FragDepth "in_FragDepth"
+               OpName %TVec4 "TVec4"
+               OpName %main "main"
+               OpName %TVec3 "TVec3"
+               OpName %TCubeSamplerImage "TCubeSamplerImage"
                OpName %u_u_VecList "u_u_VecList"
-               OpName %vecC "vecC"
-               OpName %x_0 "x"
-               OpName %yB "yB"
-               OpName %subswizzle "subswizzle"
+               OpName %in_FrontFacing "in_FrontFacing"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -87,17 +61,10 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
-     %TInt_5 = OpConstant %TInt 5
     %TInt_10 = OpConstant %TInt 10
 %TArray_Vec2__10_ = OpTypeArray %TVec2 %TInt_10
-         %22 = OpTypeFunction %TVec2 %TVec2
-         %23 = OpTypeFunction %TFloat %TFloat
-         %25 = OpTypeFunction %TVoid
+         %22 = OpTypeFunction %TVoid
 %_ptr_Function_TVec2 = OpTypePointer Function %TVec2
-%_ptr_Function_TFloat = OpTypePointer Function %TFloat
-%_ptr_Function_TVec3 = OpTypePointer Function %TVec3
-%_ptr_Function_TInt = OpTypePointer Function %TInt
-%_ptr_Function_TArray_Vec2__10_ = OpTypePointer Function %TArray_Vec2__10_
 %_ptr_UniformConstant_TVec2 = OpTypePointer UniformConstant %TVec2
 %_ptr_UniformConstant_TArray_Vec2__10_ = OpTypePointer UniformConstant %TArray_Vec2__10_
 %_ptr_Input_TInt = OpTypePointer Input %TInt
@@ -115,153 +82,14 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-       %echo = OpFunction %TVec2 None %22
-        %x_0 = OpFunctionParameter %TVec2
-         %52 = OpLabel
-               OpReturnValue %x_0
-               OpFunctionEnd
-       %test = OpFunction %TFloat None %23
-          %x = OpFunctionParameter %TFloat
-         %55 = OpLabel
-%__mnsl_param_x = OpVariable %_ptr_Function_TFloat Function
-         %57 = OpConvertSToF %TFloat %TInt_1
-         %58 = OpFAdd %TFloat %x %57
-               OpStore %__mnsl_param_x %58
-         %59 = OpConvertSToF %TFloat %TInt_2
-         %60 = OpFMul %TFloat %x %59
-               OpStore %__mnsl_param_x %60
-         %61 = OpConvertSToF %TFloat %TInt_5
-               OpStore %__mnsl_param_x %61
-               OpReturnValue %x
-               OpFunctionEnd
-       %main = OpFunction %TVoid None %25
-         %63 = OpLabel
-       %vecA = OpVariable %_ptr_Function_TVec2 Function
-         %xA = OpVariable %_ptr_Function_TFloat Function
-         %yA = OpVariable %_ptr_Function_TFloat Function
-         %xB = OpVariable %_ptr_Function_TFloat Function
-         %yB = OpVariable %_ptr_Function_TFloat Function
-       %vecC = OpVariable %_ptr_Function_TVec2 Function
-       %vecD = OpVariable %_ptr_Function_TVec2 Function
-       %vecE = OpVariable %_ptr_Function_TVec3 Function
-       %vecF = OpVariable %_ptr_Function_TVec3 Function
-         %va = OpVariable %_ptr_Function_TFloat Function
-         %qa = OpVariable %_ptr_Function_TFloat Function
-        %idx = OpVariable %_ptr_Function_TInt Function
-    %vecList = OpVariable %_ptr_Function_TArray_Vec2__10_ Function
-       %vecG = OpVariable %_ptr_Function_TVec2 Function
-       %vecH = OpVariable %_ptr_Function_TVec2 Function
-      %listX = OpVariable %_ptr_Function_TFloat Function
-      %listY = OpVariable %_ptr_Function_TFloat Function
-%listSwizzle = OpVariable %_ptr_Function_TVec3 Function
-      %vecGx = OpVariable %_ptr_Function_TFloat Function
-      %vecGy = OpVariable %_ptr_Function_TFloat Function
-    %vecGxyx = OpVariable %_ptr_Function_TVec3 Function
- %subswizzle = OpVariable %_ptr_Function_TFloat Function
-         %87 = OpConvertSToF %TFloat %TInt_1
-         %86 = OpCompositeConstruct %TVec2 %87 %87
-         %88 = OpLoad %TVec2 %u_u_Vec
-         %89 = OpFMul %TVec2 %86 %88
-               OpStore %vecA %89
-         %90 = OpLoad %TVec2 %vecA
-         %91 = OpCompositeExtract %TFloat %90 0
-               OpStore %xA %91
-         %92 = OpLoad %TVec2 %vecA
-         %93 = OpCompositeExtract %TFloat %92 1
-               OpStore %yA %93
-         %94 = OpLoad %TVec2 %u_u_Vec
-         %95 = OpCompositeExtract %TFloat %94 0
-               OpStore %xB %95
-         %96 = OpLoad %TVec2 %u_u_Vec
-         %97 = OpCompositeExtract %TFloat %96 1
-               OpStore %yB %97
-         %98 = OpLoad %TVec2 %vecA
-         %99 = OpVectorShuffle %TVec2 %98 %98 1 0
-               OpStore %vecC %99
-        %100 = OpLoad %TVec2 %u_u_Vec
-        %101 = OpVectorShuffle %TVec2 %100 %100 0 1
-               OpStore %vecD %101
-        %102 = OpConvertSToF %TFloat %TInt_1
-               OpStore %xA %102
-        %103 = OpAccessChain %_ptr_Function_TFloat %vecA %TInt_0
-        %104 = OpConvertSToF %TFloat %TInt_1
-               OpStore %103 %104
-        %105 = OpAccessChain %_ptr_Function_TFloat %vecA %TInt_1
-        %106 = OpConvertSToF %TFloat %TInt_2
-               OpStore %105 %106
-        %109 = OpLoad %TVec2 %vecA
-        %110 = OpCompositeExtract %TFloat %109 0
-        %111 = OpBitcast %TFloat %110
-        %108 = OpCompositeConstruct %TVec2 %111 %111
-        %112 = OpLoad %TVec2 %vecA
-        %113 = OpVectorShuffle %TVec2 %112 %108 2 3
-               OpStore %vecA %113
-        %114 = OpLoad %TVec2 %vecA
-        %115 = OpVectorShuffle %TVec3 %114 %114 0 1 0
-               OpStore %vecE %115
-        %116 = OpLoad %TVec2 %vecA
-        %117 = OpFunctionCall %TVec2 %echo %116
-        %118 = OpVectorShuffle %TVec3 %117 %117 0 0 1
-               OpStore %vecF %118
-               OpStore %va %TFloat_1
-        %119 = OpLoad %TFloat %va
-        %120 = OpConvertSToF %TFloat %TInt_1
-        %121 = OpFAdd %TFloat %119 %120
-               OpStore %va %121
-        %122 = OpLoad %TFloat %va
-        %123 = OpConvertSToF %TFloat %TInt_2
-        %124 = OpFMul %TFloat %122 %123
-               OpStore %va %124
-        %125 = OpLoad %TFloat %va
-        %126 = OpFunctionCall %TFloat %test %125
-               OpStore %va %126
-        %127 = OpLoad %TFloat %va
-               OpStore %qa %127
-        %128 = OpLoad %TFloat %qa
-        %129 = OpConvertSToF %TFloat %TInt_2
-        %130 = OpFDiv %TFloat %128 %129
-               OpStore %qa %130
-               OpStore %idx %TInt_0
-        %131 = OpLoad %TArray_Vec2__10_ %u_u_VecList
-               OpStore %vecList %131
-        %132 = OpLoad %TInt %idx
-        %133 = OpAccessChain %_ptr_Function_TVec2 %vecList %132
-        %134 = OpLoad %TVec2 %133
-               OpStore %vecG %134
-        %135 = OpLoad %TInt %idx
-        %136 = OpAccessChain %_ptr_UniformConstant_TVec2 %u_u_VecList %135
-        %137 = OpLoad %TVec2 %136
-               OpStore %vecH %137
-        %138 = OpLoad %TInt %idx
-        %139 = OpAccessChain %_ptr_UniformConstant_TVec2 %u_u_VecList %138
-        %140 = OpLoad %TVec2 %139
-        %141 = OpCompositeExtract %TFloat %140 0
-               OpStore %listX %141
-        %142 = OpLoad %TInt %idx
-        %143 = OpAccessChain %_ptr_UniformConstant_TVec2 %u_u_VecList %142
-        %144 = OpLoad %TVec2 %143
-        %145 = OpCompositeExtract %TFloat %144 1
-               OpStore %listY %145
-        %146 = OpLoad %TInt %idx
-        %147 = OpAccessChain %_ptr_UniformConstant_TVec2 %u_u_VecList %146
-        %148 = OpLoad %TVec2 %147
-        %149 = OpVectorShuffle %TVec3 %148 %148 0 0 1
-               OpStore %listSwizzle %149
-        %150 = OpLoad %TVec2 %vecG
-        %151 = OpCompositeExtract %TFloat %150 0
-               OpStore %vecGx %151
-        %152 = OpLoad %TVec2 %vecG
-        %153 = OpCompositeExtract %TFloat %152 1
-               OpStore %vecGy %153
-        %154 = OpLoad %TVec2 %vecG
-        %155 = OpVectorShuffle %TVec3 %154 %154 0 1 0
-               OpStore %vecGxyx %155
-        %156 = OpLoad %TInt %idx
-        %157 = OpAccessChain %_ptr_UniformConstant_TVec2 %u_u_VecList %156
-        %158 = OpLoad %TVec2 %157
-        %159 = OpVectorShuffle %TVec2 %158 %158 0 1
-        %160 = OpVectorShuffle %TVec2 %159 %159 1 0
-        %161 = OpCompositeExtract %TFloat %160 0
-               OpStore %subswizzle %161
+       %main = OpFunction %TVoid None %22
+         %44 = OpLabel
+          %x = OpVariable %_ptr_Function_TVec2 Function
+         %46 = OpLoad %TVec2 %u_u_Vec
+               OpStore %x %46
+         %48 = OpConvertSToF %TFloat %TInt_1
+         %49 = OpConvertSToF %TFloat %TInt_2
+         %47 = OpCompositeConstruct %TVec2 %48 %49
+               OpStore %x %47
                OpReturn
                OpFunctionEnd
