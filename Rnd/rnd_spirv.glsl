@@ -1,11 +1,12 @@
 #version 450
 
-uniform vec2 u_u_Vec;
-uniform vec2 u_u_VecList[10];
+uniform sampler2D u_Texture;
+
+layout(location = 0) in vec2 in_TexCoord;
+layout(location = 1) out vec4 out_FragColour;
 
 void main()
 {
-    vec2 x = u_u_Vec;
-    x = vec2(float(1), float(2));
+    out_FragColour = texture(u_Texture, in_TexCoord);
 }
 

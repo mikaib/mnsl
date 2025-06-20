@@ -1,7 +1,7 @@
-@uniform(u_Vec: Vec2)
-@uniform(u_VecList: Vec2[10])
+@input(TexCoord: Vec2)
+@uniform(Texture: Sampler)
+@output(FragColour: Vec4)
 
 func main() {
-    var x = uniform.u_Vec;
-    x = vec2(1, 2);
+    output.FragColour = texture(uniform.Texture, input.TexCoord);
 }

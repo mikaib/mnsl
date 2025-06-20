@@ -3,9 +3,20 @@
 
 using namespace metal;
 
-fragment void main0(constant float2& u_u_Vec [[buffer(0)]])
+struct main0_out
 {
-    float2 x = u_u_Vec;
-    x = float2(float(1), float(2));
+    float4 out_FragColour [[color(1)]];
+};
+
+struct main0_in
+{
+    float2 in_TexCoord [[user(locn0)]];
+};
+
+fragment main0_out main0(main0_in in [[stage_in]], texture2d<float> u_Texture [[texture(0)]], sampler u_TextureSmplr [[sampler(0)]])
+{
+    main0_out out = {};
+    out.out_FragColour = u_Texture.sample(u_TextureSmplr, in.in_TexCoord);
+    return out;
 }
 

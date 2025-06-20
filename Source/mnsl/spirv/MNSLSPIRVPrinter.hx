@@ -152,9 +152,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             case "Float":
                 this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeFloat, oper: [id, 32] });
             case "Sampler":
-                var sampledId = id;
-                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeImage, oper: [id, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0] });
-                id = assignId();
+                var sampledId = assignId();
+                this._typeInit.push({ id: sampledId, op: MNSLSPIRVOpCode.OpTypeImage, oper: [sampledId, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0] });
                 this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeSampledImage, oper: [id, sampledId] });
                 emitDebugLabel(sampledId, 'TSamplerImage');
             case "CubeSampler":

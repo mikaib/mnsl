@@ -1,10 +1,10 @@
 #version 300 core
 
-uniform vec2 u_u_Vec;
-uniform vec2 u_u_VecList[10];
+in vec2 in_TexCoord;
+uniform sampler2D u_Texture;
+out vec4 out_FragColour;
 
 void main() {
-    vec2 x = u_u_Vec;
-    x = vec2(1, 2);
+    out_FragColour = texture(u_Texture, in_TexCoord);
 }
 

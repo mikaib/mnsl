@@ -1304,6 +1304,13 @@ mnsl_MNSLContext.prototype = {
 				limitStr += Std.string(limits[limitIdx]);
 			}
 			return Std.string(node) + " did not match any of the expected types: " + limitStr;
+		case 25:
+			var type = error.type;
+			var node = error.node;
+			return "Unknown array size for type: " + Std.string(type) + " at " + Std.string(node);
+		case 26:
+			var node = error.node;
+			return "Cannot assign to read-only variable: " + Std.string(node);
 		}
 	}
 	,__class__: mnsl_MNSLContext
@@ -1362,8 +1369,10 @@ var mnsl_MNSLError = $hxEnums["mnsl.MNSLError"] = { __ename__:true,__constructs_
 	,AnalyserInvalidUnaryOp: ($_=function(op,info) { return {_hx_index:22,op:op,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidUnaryOp",$_.__params__ = ["op","info"],$_)
 	,AnalyserLoopKeywordOutsideLoop: ($_=function(node,info) { return {_hx_index:23,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserLoopKeywordOutsideLoop",$_.__params__ = ["node","info"],$_)
 	,AnalyserMismatchingEitherType: ($_=function(limits,node) { return {_hx_index:24,limits:limits,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingEitherType",$_.__params__ = ["limits","node"],$_)
+	,AnalyserUnknownArraySize: ($_=function(type,node) { return {_hx_index:25,type:type,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnknownArraySize",$_.__params__ = ["type","node"],$_)
+	,AnalyserReadOnlyAssignment: ($_=function(node) { return {_hx_index:26,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserReadOnlyAssignment",$_.__params__ = ["node"],$_)
 };
-mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMissingReturn,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnknownType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserRecursiveFunction,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType];
+mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMissingReturn,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnknownType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserRecursiveFunction,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType,mnsl_MNSLError.AnalyserUnknownArraySize,mnsl_MNSLError.AnalyserReadOnlyAssignment];
 var mnsl_MNSLPrinter = function(context) {
 	this._output = "";
 	this._indent = 0;
@@ -1758,6 +1767,36 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		return v;
 	}
 	,analyseVariableAssignPost: function(node,on,value,ctx,info) {
+		var _gthis = this;
+		var findBase = null;
+		findBase = function(node) {
+			switch(node._hx_index) {
+			case 5:
+				var _g = node.type;
+				var _g = node.info;
+				var name = node.name;
+				return name;
+			case 17:
+				var on = node.on;
+				var field = node.field;
+				var type = node.type;
+				var info = node.info;
+				return findBase(on);
+			case 18:
+				var on = node.on;
+				var index = node.index;
+				var info = node.info;
+				return findBase(on);
+			default:
+				_gthis._context.emitError(mnsl_MNSLError.AnalyserInvalidAccess(node));
+				return null;
+			}
+		};
+		var base = findBase(on);
+		if(base == "uniform" || base == "input") {
+			this._context.emitError(mnsl_MNSLError.AnalyserReadOnlyAssignment(node));
+			return node;
+		}
 		switch(on._hx_index) {
 		case 17:
 			var accessOn = on.on;
@@ -2316,6 +2355,10 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		var t = mnsl_analysis_MNSLAnalyser.getType(node);
 		if(t._type != "Unknown" && !t._tempType && this._types.indexOf(t.toBaseString()) == -1) {
 			this._context.emitError(mnsl_MNSLError.AnalyserUnknownType(t,node));
+			return;
+		}
+		if(t._arrayBaseType != null && t._arraySize == -1) {
+			this._context.emitError(mnsl_MNSLError.AnalyserUnknownArraySize(t,node));
 			return;
 		}
 	}
@@ -5565,6 +5608,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		var currIsShaderData = false;
 		var currShaderDataKind = mnsl_parser_MNSLShaderDataKind.Input;
 		var currIsVecAccess = false;
+		var nextIsVecAccess = false;
 		var currStorageClass = 7;
 		var lastType = new mnsl_analysis_MNSLType("Void");
 		var iterNode = null;
@@ -5604,8 +5648,12 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		};
 		var enter = function(name,type,node,isLast,arrayIndex) {
 			var varDef = currScope.variables.h[name];
-			if((type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4) && !isLast) {
+			if(nextIsVecAccess) {
 				currIsVecAccess = true;
+				nextIsVecAccess = false;
+			}
+			if((type._type == "Vec" + 2 || type._type == "Vec" + 3 || type._type == "Vec" + 4) && !isLast) {
+				nextIsVecAccess = true;
 			}
 			if(currIsShaderData) {
 				var shData = _gthis.getShaderData(name,currShaderDataKind);
@@ -5673,7 +5721,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				lastType = type;
 				return;
 			}
-			if(currIsVecAccess && isLast) {
+			if(currIsVecAccess) {
 				var _this = name.split("");
 				var result = new Array(_this.length);
 				var _g = 0;
@@ -6082,7 +6130,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var info = node.info;
 			return this.getConst(value,new mnsl_analysis_MNSLType("Bool"));
 		default:
-			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 725, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
+			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 731, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
 			return 0;
 		}
 	}
@@ -6264,7 +6312,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			return resId;
 		}
 		if(from._type == "Int" && to._type == "Float") {
-			haxe_Log.trace(on,{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 916, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitTypeCast"});
+			haxe_Log.trace(on,{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 927, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitTypeCast"});
 			this.emitInstruction(111,[targetType,resId,onId]);
 			return resId;
 		}
@@ -6584,6 +6632,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		this._ptrInit.reverse();
 		this._constInit.reverse();
 		this._typeInit.reverse();
+		this.emitBody(this._ast,new mnsl_spirv_MNSLSPIRVScope(null,null));
 		var _g = 0;
 		var _g1 = this._ptrInit;
 		while(_g < _g1.length) {
@@ -6649,7 +6698,6 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			++_g;
 			this.insertInstruction(preShaderIdx,type.op,type.oper);
 		}
-		this.emitBody(this._ast,new mnsl_spirv_MNSLSPIRVScope(null,null));
 		var debugLabels = Lambda.count(this._debugLabels);
 		var label = this._debugLabels.keys();
 		while(label.hasNext()) {
@@ -7170,13 +7218,6 @@ mnsl_tokenizer_MNSLTokenizer.prototype = {
 						++column;
 					}
 					var value1 = HxOverrides.substr(this.source,start3,this.position - start3);
-					var nextChar = this.position < this.length ? this.source.charAt(this.position) : null;
-					var secondChar = this.position + 1 < this.length ? this.source.charAt(this.position + 1) : null;
-					if(nextChar == "[" && secondChar == "]") {
-						value1 = "Array<" + value1 + ", -1>";
-						this.position += 2;
-						column += 2;
-					}
 					appendToken(mnsl_tokenizer_MNSLToken.Identifier(value1,new mnsl_tokenizer_MNSLTokenInfo(line,column,initialPosition,this.position - start3)));
 				} else {
 					this.position++;
