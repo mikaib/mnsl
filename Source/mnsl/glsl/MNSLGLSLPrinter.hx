@@ -414,9 +414,15 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             println("");
         }
 
+        var dataOutputLength: Int = 0;
         for (data in _context.getShaderData()) {
             switch (data.kind) {
                 case MNSLShaderDataKind.Input:
+                    if (_internalInputStruct.exists(data.name)) {
+                        continue;
+                    }
+
+                    dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
                         println("attribute {0} in_{1};", _types.get(data.type.toString()), data.name);
                     } else {
@@ -424,6 +430,11 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                 case MNSLShaderDataKind.Output:
+                    if (_internalOutputStruct.exists(data.name)) {
+                        continue;
+                    }
+
+                    dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
                         println("varying {0} out_{1};", _types.get(data.type.toString()), data.name);
                     } else {
@@ -431,6 +442,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                 case MNSLShaderDataKind.Uniform:
+                    dataOutputLength++;
                     if (data.arraySize != -1) {
                         println("uniform {0} u_{1}[{2}];", _types.get(data.type.toString()), data.name, data.arraySize);
                     } else {
@@ -439,7 +451,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             }
         }
 
-        if (_context.getShaderData().length > 0) {
+        if (dataOutputLength > 0) {
             println("");
         }
 

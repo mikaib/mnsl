@@ -11,6 +11,9 @@ import haxe.io.FPHelper;
 import haxe.EnumTools.EnumValueTools;
 import mnsl.tokenizer.MNSLToken;
 import mnsl.analysis.MNSLAnalyser;
+import mnsl.parser.MNSLShaderDataKind;
+import mnsl.spirv.MNSLSPIRVBuiltIn;
+import mnsl.parser.MNSLShaderData;
 
 class MNSLSPIRVPrinter extends MNSLPrinter {
 
@@ -21,14 +24,50 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     private var _functionTypes: Map<String, Int>;
     private var _ptrTypes: Map<String, Int>;
     private var _constants: Map<String, { id: Int, op: MNSLSPIRVOpCode, oper: Array<Int> }>;
+    private var _decorations: Array<{ id: Int, decoration: MNSLSPIRVDecoration, oper: Array<Int>, kind: MNSLShaderDataKind, name: String }>;
+    private var _componentList: Array<String>;
     private var _entry: Int;
 
     private var _idCount: Int;
     private var _instructions: Array<Array<Int>>;
     private var _debugLabels: Map<Int, String>;
 
+    private var _glslFuncMap: Array<{ name: String, mapping: MNSLSPIRVUnifiedStd }>;
+    private var _glslExtId: Int;
+
     public function new(context: MNSLContext, config: MNSLSPIRVConfig) {
         super(context);
+        this._glslExtId = -1;
+        this._componentList = ['x', 'y', 'z', 'w'];
+        this._glslFuncMap = [
+            { name: "texture", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "dot", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "mod", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "sin", mapping: MNSLSPIRVUnifiedStd.Sin },
+            { name: "cos", mapping: MNSLSPIRVUnifiedStd.Cos },
+            { name: "tan", mapping: MNSLSPIRVUnifiedStd.Tan },
+            { name: "normalize", mapping: MNSLSPIRVUnifiedStd.Normalize },
+            { name: "cross", mapping: MNSLSPIRVUnifiedStd.Cross },
+            { name: "length", mapping: MNSLSPIRVUnifiedStd.Length },
+            { name: "reflect", mapping: MNSLSPIRVUnifiedStd.Reflect },
+            { name: "refract", mapping: MNSLSPIRVUnifiedStd.Refract },
+            { name: "pow", mapping: MNSLSPIRVUnifiedStd.Pow },
+            { name: "exp", mapping: MNSLSPIRVUnifiedStd.Exp },
+            { name: "log", mapping: MNSLSPIRVUnifiedStd.Log },
+            { name: "sqrt", mapping: MNSLSPIRVUnifiedStd.Sqrt },
+            { name: "abs", mapping: MNSLSPIRVUnifiedStd.FAbs },
+            { name: "clamp", mapping: MNSLSPIRVUnifiedStd.FClamp },
+            { name: "mix", mapping: MNSLSPIRVUnifiedStd.FMix },
+            { name: "step", mapping: MNSLSPIRVUnifiedStd.Step },
+            { name: "smoothstep", mapping: MNSLSPIRVUnifiedStd.SmoothStep },
+            { name: "max", mapping: MNSLSPIRVUnifiedStd.FMax },
+            { name: "min", mapping: MNSLSPIRVUnifiedStd.FMin },
+            { name: "atan", mapping: MNSLSPIRVUnifiedStd.Atan2 },
+            { name: "acos", mapping: MNSLSPIRVUnifiedStd.Acos },
+            { name: "asin", mapping: MNSLSPIRVUnifiedStd.Asin },
+            { name: "fract", mapping: MNSLSPIRVUnifiedStd.Fract },
+            { name: "floor", mapping: MNSLSPIRVUnifiedStd.Floor }
+        ];
 
         this._config = config;
         this._bin = new BytesOutput();
@@ -41,6 +80,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         this._debugLabels = [];
         this._functionTypes = [];
         this._ptrTypes = [];
+        this._decorations = [];
 
         this._idCount = 1;
     }
@@ -70,7 +110,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var id = assignId();
-        emitDebugLabel(id, 'T${type.toHumanString()}');
+        emitDebugLabel(id, '${type.toHumanString()}');
 
         _types.set(type, id);
 
@@ -123,7 +163,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var id = assignId();
-        emitDebugLabel(id, '${v}');
 
         if (type.isBool()) {
             _constants.set(key, { id: id, op: v == true ? MNSLSPIRVOpCode.OpConstantTrue : MNSLSPIRVOpCode.OpConstantFalse, oper: [getType(type), id] });
@@ -157,6 +196,14 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return typeId;
     }
 
+    public function getExtGlslStd(): Int {
+        if (_glslExtId == -1) {
+            _glslExtId = assignId();
+            emitInstruction(MNSLSPIRVOpCode.OpExtInstImport, [_glslExtId].concat(convString("GLSL.std.450")));
+        }
+        return _glslExtId;
+    }
+
     public function getFunctionType(ret: MNSLType, params: Array<MNSLType>): Int {
         var key = ret.toString() + ":" + params.map(t -> t.toString()).join(",");
         if (_functionTypes.exists(key)) {
@@ -173,17 +220,207 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return typeId;
     }
 
-    public function getVarBase(on: MNSLNode): String {
+    public function getShaderData(name: String, kind: MNSLShaderDataKind): Int {
+        for (data in _decorations) {
+            if (data.kind == kind && data.name == name) {
+                return data.id;
+            }
+        }
+
+        return 0;
+    }
+
+    public function getVarBaseName(on: MNSLNode): String {
         switch (on) {
             case Identifier(name, type, info):
                 return name;
             case StructAccess(on, field, type, info):
-                return getVarBase(on);
+                return getVarBaseName(on);
             case ArrayAccess(on, index, info):
-                return getVarBase(on);
+                return getVarBaseName(on);
             default:
                 throw "Invalid node for variable base: " + on;
         }
+    }
+
+    public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, requirePtr: Bool = false): { id: Int, isParam: Bool } {
+        var stack: Array<{ name: String, type: MNSLType, node: MNSLNode }> = [];
+        var currScope: MNSLSPIRVScope = scope;
+        var currIsParam: Bool = false;
+        var currRetId: Int = 0;
+        var currIsShaderData: Bool = false;
+        var currShaderDataKind: MNSLShaderDataKind = MNSLShaderDataKind.Input;
+        var currIsVecAccess: Bool = false;
+        var lastType: MNSLType = MNSLType.TVoid;
+
+        function iterNode(node: MNSLNode) {
+            switch (node) {
+                case Identifier(iterName, iterType, iterInfo):
+                    stack.push({ name: iterName, type: iterType, node: node });
+                case StructAccess(iterOn, iterField, iterType, iterInfo):
+                    iterNode(iterOn);
+                    stack.push({ name: iterField, type: iterType, node: node });
+                case FunctionCall(iterName, iterArgs, iterRet, iterInfo):
+                    stack.push({ name: '__mnsl_eval_tmp', type: iterRet, node: node });
+                default:
+                    throw "Invalid node for variable access: " + node;
+            }
+        }
+
+        function enter(name: String, type: MNSLType, node: MNSLNode, isLast: Bool) {
+            var varDef = currScope.variables.get(name);
+
+            if (type.isVector() && !isLast) {
+                currIsVecAccess = true;
+            }
+
+            if (currIsShaderData) {
+                var shData = getShaderData(name, currShaderDataKind);
+                if (shData == 0) {
+                    throw "Shader data not found: " + name + " of kind " + currShaderDataKind;
+                }
+
+                currRetId = shData;
+                currIsShaderData = false;
+                currIsParam = false;
+                lastType = type;
+                return;
+            }
+
+            if (name == '__mnsl_eval_tmp') {
+                var funcRet = emitNode(node, scope);
+                currRetId = funcRet;
+                currIsParam = true;
+                lastType = type;
+                return;
+            }
+
+            if (name == "input" || name == "output" || name == "uniform") {
+                var varKind = switch(name) {
+                    case "input": MNSLShaderDataKind.Input;
+                    case "output": MNSLShaderDataKind.Output;
+                    case "uniform": MNSLShaderDataKind.Uniform;
+                    default: null;
+                };
+
+                currIsParam = false;
+                currIsShaderData = true;
+                currShaderDataKind = varKind;
+                lastType = type;
+                return;
+            }
+
+            if (currIsVecAccess && isLast) {
+                var componentsIdxList = name.split("").map(c -> _componentList.indexOf(c));
+                if (componentsIdxList.length == 0) {
+                    throw "Invalid vector access: " + name;
+                }
+
+                for (comp in componentsIdxList) {
+                    if (comp < 0 || comp >= _componentList.length) {
+                        throw "Invalid vector component index: " + comp + " in " + name;
+                    }
+                }
+
+                if (requirePtr) {
+                    if (componentsIdxList.length == 1) {
+                        var accessId = assignId();
+                        var basePtr = currRetId;
+
+                        if (currIsParam) {
+                            throw "Cannot get pointer to vector component of a temporary value";
+                        }
+
+                        emitInstruction(MNSLSPIRVOpCode.OpAccessChain, [
+                            getPtr(getType(MNSLType.TFloat), MNSLSPIRVStorageClass.Function),
+                            accessId,
+                            basePtr,
+                            getConst(componentsIdxList[0], MNSLType.TInt)
+                        ]);
+
+                        currRetId = accessId;
+                        currIsParam = false;
+                        lastType = type;
+                        return;
+                    } else {
+                        var swizzleId = assignId();
+                        var basePtr = currRetId;
+
+                        if (currIsParam) {
+                            throw "Cannot get pointer to vector component of a temporary value";
+                        }
+
+                        currScope.swizzlePointers.set(swizzleId, {
+                            basePtr: basePtr,
+                            components: componentsIdxList,
+                            vectorType: lastType
+                        });
+
+                        currRetId = swizzleId;
+                        currIsParam = false;
+                        lastType = type;
+                        return;
+                    }
+                }
+
+                var vecId = currRetId;
+                if (!currIsParam) {
+                    vecId = assignId();
+                    emitInstruction(MNSLSPIRVOpCode.OpLoad, [getType(lastType), vecId, currRetId]);
+                }
+
+                currRetId = assignId();
+                currIsParam = true;
+                lastType = type;
+
+                if (componentsIdxList.length == 1) emitInstruction(MNSLSPIRVOpCode.OpCompositeExtract, [getType(MNSLType.TFloat), currRetId, vecId, componentsIdxList[0]]);
+                else emitInstruction(MNSLSPIRVOpCode.OpVectorShuffle, [
+                    getType(type),
+                    currRetId,
+                    vecId,
+                    vecId,
+                ].concat(componentsIdxList));
+
+                return;
+            }
+
+            if (varDef == null) {
+                throw "Undefined variable: " + stack.map(e -> e.name).join(".");
+            } else {
+                currRetId = varDef.id;
+                currIsParam = varDef.isParam;
+                lastType = type;
+            }
+        }
+
+        iterNode(on);
+
+        var idx = 0;
+        for (entry in stack) {
+            enter(entry.name, entry.type, entry.node, idx == stack.length - 1);
+            idx++;
+        }
+
+        if (requirePtr && currIsParam) {
+            if (stack.length == 1 && scope.variables.exists("__mnsl_param_" + stack[0].name)) {
+                return { id: scope.variables.get("__mnsl_param_" + stack[0].name).id, isParam: false };
+            }
+
+            var accessPath = stack.map(e -> e.name).join(".");
+            throw "Cannot get pointer to computed value: " + accessPath;
+        }
+
+        if (requirePtr && !currIsParam) {
+            return { id: currRetId, isParam: false };
+        }
+
+        if (!requirePtr && !currIsParam) {
+            var loadId = assignId();
+            emitInstruction(MNSLSPIRVOpCode.OpLoad, [getType(lastType), loadId, currRetId]);
+            return { id: loadId, isParam: true };
+        }
+
+        return { id: currRetId, isParam: currIsParam };
     }
 
     public function assignId(): Int {
@@ -222,6 +459,132 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         _debugLabels.set(id, name);
     }
 
+    public function emitDecoration(name: String, kind: MNSLShaderDataKind, id: Int, decoration: MNSLSPIRVDecoration, params: Array<Int>): Void {
+        _decorations.push({ id: id, decoration: decoration, oper: params, kind: kind, name: name });
+    }
+
+    public function emitShaderData(): Void {
+        var locationCount = 0;
+        var internalData: Array<MNSLShaderData> = [
+            {
+                name: "VertexID",
+                type: MNSLType.TInt,
+                kind: MNSLShaderDataKind.Input,
+                arraySize: -1
+            },
+            {
+                name: "InstanceID",
+                type: MNSLType.TInt,
+                kind: MNSLShaderDataKind.Input,
+                arraySize: -1
+            },
+            {
+                name: "FragCoord",
+                type: MNSLType.TVec4,
+                kind: MNSLShaderDataKind.Input,
+                arraySize: -1
+            },
+            {
+                name: "FrontFacing",
+                type: MNSLType.TBool,
+                kind: MNSLShaderDataKind.Input,
+                arraySize: -1
+            },
+            {
+                name: "FragDepth",
+                type: MNSLType.TFloat,
+                kind: MNSLShaderDataKind.Input,
+                arraySize: -1
+            },
+            {
+                name: "Position",
+                type: MNSLType.TVec4,
+                kind: MNSLShaderDataKind.Output,
+                arraySize: -1
+            },
+            {
+                name: "PointSize",
+                type: MNSLType.TFloat,
+                kind: MNSLShaderDataKind.Output,
+                arraySize: -1
+            }
+        ];
+
+        for (data in _context.getShaderData().concat(internalData)) {
+            var typeId = getType(data.type);
+            var varId = assignId();
+            var varName: String;
+            var storageClass: MNSLSPIRVStorageClass;
+
+            switch (data.kind) {
+                case MNSLShaderDataKind.Input:
+                    storageClass = MNSLSPIRVStorageClass.Input;
+                    varName = "in_" + data.name;
+                case MNSLShaderDataKind.Output:
+                    storageClass = MNSLSPIRVStorageClass.Output;
+                    varName = "out_" + data.name;
+                case MNSLShaderDataKind.Uniform:
+                    storageClass = MNSLSPIRVStorageClass.UniformConstant;
+                    varName = "u_" + data.name;
+            }
+
+            var ptrId: Int = 0;
+
+            if (data.arraySize != -1) {
+                var arraySizeId = getConst(data.arraySize, MNSLType.TInt);
+                var arrayTypeId = assignId();
+                emitInstruction(MNSLSPIRVOpCode.OpTypeArray, [arrayTypeId, typeId, arraySizeId]);
+                ptrId = getPtr(arrayTypeId, storageClass);
+            } else {
+                ptrId = getPtr(typeId, storageClass);
+            }
+
+            emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, storageClass]);
+            emitDebugLabel(varId, varName);
+
+            if (data.kind == MNSLShaderDataKind.Output) {
+                switch (data.name) {
+                    case "Position":
+                        emitDecoration("Position", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.Position]);
+                        continue;
+                    case "PointSize":
+                        emitDecoration("PointSize", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.PointSize]);
+                        continue;
+                    default:
+                        emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Location, [locationCount]);
+                        locationCount++;
+                }
+            }
+
+            if (data.kind == MNSLShaderDataKind.Input) {
+                switch(data.name) {
+                    case "VertexID":
+                        emitDecoration("VertexID", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.VertexId]);
+                        continue;
+                    case "InstanceID":
+                        emitDecoration("InstanceID", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.InstanceId]);
+                        continue;
+                    case "FragCoord":
+                        emitDecoration("FragCoord", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.FragCoord]);
+                        continue;
+                    case "FrontFacing":
+                        emitDecoration("FrontFacing", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.FrontFacing]);
+                        continue;
+                    case "FragDepth":
+                        emitDecoration("FragDepth", data.kind, varId, MNSLSPIRVDecoration.BuiltIn, [MNSLSPIRVBuiltIn.FragDepth]);
+                        continue;
+                    default:
+                        emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Location, [locationCount]);
+                        locationCount++;
+                }
+            }
+
+            if (data.kind == MNSLShaderDataKind.Uniform) {
+                emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.MNSLInternalNone, []);
+            }
+        }
+    }
+
     public function preEmit(ast: MNSLNodeChildren, scope: Null<MNSLSPIRVScope> = null): Void {
         for (node in ast) {
             switch (node) {
@@ -244,17 +607,17 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     }
                 case VariableAssign(name, value, info):
                     if (scope != null &&
-                        scope.variables.exists(getVarBase(name)) &&
-                        scope.variables.get(getVarBase(name)).isParam &&
-                        !scope.variables.exists("__mnsl_param_" + getVarBase(name))
+                        scope.variables.exists(getVarBaseName(name)) &&
+                        scope.variables.get(getVarBaseName(name)).isParam &&
+                        !scope.variables.exists("__mnsl_param_" + getVarBaseName(name))
                     ) {
 
-                        // this is a parameter assignment, we need to create a temporary variable
+                        // this is a parameter assignment, we need to create a temporary variable as they are read-only
                         var varId = assignId();
                         var ptrId = getPtr(getType(MNSLAnalyser.getType(value)), MNSLSPIRVStorageClass.Function);
                         emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
-                        emitDebugLabel(varId, "__mnsl_param_" + getVarBase(name));
-                        scope.setVariable("__mnsl_param_" + getVarBase(name), varId);
+                        emitDebugLabel(varId, "__mnsl_param_" + getVarBaseName(name));
+                        scope.setVariable("__mnsl_param_" + getVarBaseName(name), varId);
                     }
                 default:
             }
@@ -308,6 +671,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitTypeCast(on, from, to, scope);
             case SubExpression(node, info):
                 return emitNode(node, scope);
+            case StructAccess(on, field, type, info):
+                return emitStructAccess(on, field, type, info, scope);
             case Block(body, info):
                 emitBody(body, scope);
                 return 0;
@@ -317,51 +682,81 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function emitIdentifier(name: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        if (!scope.variables.exists(name)) {
-            throw "Variable not found in scope: " + name;
-        }
-
-        var varId = scope.variables.get(name);
-        if (varId.isParam) {
-            return varId.id;
+    public function emitStructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var varDef = getVar(StructAccess(on, field, type, info), scope);
+        if (varDef.isParam) {
+            return varDef.id;
         }
 
         var typeId = getType(type);
         var resultId = assignId();
 
-        emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varId.id]);
+        emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varDef.id]);
+
+        return resultId;
+    }
+
+    public function emitIdentifier(name: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var varDef = getVar(Identifier(name, type, info), scope);
+        if (varDef.isParam) {
+            return varDef.id;
+        }
+
+        var typeId = getType(type);
+        var resultId = assignId();
+
+        emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varDef.id]);
 
         return resultId;
     }
 
     public function emitVariableAssign(on: MNSLNode, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var name = getVarBase(on);
-        if (!scope.variables.exists(name)) {
-            throw "Variable not found in scope: " + name;
-        }
-
-        var varId = scope.variables.get(name);
+        var varDef = getVar(on, scope, true);
         var valueId = emitNode(value, scope);
 
-        if (varId.isParam) {
-            // this is a small hack to handle assignments to parameters
-            // it first loads the parameter into a temporary variable, then updates the scope to use the temporary variable from now on
-            if (!scope.variables.exists("__mnsl_param_" + name)) {
-                throw "Parameter variable not found in scope: " + name;
-            }
-
-            var paramVarId = scope.variables.get("__mnsl_param_" + name);
-            emitInstruction(MNSLSPIRVOpCode.OpStore, [paramVarId.id, valueId]);
-
-            scope.setVariable(name, paramVarId.id);
-
-            return paramVarId.id;
+        if (scope.swizzlePointers.exists(varDef.id)) {
+            return emitSwizzleStore(varDef.id, valueId, scope);
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpStore, [varId.id, valueId]);
+        emitInstruction(MNSLSPIRVOpCode.OpStore, [varDef.id, valueId]);
 
-        return varId.id;
+        return varDef.id;
+    }
+
+    private function emitSwizzleStore(swizzleId: Int, valueId: Int, scope: MNSLSPIRVScope): Int {
+        var swizzleInfo = scope.swizzlePointers.get(swizzleId);
+        if (swizzleInfo == null) {
+            throw "Invalid swizzle pointer: " + swizzleId;
+        }
+
+        var originalVecId = assignId();
+        emitInstruction(MNSLSPIRVOpCode.OpLoad, [getType(swizzleInfo.vectorType), originalVecId, swizzleInfo.basePtr]);
+
+        var newVecId = assignId();
+        var originalSize = swizzleInfo.vectorType.getVectorComponents();
+
+        var shuffleIndices = [];
+
+        for (i in 0...originalSize) {
+            var componentInSwizzle = swizzleInfo.components.indexOf(i);
+            if (componentInSwizzle >= 0) {
+                shuffleIndices.push(originalSize + componentInSwizzle);
+            } else {
+                shuffleIndices.push(i);
+            }
+        }
+
+        emitInstruction(MNSLSPIRVOpCode.OpVectorShuffle, [
+            getType(swizzleInfo.vectorType),
+            newVecId,
+            originalVecId,
+            valueId
+        ].concat(shuffleIndices));
+
+        emitInstruction(MNSLSPIRVOpCode.OpStore, [swizzleInfo.basePtr, newVecId]);
+        scope.swizzlePointers.remove(swizzleId);
+
+        return swizzleInfo.basePtr;
     }
 
     public function emitVariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
@@ -430,20 +825,24 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var resId = assignId();
 
         if (nodes.length == 1) {
-            var scalarId = emitNode(nodes[0], scope);
+            var scalarId = emitTypeCast(nodes[0], MNSLAnalyser.getType(nodes[0]), MNSLType.TFloat, scope);
             var componentIds = [for (i in 0...comp) scalarId];
 
             emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat(componentIds));
             return resId;
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitNode(n, scope)]));
+        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitTypeCast(n, MNSLAnalyser.getType(n), MNSLType.TFloat, scope)]));
 
         return resId;
     }
 
     public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType, scope: MNSLSPIRVScope): Int {
         var onId = emitNode(on, scope);
+        if (from.equals(to)) {
+            return onId;
+        }
+
         var resId = assignId();
         var targetType = getType(to);
 
@@ -507,8 +906,24 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIMul, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for multiplication: " + type.toHumanString();
             case MNSLToken.Slash(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(type), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSDiv, [getType(type), resultId, leftId, rightId]);
+                if (type.isFloat() || type.isVector()) {
+                    var leftType = MNSLAnalyser.getType(left);
+                    var rightType = MNSLAnalyser.getType(right);
+
+                    if (leftType.isInt()) {
+                        var leftConvId = assignId();
+                        emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [getType(MNSLType.TFloat), leftConvId, leftId]);
+                        leftId = leftConvId;
+                    }
+
+                    if (rightType.isInt()) {
+                        var rightConvId = assignId();
+                        emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [getType(MNSLType.TFloat), rightConvId, rightId]);
+                        rightId = rightConvId;
+                    }
+
+                    emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(type), resultId, leftId, rightId]);
+                } else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSDiv, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for division: " + type.toHumanString();
             case MNSLToken.Percent(_):
                 if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSRem, [getType(type), resultId, leftId, rightId]);
@@ -586,7 +1001,50 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return id;
     }
 
+    public function emitBuiltinFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, glslMapping: MNSLSPIRVUnifiedStd, scope: MNSLSPIRVScope): Int {
+        var argIds = [for (arg in args) emitNode(arg, scope)];
+        var retId = assignId();
+        var typeId = getType(returnType);
+
+        switch(name) {
+            case "texture":
+                if (args.length != 2) {
+                    throw "texture() requires sampler and texcoords";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpImageSampleImplicitLod, [typeId, retId].concat(argIds)); // TODO: fix
+                return retId;
+
+            case "dot":
+                if (args.length != 2) {
+                    throw "dot() requires 2 arguments";
+                }
+                emitInstruction(MNSLSPIRVOpCode.OpDot, [typeId, retId].concat(argIds));
+                return retId;
+
+            case "mod":
+                if (args.length != 2) {
+                    throw "mod() requires 2 arguments";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpFMod, [typeId, retId].concat(argIds));
+                return retId;
+
+            default:
+                var glslExtId = getExtGlslStd();
+                var glslInst = glslMapping;
+                emitInstruction(MNSLSPIRVOpCode.OpExtInst, [typeId, retId, glslExtId, glslInst].concat(argIds));
+                return retId;
+        }
+    }
+
     public function emitFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        for (func in _glslFuncMap) {
+            if (func.name == name) {
+                return emitBuiltinFunctionCall(name, args, returnType, info, func.mapping, scope);
+            }
+        }
+
         if (!_functions.exists(name)) {
             throw "Function not found: " + name;
         }
@@ -595,7 +1053,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var argIds = [for (arg in args) emitNode(arg, scope)];
         var retId = assignId();
 
-        emitDebugLabel(retId, name);
         emitInstruction(MNSLSPIRVOpCode.OpFunctionCall, [getType(returnType), retId, funcId].concat(argIds));
 
         return retId;
@@ -619,7 +1076,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     override public function run(): Void {
         // caps
         emitInstruction(MNSLSPIRVOpCode.OpCapability, [MNSLSPIRVCapability.Shader]);
-        emitInstruction(MNSLSPIRVOpCode.OpMemoryModel, [0, 1]);
+
+        // extensions
+        getExtGlslStd();
+
+        // memory model + entry point
+        emitInstruction(MNSLSPIRVOpCode.OpMemoryModel, [0, 1]); // Logical, GLSL450
         var entryInst = emitInstruction(MNSLSPIRVOpCode.OpEntryPoint, []);
 
         // types
@@ -636,10 +1098,17 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         getType(MNSLType.TSampler);
         getType(MNSLType.TCubeSampler);
 
+        // shader data
+        emitShaderData();
+
         // find/create all constants and assign IDs
-        getConst(0.0, MNSLType.TFloat);
-        getConst(1.0, MNSLType.TFloat);
-        preEmit(_ast);
+        getConst(0.0, MNSLType.TFloat); // vec init (x,y,z)
+        getConst(1.0, MNSLType.TFloat); // vec init (w)
+        getConst(0, MNSLType.TInt); // vec idx (x)
+        getConst(1, MNSLType.TInt); // vec idx (y)
+        getConst(2, MNSLType.TInt); // vec idx (z)
+        getConst(3, MNSLType.TInt); // vec idx (w)
+        preEmit(_ast); // user-defined constants
 
         // constants
         for (constKey in _constants.keys()) {
@@ -649,6 +1118,19 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
         // ast
         emitBody(_ast, {});
+
+        // debug
+        var debugLabels = Lambda.count(_debugLabels);
+        for (label in _debugLabels.keys()) {
+            var name = _debugLabels.get(label);
+            insertInstruction(entryInst + 1, MNSLSPIRVOpCode.OpName, [label].concat(convString(name)));
+        }
+
+        // decorations
+        for (decoration in _decorations) {
+            if (decoration.decoration == -1) continue;
+            insertInstruction(entryInst + debugLabels + 1, MNSLSPIRVOpCode.OpDecorate, [decoration.id, decoration.decoration].concat(decoration.oper));
+        }
 
         // entry point
         if (_entry == 0) {
@@ -661,12 +1143,14 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             default: throw "Unsupported shader type: " + _config.shaderType;
         }
 
-        editInstruction(entryInst, MNSLSPIRVOpCode.OpEntryPoint, [execModel, _entry].concat(convString("main")));
+        editInstruction(entryInst, MNSLSPIRVOpCode.OpEntryPoint,
+            [execModel, _entry]
+            .concat(convString("main")
+            .concat([for (data in _decorations.filter(x -> x.kind == MNSLShaderDataKind.Input || x.kind == MNSLShaderDataKind.Output )) data.id]))
+        );
 
-        // debug
-        for (label in _debugLabels.keys()) {
-            var name = _debugLabels.get(label);
-            insertInstruction(entryInst + 1, MNSLSPIRVOpCode.OpName, [label].concat(convString(name)));
+        if (_config.shaderType == MNSLSPIRVShaderType.SPIRV_SHADER_TYPE_FRAGMENT) {
+            insertInstruction(entryInst + 1, MNSLSPIRVOpCode.OpExecutionMode, [_entry, 7]); // OriginUpperLeft
         }
 
         // header
@@ -683,5 +1167,4 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             }
         }
     }
-
 }

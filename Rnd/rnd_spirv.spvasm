@@ -1,106 +1,75 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 56
+; Bound: 38
 ; Schema: 0
                OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
-               OpEntryPoint Vertex %main "main"
-               OpName %1 "1"
-               OpName %q "q"
-               OpName %0 "0"
-               OpName %someVar "someVar"
-               OpName %test "test"
-               OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %main "main"
-               OpName %x "x"
-               OpName %test_0 "test"
+               OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
+               OpExecutionMode %main OriginUpperLeft
+               OpName %TVec2 "TVec2"
+               OpName %out_PointSize "out_PointSize"
+               OpName %TFloat "TFloat"
                OpName %TSamplerImage "TSamplerImage"
-               OpName %TTMat4 "TTMat4"
-               OpName %test_1 "test"
-               OpName %TTMat3 "TTMat3"
-               OpName %TTMat2 "TTMat2"
-               OpName %1_2 "1.2"
-               OpName %TTVec4 "TTVec4"
-               OpName %TTVec3 "TTVec3"
-               OpName %5 "5"
-               OpName %__mnsl_param_x "__mnsl_param_x"
-               OpName %TTVec2 "TTVec2"
-               OpName %2 "2"
-               OpName %TTFloat "TTFloat"
-               OpName %x_0 "x"
-               OpName %TTInt "TTInt"
-               OpName %1_0 "1"
-               OpName %cool "cool"
-               OpName %TTBool "TTBool"
-               OpName %3 "3"
-               OpName %TTVoid "TTVoid"
-               OpName %2_0 "2"
-               OpName %cool_0 "cool"
-     %TTVoid = OpTypeVoid
-     %TTBool = OpTypeBool
-      %TTInt = OpTypeInt 32 1
-    %TTFloat = OpTypeFloat 32
-     %TTVec2 = OpTypeVector %TTFloat 2
-     %TTVec3 = OpTypeVector %TTFloat 3
-     %TTVec4 = OpTypeVector %TTFloat 4
-     %TTMat2 = OpTypeMatrix %TTVec2 2
-     %TTMat3 = OpTypeMatrix %TTVec3 3
-     %TTMat4 = OpTypeMatrix %TTVec4 4
-%TSamplerImage = OpTypeImage %TTFloat 2D 0 0 0 1 Unknown
-         %12 = OpTypeSampledImage %TSamplerImage
-%TCubeSamplerImage = OpTypeImage %TTFloat Cube 0 0 0 1 Unknown
-         %14 = OpTypeSampledImage %TCubeSamplerImage
-         %17 = OpTypeFunction %TTFloat %TTFloat
-         %23 = OpTypeFunction %TTVoid
-%_ptr_Function_TTFloat = OpTypePointer Function %TTFloat
-%_ptr_Function_TTInt = OpTypePointer Function %TTInt
-          %2 = OpConstant %TTInt 2
-          %0 = OpConstant %TTFloat 0
-          %3 = OpConstant %TTInt 3
-          %1 = OpConstant %TTFloat 1
-        %1_2 = OpConstant %TTFloat 1.20000005
-        %2_0 = OpConstant %TTFloat 2
-          %5 = OpConstant %TTFloat 5
-        %1_0 = OpConstant %TTInt 1
-     %test_1 = OpFunction %TTFloat None %17
-          %x = OpFunctionParameter %TTFloat
-         %29 = OpLabel
-         %30 = OpConvertSToF %TTFloat %3
-         %31 = OpFMul %TTFloat %2_0 %30
-         %32 = OpConvertSToF %TTFloat %1_0
-         %33 = OpFMul %TTFloat %32 %x
-         %34 = OpFNegate %TTFloat %33
-         %35 = OpFAdd %TTFloat %31 %34
-               OpReturnValue %35
-               OpFunctionEnd
-       %cool = OpFunction %TTFloat None %17
-        %x_0 = OpFunctionParameter %TTFloat
-         %38 = OpLabel
-%__mnsl_param_x = OpVariable %_ptr_Function_TTFloat Function
-         %40 = OpConvertSToF %TTFloat %2
-         %41 = OpFMul %TTFloat %x_0 %40
-               OpStore %__mnsl_param_x %41
-         %42 = OpLoad %TTFloat %__mnsl_param_x
-         %43 = OpFAdd %TTFloat %42 %5
-               OpStore %__mnsl_param_x %43
-         %44 = OpLoad %TTFloat %__mnsl_param_x
-     %test_0 = OpFunctionCall %TTFloat %test_1 %44
-               OpReturnValue %test_0
-               OpFunctionEnd
-       %main = OpFunction %TTVoid None %23
-         %47 = OpLabel
-       %test = OpVariable %_ptr_Function_TTFloat Function
-    %someVar = OpVariable %_ptr_Function_TTFloat Function
-          %q = OpVariable %_ptr_Function_TTInt Function
-               OpStore %test %1_2
-         %51 = OpLoad %TTFloat %test
-     %cool_0 = OpFunctionCall %TTFloat %cool %51
-               OpStore %someVar %cool_0
-         %53 = OpLoad %TTFloat %someVar
-         %54 = OpConvertSToF %TTFloat %1_0
-         %55 = OpFAdd %TTFloat %53 %54
-               OpStore %someVar %55
-               OpStore %q %3
+               OpName %in_FragCoord "in_FragCoord"
+               OpName %TInt "TInt"
+               OpName %TMat4 "TMat4"
+               OpName %in_InstanceID "in_InstanceID"
+               OpName %out_Position "out_Position"
+               OpName %TBool "TBool"
+               OpName %TMat3 "TMat3"
+               OpName %TVoid "TVoid"
+               OpName %TMat2 "TMat2"
+               OpName %in_VertexID "in_VertexID"
+               OpName %in_FragDepth "in_FragDepth"
+               OpName %TVec4 "TVec4"
+               OpName %main "main"
+               OpName %TVec3 "TVec3"
+               OpName %TCubeSamplerImage "TCubeSamplerImage"
+               OpName %in_FrontFacing "in_FrontFacing"
+               OpDecorate %out_PointSize BuiltIn PointSize
+               OpDecorate %out_Position BuiltIn Position
+               OpDecorate %in_FragDepth BuiltIn FragDepth
+               OpDecorate %in_FrontFacing BuiltIn FrontFacing
+               OpDecorate %in_FragCoord BuiltIn FragCoord
+               OpDecorate %in_InstanceID BuiltIn InstanceId
+               OpDecorate %in_VertexID BuiltIn VertexId
+      %TVoid = OpTypeVoid
+      %TBool = OpTypeBool
+       %TInt = OpTypeInt 32 1
+     %TFloat = OpTypeFloat 32
+      %TVec2 = OpTypeVector %TFloat 2
+      %TVec3 = OpTypeVector %TFloat 3
+      %TVec4 = OpTypeVector %TFloat 4
+      %TMat2 = OpTypeMatrix %TVec2 2
+      %TMat3 = OpTypeMatrix %TVec3 3
+      %TMat4 = OpTypeMatrix %TVec4 4
+%TSamplerImage = OpTypeImage %TFloat 2D 0 0 0 1 Unknown
+         %13 = OpTypeSampledImage %TSamplerImage
+%TCubeSamplerImage = OpTypeImage %TFloat Cube 0 0 0 1 Unknown
+         %15 = OpTypeSampledImage %TCubeSamplerImage
+%_ptr_Input_TInt = OpTypePointer Input %TInt
+%in_VertexID = OpVariable %_ptr_Input_TInt Input
+%in_InstanceID = OpVariable %_ptr_Input_TInt Input
+%_ptr_Input_TVec4 = OpTypePointer Input %TVec4
+%in_FragCoord = OpVariable %_ptr_Input_TVec4 Input
+%_ptr_Input_TBool = OpTypePointer Input %TBool
+%in_FrontFacing = OpVariable %_ptr_Input_TBool Input
+%_ptr_Input_TFloat = OpTypePointer Input %TFloat
+%in_FragDepth = OpVariable %_ptr_Input_TFloat Input
+%_ptr_Output_TVec4 = OpTypePointer Output %TVec4
+%out_Position = OpVariable %_ptr_Output_TVec4 Output
+%_ptr_Output_TFloat = OpTypePointer Output %TFloat
+%out_PointSize = OpVariable %_ptr_Output_TFloat Output
+         %35 = OpTypeFunction %TVoid
+     %TInt_2 = OpConstant %TInt 2
+   %TFloat_0 = OpConstant %TFloat 0
+     %TInt_3 = OpConstant %TInt 3
+   %TFloat_1 = OpConstant %TFloat 1
+     %TInt_0 = OpConstant %TInt 0
+     %TInt_1 = OpConstant %TInt 1
+       %main = OpFunction %TVoid None %35
+         %37 = OpLabel
                OpReturn
                OpFunctionEnd

@@ -467,7 +467,7 @@ class MNSLAnalyser {
                 return MNSLType.TString;
 
             case BooleanLiteralNode(value, _):
-                return MNSLType.TInt;
+                return MNSLType.TBool;
 
             case VoidNode(_):
                 return MNSLType.TVoid;

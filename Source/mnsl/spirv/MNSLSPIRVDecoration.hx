@@ -1,6 +1,7 @@
 package mnsl.spirv;
 
 enum abstract MNSLSPIRVDecoration(Int) to Int {
+    var MNSLInternalNone = 0;
     var RelaxedPrecision = 0;
     var SpecId = 1;
     var Block = 2;

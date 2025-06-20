@@ -1,0 +1,38 @@
+@uniform(vecB: Vec2)
+
+func echo(x) {
+    return x;
+}
+
+func test(x: Float) {
+    x += 1;
+    x *= 2;
+    x = 5;
+    return x;
+}
+
+func main() {
+    var vecA = vec2(1) * uniform.vecB;
+    var xA = vecA.x;
+    var yA = vecA.y;
+    var xB = uniform.vecB.x;
+    var yB = uniform.vecB.y;
+    var vecC = vecA.yx;
+    var vecD = uniform.vecB.xy;
+
+    xA = 1;
+    vecA.x = 1;
+    vecA.y = 2;
+    vecA.xy = vecA.xx;
+
+    var vecE = vecA.xyx;
+    var vecF = echo(vecA).xxy;
+
+    var va = 1.0;
+    va += 1;
+    va *= 2;
+    va = test(va);
+
+    var qa = va;
+    qa /= 2;
+}
