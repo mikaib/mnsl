@@ -5,6 +5,7 @@ import mnsl.parser.MNSLNodeChildren;
 import mnsl.tokenizer.MNSLToken;
 import mnsl.parser.MNSLShaderDataKind;
 import mnsl.parser.MNSLParser;
+import mnsl.analysis.MNSLType;
 
 class MNSLGLSLPrinter extends MNSLPrinter {
 
@@ -82,10 +83,10 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             case FunctionDecl(name, returnType, arguments, body, info):
                 printlnIndented(
                     "{0} {1}({2}) {",
-                    _types.get(returnType.toString()),
+                   returnType.isArray() ? '${getTypeStr(returnType)}[${returnType.getArraySize()}]' : getTypeStr(returnType),
                     name,
                     arguments
-                        .map(arg -> _types.get(arg.type.toString()) + " " + arg.name)
+                        .map(arg -> getTypeStr(arg.type) + " " + arg.name + (arg.type.isArray() ? '[${arg.type.getArraySize()}]' : ""))
                         .join(", ")
                 );
                 increaseIndent();
@@ -107,9 +108,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
             case VariableDecl(name, type, value, info):
                 if (value == null) {
-                    printlnIndented("{0} {1};", _types.get(type.toString()), name);
+                    printlnIndented("{0} {1};", getTypeStr(type), name + (type.isArray() ? '[${type.getArraySize()}]' : ""));
                 } else {
-                    printIndented("{0} {1} = ", _types.get(type.toString()), name);
+                    printIndented("{0} {1} = ", getTypeStr(type), name + (type.isArray() ? '[${type.getArraySize()}]' : ""));
                     enableInline();
                     printNode(value);
                     disableInline();
@@ -299,7 +300,10 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 print("]");
 
             case TypeCast(on, from, to):
-                print(_types.get(to.toString()));
+                if (from.isArray() || to.isArray()) {
+                    throw "Type casting of arrays is not supported!";
+                }
+                print(getTypeStr(to));
                 print("(");
                 enableInline();
                 printNode(on);
@@ -424,9 +428,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("attribute {0} in_{1};", _types.get(data.type.toString()), data.name);
+                        println("attribute {0} in_{1};", getTypeStr(data.type), data.name);
                     } else {
-                        println("in {0} in_{1};", _types.get(data.type.toString()), data.name);
+                        println("in {0} in_{1};", getTypeStr(data.type), data.name);
                     }
 
                 case MNSLShaderDataKind.Output:
@@ -436,17 +440,17 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("varying {0} out_{1};", _types.get(data.type.toString()), data.name);
+                        println("varying {0} out_{1};", getTypeStr(data.type), data.name);
                     } else {
-                        println("out {0} out_{1};", _types.get(data.type.toString()), data.name);
+                        println("out {0} out_{1};", getTypeStr(data.type), data.name);
                     }
 
                 case MNSLShaderDataKind.Uniform:
                     dataOutputLength++;
-                    if (data.arraySize != -1) {
-                        println("uniform {0} u_{1}[{2}];", _types.get(data.type.toString()), data.name, data.arraySize);
+                    if (data.type.isArray()) {
+                        println("uniform {0} u_{1}[{2}];", getTypeStr(data.type.getArrayBaseType()), data.name, data.type.getArraySize());
                     } else {
-                        println("uniform {0} u_{1};", _types.get(data.type.toString()), data.name);
+                        println("uniform {0} u_{1};", getTypeStr(data.type.getArrayBaseType()), data.name);
                     }
             }
         }
@@ -458,4 +462,8 @@ class MNSLGLSLPrinter extends MNSLPrinter {
         printNodeChildren(_ast);
     }
 
+    public function getTypeStr(type: MNSLType): String {
+        return _types.get(type.toBaseString());
+    }
+    
 }

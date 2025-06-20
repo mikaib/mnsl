@@ -370,6 +370,8 @@ class MNSLContext {
                 return "Type of vector component is unknown: " + node + " at vector " + info;
             case AnalyserInvalidUnaryOp(op, info):
                 return "Invalid unary operation: " + op + " at " + info;
+            case AnalyserUnknownArraySize(type, node):
+                return "Unknown array size for type: " + type + " at " + node;
             case AnalyserRecursiveFunction(func, chain, info):
                 var chainStr = "";
                 for (i in 0...chain.length) {

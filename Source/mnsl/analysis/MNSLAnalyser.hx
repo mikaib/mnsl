@@ -449,7 +449,7 @@ class MNSLAnalyser {
                 return getType(value);
 
             case ArrayAccess(on, index, info):
-                return getType(on);
+                return getType(on).getArrayBaseType();
 
             case VectorConversion(on, fromComp, toComp):
                 return MNSLType.fromString('Vec$toComp');
@@ -1123,8 +1123,13 @@ class MNSLAnalyser {
      */
     public function checkTypeValidity(node: MNSLNode): Void {
         var t = getType(node);
-        if (t.isDefined() && !_types.contains(t.toString())) {
+        if (t.isDefined() && !_types.contains(t.toBaseString())) {
             _context.emitError(AnalyserUnknownType(t, node));
+            return;
+        }
+
+        if (t.isArray() && t.getArraySize() == -1) {
+            _context.emitError(AnalyserUnknownArraySize(t, node));
             return;
         }
     }

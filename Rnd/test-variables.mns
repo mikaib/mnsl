@@ -44,4 +44,9 @@ func main() {
     var listX = uniform.u_VecList[idx].x;
     var listY = uniform.u_VecList[idx].y;
     var listSwizzle = uniform.u_VecList[idx].xxy;
+    var vecGx = vecG.x;
+    var vecGy = vecG.y;
+    var vecGxyx = vecG.xyx;
+
+    var subswizzle = uniform.u_VecList[idx].xy.yx.x;
 }

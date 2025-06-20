@@ -22,8 +22,14 @@ class MNSLType {
         return new MNSLType('Template<$T>', true, limits);
     }
 
+    public static function Array(T: String, size: Int): MNSLType {
+        return new MNSLType('Array<$T, $size>', false, []);
+    }
+
     private var _type: String;
     private var _tempType: Bool;
+    private var _arrayBaseType: MNSLType;
+    private var _arraySize: Int = -1;
     private var _limits: Array<MNSLType>;
 
     /**
@@ -31,9 +37,11 @@ class MNSLType {
      * @param type The type name.
      */
     private function new(t: String, temp: Bool = false, ?limits: Array<MNSLType>): Void {
-        _type = t;
         _tempType = temp;
         _limits = limits != null ? limits : [];
+        _arrayBaseType = null;
+
+        setTypeStrUnsafe(t);
     }
 
     /**
@@ -61,6 +69,45 @@ class MNSLType {
     }
 
     /**
+     * Set the array base type.
+     */
+    public function setArrayBaseType(base: MNSLType): Void {
+        _arrayBaseType = base;
+    }
+
+    /**
+    * Set the array size.
+    * @param size The size of the array.
+    */
+    public function setArraySize(size: Int): Void {
+        _arraySize = size;
+    }
+
+    /**
+     * Get the array size.
+     * @return The size of the array, or -1 if not an array.
+     */
+    public inline function getArraySize(): Int {
+        return _arraySize;
+    }
+
+    /**
+     * Get the array base type.
+     * @return The base type of the array, or null if not an array.
+     */
+    public inline function getArrayBaseType(): MNSLType {
+        return _arrayBaseType ?? this;
+    }
+
+    /**
+     * Check if the type is an array.
+     * @return True if the type is an array, false otherwise.
+     */
+    public inline function isArray(): Bool {
+        return _arrayBaseType != null;
+    }
+
+    /**
      * Check if the type accepts a specific type as a limit.
      */
     public function accepts(t: MNSLType): Bool {
@@ -78,6 +125,13 @@ class MNSLType {
      * @param type The type name.
      */
     public function setTypeStrUnsafe(type: String): Void {
+        if (StringTools.startsWith(type, "Array<") && StringTools.endsWith(type, ">")) {
+            var baseTypeContent = type.substr(6, type.length - 7);
+            var parts = StringTools.replace(baseTypeContent, " ", "").split(",");
+            if (parts.length > 0) _arrayBaseType = MNSLType.fromString(parts[0]);
+            if (parts.length > 1) _arraySize = Std.parseInt(parts[1]) ?? -1;
+        }
+
         _type = type;
     }
 
@@ -86,7 +140,7 @@ class MNSLType {
      * @param type The type name.
      */
     public function setType(type: MNSLType): Void {
-        @:privateAccess _type = type._type;
+        setTypeStrUnsafe(type.toString());
     }
 
     /**
@@ -359,6 +413,20 @@ class MNSLType {
      */
     @:to
     public function toString(): String {
+        return _type;
+    }
+
+    /**
+     * Convert to base string
+     * @return The type name without template or temporary information.
+     */
+    public function toBaseString(): String {
+        if (isTemplate()) {
+            return getTemplateName();
+        }
+        if (isArray()) {
+            return getArrayBaseType().toBaseString();
+        }
         return _type;
     }
 

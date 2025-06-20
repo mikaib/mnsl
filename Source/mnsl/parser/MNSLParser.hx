@@ -296,7 +296,7 @@ class MNSLParser {
 
         var shData: MNSLShaderData = {
             name: name,
-            type: MNSLType.fromString(type),
+            type: arraySizeInt == -1 ? MNSLType.fromString(type) : MNSLType.Array(type, arraySizeInt),
             arraySize: arraySizeInt,
             kind: kind
         };

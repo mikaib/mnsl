@@ -999,7 +999,10 @@
 
 // main function
 func main() {
-    output.FragColour = input.TexCoord;
+    var uv = input.FragCoord / uniform.iResolution.xy;
+    var col = 0.5 + 0.5 * cos(uniform.iTime + uv.xyx + (0,2,4));
+
+    output.FragColour = col.rgb;
 }`
         });
 
