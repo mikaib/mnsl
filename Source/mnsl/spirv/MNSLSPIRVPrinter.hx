@@ -23,7 +23,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     private var _functions: Map<String, Int>;
     private var _functionTypes: Map<String, Int>;
     private var _ptrTypes: Map<String, Int>;
+    private var _ptrInit: Array<{ id: Int, typeId: Int, storageClass: MNSLSPIRVStorageClass }>;
+    private var _typeInit: Array<{ id: Int, op: MNSLSPIRVOpCode, oper: Array<Int> }>;
     private var _constants: Map<String, { id: Int, op: MNSLSPIRVOpCode, oper: Array<Int> }>;
+    private var _constInit: Array<{ id: Int, op: MNSLSPIRVOpCode, oper: Array<Int> }>;
     private var _decorations: Array<{ id: Int, decoration: MNSLSPIRVDecoration, oper: Array<Int>, kind: MNSLShaderDataKind, name: String }>;
     private var _componentList: Array<String>;
     private var _entry: Int;
@@ -80,6 +83,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         this._debugLabels = [];
         this._functionTypes = [];
         this._ptrTypes = [];
+        this._ptrInit = [];
+        this._typeInit = [];
+        this._constInit = [];
         this._decorations = [];
 
         this._idCount = 1;
@@ -117,37 +123,37 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         if (type.isMatrix()) {
             var w = type.getMatrixWidth();
             var h = type.getMatrixHeight();
-            emitInstruction(MNSLSPIRVOpCode.OpTypeMatrix, [id, getType(MNSLType.fromString('Vec$w')), h]);
+            this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeMatrix, oper: [id, getType(MNSLType.fromString('Vec$w')), h]});
 
             return id;
         }
 
         if (type.isVector()) {
-            emitInstruction(MNSLSPIRVOpCode.OpTypeVector, [id, getType(MNSLType.TFloat), type.getVectorComponents()]);
+            this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeVector, oper: [id, getType(MNSLType.TFloat), type.getVectorComponents()] });
             return id;
         }
 
         var typeStr = type.toString();
         switch (typeStr) {
             case "Void":
-                emitInstruction(MNSLSPIRVOpCode.OpTypeVoid, [id]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeVoid, oper: [id] });
             case "Bool":
-                emitInstruction(MNSLSPIRVOpCode.OpTypeBool, [id]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeBool, oper: [id] });
             case "Int":
-                emitInstruction(MNSLSPIRVOpCode.OpTypeInt, [id, 32, 1]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeInt, oper: [id, 32, 1] });
             case "Float":
-                emitInstruction(MNSLSPIRVOpCode.OpTypeFloat, [id, 32]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeFloat, oper: [id, 32] });
             case "Sampler":
                 var sampledId = id;
-                emitInstruction(MNSLSPIRVOpCode.OpTypeImage, [id, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeImage, oper: [id, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0] });
                 id = assignId();
-                emitInstruction(MNSLSPIRVOpCode.OpTypeSampledImage, [id, sampledId]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeSampledImage, oper: [id, sampledId] });
                 emitDebugLabel(sampledId, 'TSamplerImage');
             case "CubeSampler":
                 var sampledId = id;
-                emitInstruction(MNSLSPIRVOpCode.OpTypeImage, [id, getType(MNSLType.TFloat), 3, 0, 0, 0, 1, 0]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeImage, oper: [id, getType(MNSLType.TFloat), 3, 0, 0, 0, 1, 0] });
                 id = assignId();
-                emitInstruction(MNSLSPIRVOpCode.OpTypeSampledImage, [id, sampledId]);
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeSampledImage, oper: [id, sampledId] });
                 emitDebugLabel(sampledId, 'TCubeSamplerImage');
             default:
                 throw "Invalid type: " + typeStr;
@@ -165,17 +171,26 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var id = assignId();
 
         if (type.isBool()) {
-            _constants.set(key, { id: id, op: v == true ? MNSLSPIRVOpCode.OpConstantTrue : MNSLSPIRVOpCode.OpConstantFalse, oper: [getType(type), id] });
+            var data = { id: id, op: v == true ? MNSLSPIRVOpCode.OpConstantTrue : MNSLSPIRVOpCode.OpConstantFalse, oper: [getType(type), id] };
+            _constants.set(key, data);
+            _constInit.push(data);
+
             return id;
         }
 
         if (type.isInt()) {
-            _constants.set(key, { id: id, op: MNSLSPIRVOpCode.OpConstant, oper: [getType(type), id, Std.int(v)] });
+            var data = { id: id, op: MNSLSPIRVOpCode.OpConstant, oper: [getType(type), id, Std.int(v)] };
+            _constants.set(key, data);
+            _constInit.push(data);
+
             return id;
         }
 
         if (type.isFloat()) {
-            _constants.set(key, { id: id, op: MNSLSPIRVOpCode.OpConstant, oper: [getType(type), id, FPHelper.floatToI32(v)] });
+            var data = { id: id, op: MNSLSPIRVOpCode.OpConstant, oper: [getType(type), id, FPHelper.floatToI32(v)] };
+            _constInit.push(data);
+            _constants.set(key, data);
+
             return id;
         }
 
@@ -190,7 +205,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
         var typeId = assignId();
 
-        emitInstruction(MNSLSPIRVOpCode.OpTypePointer, [typeId, storageClass, id]);
+        _ptrInit.push({ id: typeId, typeId: id, storageClass: storageClass });
         _ptrTypes.set(key, typeId);
 
         return typeId;
@@ -214,7 +229,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var retTypeId = getType(ret);
         var typeId = assignId();
 
-        emitInstruction(MNSLSPIRVOpCode.OpTypeFunction, [typeId, retTypeId].concat(paramTypes));
+        _typeInit.push({ id: typeId, op: MNSLSPIRVOpCode.OpTypeFunction, oper: [typeId, retTypeId].concat(paramTypes) });
         _functionTypes.set(key, typeId);
 
         return typeId;
@@ -244,30 +259,34 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     }
 
     public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, requirePtr: Bool = false): { id: Int, isParam: Bool } {
-        var stack: Array<{ name: String, type: MNSLType, node: MNSLNode }> = [];
+        var stack: Array<{ name: String, type: MNSLType, node: MNSLNode, arrayIndex: MNSLNode }> = [];
         var currScope: MNSLSPIRVScope = scope;
         var currIsParam: Bool = false;
         var currRetId: Int = 0;
         var currIsShaderData: Bool = false;
         var currShaderDataKind: MNSLShaderDataKind = MNSLShaderDataKind.Input;
         var currIsVecAccess: Bool = false;
+        var currStorageClass: MNSLSPIRVStorageClass = MNSLSPIRVStorageClass.Function;
         var lastType: MNSLType = MNSLType.TVoid;
 
         function iterNode(node: MNSLNode) {
             switch (node) {
                 case Identifier(iterName, iterType, iterInfo):
-                    stack.push({ name: iterName, type: iterType, node: node });
+                    stack.push({ name: iterName, type: iterType, node: node, arrayIndex: null });
                 case StructAccess(iterOn, iterField, iterType, iterInfo):
                     iterNode(iterOn);
-                    stack.push({ name: iterField, type: iterType, node: node });
+                    stack.push({ name: iterField, type: iterType, node: node, arrayIndex: null });
                 case FunctionCall(iterName, iterArgs, iterRet, iterInfo):
-                    stack.push({ name: '__mnsl_eval_tmp', type: iterRet, node: node });
+                    stack.push({ name: '__mnsl_eval_tmp', type: iterRet, node: node, arrayIndex: null });
+                case ArrayAccess(iterOn, iterIndex, iterInfo):
+                    iterNode(iterOn);
+                    stack.push({ name: '__mnsl_array_access', type: MNSLAnalyser.getType(node), node: node, arrayIndex: iterIndex });
                 default:
                     throw "Invalid node for variable access: " + node;
             }
         }
 
-        function enter(name: String, type: MNSLType, node: MNSLNode, isLast: Bool) {
+        function enter(name: String, type: MNSLType, node: MNSLNode, isLast: Bool, arrayIndex: MNSLNode) {
             var varDef = currScope.variables.get(name);
 
             if (type.isVector() && !isLast) {
@@ -295,6 +314,27 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return;
             }
 
+            if (name == '__mnsl_array_access') {
+                var indexId = emitNode(arrayIndex, scope);
+                var resId = assignId();
+
+                if (currIsParam) {
+                    throw "Cannot get pointer to array access of a temporary value";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpAccessChain, [
+                    getPtr(getType(type), currStorageClass),
+                    resId,
+                    currRetId,
+                    indexId
+                ]);
+
+                currRetId = resId;
+                currIsParam = false;
+                lastType = type;
+                return;
+            }
+
             if (name == "input" || name == "output" || name == "uniform") {
                 var varKind = switch(name) {
                     case "input": MNSLShaderDataKind.Input;
@@ -306,6 +346,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 currIsParam = false;
                 currIsShaderData = true;
                 currShaderDataKind = varKind;
+                currStorageClass = switch(varKind) {
+                    case MNSLShaderDataKind.Input: MNSLSPIRVStorageClass.Input;
+                    case MNSLShaderDataKind.Output: MNSLSPIRVStorageClass.Output;
+                    case MNSLShaderDataKind.Uniform: MNSLSPIRVStorageClass.UniformConstant;
+                    default: throw "Invalid shader data kind: " + varKind;
+                };
                 lastType = type;
                 return;
             }
@@ -397,7 +443,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
         var idx = 0;
         for (entry in stack) {
-            enter(entry.name, entry.type, entry.node, idx == stack.length - 1);
+            enter(entry.name, entry.type, entry.node, idx == stack.length - 1, entry.arrayIndex);
             idx++;
         }
 
@@ -533,7 +579,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             if (data.arraySize != -1) {
                 var arraySizeId = getConst(data.arraySize, MNSLType.TInt);
                 var arrayTypeId = assignId();
-                emitInstruction(MNSLSPIRVOpCode.OpTypeArray, [arrayTypeId, typeId, arraySizeId]);
+                _typeInit.push({ id: arrayTypeId, op: MNSLSPIRVOpCode.OpTypeArray, oper: [arrayTypeId, typeId, arraySizeId] });
                 ptrId = getPtr(arrayTypeId, storageClass);
             } else {
                 ptrId = getPtr(typeId, storageClass);
@@ -673,6 +719,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitNode(node, scope);
             case StructAccess(on, field, type, info):
                 return emitStructAccess(on, field, type, info, scope);
+            case ArrayAccess(on, index, info):
+                return emitArrayAccess(on, index, MNSLAnalyser.getType(node), info, scope);
             case Block(body, info):
                 emitBody(body, scope);
                 return 0;
@@ -692,6 +740,22 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var resultId = assignId();
 
         emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varDef.id]);
+
+        return resultId;
+    }
+
+    public function emitArrayAccess(on: MNSLNode, index: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+        var varDef = getVar(ArrayAccess(on, index, info), scope);
+        if (varDef.isParam) {
+            return varDef.id;
+        }
+
+        var typeId = getType(type);
+        var resultId = assignId();
+        var indexId = emitNode(index, scope);
+
+        emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varDef.id]);
+        emitInstruction(MNSLSPIRVOpCode.OpAccessChain, [getPtr(typeId, MNSLSPIRVStorageClass.Function), resultId, resultId, indexId]);
 
         return resultId;
     }
@@ -723,7 +787,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return varDef.id;
     }
 
-    private function emitSwizzleStore(swizzleId: Int, valueId: Int, scope: MNSLSPIRVScope): Int {
+    public function emitSwizzleStore(swizzleId: Int, valueId: Int, scope: MNSLSPIRVScope): Int {
         var swizzleInfo = scope.swizzlePointers.get(swizzleId);
         if (swizzleInfo == null) {
             throw "Invalid swizzle pointer: " + swizzleId;
@@ -1098,8 +1162,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         getType(MNSLType.TSampler);
         getType(MNSLType.TCubeSampler);
 
-        // shader data
-        emitShaderData();
+        // store index
+        var preShaderIdx = _instructions.length;
 
         // find/create all constants and assign IDs
         getConst(0.0, MNSLType.TFloat); // vec init (x,y,z)
@@ -1110,10 +1174,40 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         getConst(3, MNSLType.TInt); // vec idx (w)
         preEmit(_ast); // user-defined constants
 
+        // shader data
+        emitShaderData();
+
+        // reverse init order
+        _ptrInit.reverse();
+        _constInit.reverse();
+        _typeInit.reverse();
+
+        // internal ptr types
+        for (ptr in _ptrInit) {
+            insertInstruction(preShaderIdx, MNSLSPIRVOpCode.OpTypePointer, [ptr.id, ptr.storageClass, ptr.typeId]);
+        }
+
+        // function types
+        var functionTypes = _typeInit.filter(x -> x.op == MNSLSPIRVOpCode.OpTypeFunction);
+        for (type in functionTypes) {
+            insertInstruction(preShaderIdx, type.op, type.oper);
+        }
+
+        // array types
+        var arrayTypes = _typeInit.filter(x -> x.op == MNSLSPIRVOpCode.OpTypeArray);
+        for (type in arrayTypes) {
+            insertInstruction(preShaderIdx, type.op, type.oper);
+        }
+
         // constants
-        for (constKey in _constants.keys()) {
-            var const = _constants.get(constKey);
-            emitInstruction(const.op, const.oper);
+        for (const in _constInit) {
+            insertInstruction(preShaderIdx, const.op, const.oper);
+        }
+
+        // types (excl. functions and arrays)
+        var basicTypes = _typeInit.filter(x -> x.op != MNSLSPIRVOpCode.OpTypeArray && x.op != MNSLSPIRVOpCode.OpTypeFunction);
+        for (type in basicTypes) {
+            insertInstruction(preShaderIdx, type.op, type.oper);
         }
 
         // ast

@@ -1,1 +1,8 @@
-func main() {}
+@uniform(u_VecList: Vec2[10])
+
+func main() {
+    var list = uniform.u_VecList;
+    var first = list[0];
+    var x = first.x;
+    var y = first.y;
+}

@@ -1,4 +1,5 @@
-@uniform(vecB: Vec2)
+@uniform(u_Vec: Vec2)
+@uniform(u_VecList: Vec2[10])
 
 func echo(x) {
     return x;
@@ -12,13 +13,13 @@ func test(x: Float) {
 }
 
 func main() {
-    var vecA = vec2(1) * uniform.vecB;
+    var vecA = vec2(1) * uniform.u_Vec;
     var xA = vecA.x;
     var yA = vecA.y;
-    var xB = uniform.vecB.x;
-    var yB = uniform.vecB.y;
+    var xB = uniform.u_Vec.x;
+    var yB = uniform.u_Vec.y;
     var vecC = vecA.yx;
-    var vecD = uniform.vecB.xy;
+    var vecD = uniform.u_Vec.xy;
 
     xA = 1;
     vecA.x = 1;
@@ -35,4 +36,12 @@ func main() {
 
     var qa = va;
     qa /= 2;
+
+    var idx = 0;
+    var vecList = uniform.u_VecList;
+    var vecG = vecList[idx];
+    var vecH = uniform.u_VecList[idx];
+    var listX = uniform.u_VecList[idx].x;
+    var listY = uniform.u_VecList[idx].y;
+    var listSwizzle = uniform.u_VecList[idx].xxy;
 }
