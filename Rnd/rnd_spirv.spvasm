@@ -1,36 +1,41 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 44
+; Bound: 52
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %TVec2 "TVec2"
-               OpName %TSamplerImage "TSamplerImage"
-               OpName %TFloat "TFloat"
-               OpName %TSampler "TSampler"
-               OpName %in_VertexID "in_VertexID"
                OpName %in_FragDepth "in_FragDepth"
-               OpName %x "x"
-               OpName %TInt "TInt"
-               OpName %TMat4 "TMat4"
-               OpName %test "test"
-               OpName %TBool "TBool"
-               OpName %TMat3 "TMat3"
-               OpName %in_FrontFacing "in_FrontFacing"
-               OpName %TVoid "TVoid"
-               OpName %TMat2 "TMat2"
-               OpName %out_PointSize "out_PointSize"
-               OpName %TVec4 "TVec4"
-               OpName %in_FragCoord "in_FragCoord"
-               OpName %TVec3 "TVec3"
-               OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %in_InstanceID "in_InstanceID"
-               OpName %out_Position "out_Position"
                OpName %main "main"
+               OpName %TCubeSamplerImage "TCubeSamplerImage"
+               OpName %in_FrontFacing "in_FrontFacing"
+               OpName %if_cond "if_cond"
+               OpName %TSamplerImage "TSamplerImage"
+               OpName %in_FragCoord "in_FragCoord"
+               OpName %TSampler "TSampler"
+               OpName %in_InstanceID "in_InstanceID"
+               OpName %if_true "if_true"
+               OpName %TMat4 "TMat4"
+               OpName %if_false "if_false"
+               OpName %TMat3 "TMat3"
+               OpName %if_merge "if_merge"
+               OpName %TMat2 "TMat2"
+               OpName %in_VertexID "in_VertexID"
+               OpName %b "b"
+               OpName %TVec4 "TVec4"
+               OpName %TVec3 "TVec3"
+               OpName %a "a"
+               OpName %TVec2 "TVec2"
+               OpName %test_2 "test_2"
+               OpName %TFloat "TFloat"
+               OpName %TInt "TInt"
+               OpName %out_PointSize "out_PointSize"
+               OpName %TBool "TBool"
+               OpName %TVoid "TVoid"
+               OpName %out_Position "out_Position"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -58,10 +63,10 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
-       %true = OpConstantTrue %TBool
-      %false = OpConstantFalse %TBool
-         %22 = OpTypeFunction %TInt %TInt
-         %23 = OpTypeFunction %TVoid
+ %TInt_10000 = OpConstant %TInt 10000
+         %22 = OpTypeFunction %TInt
+         %25 = OpTypeFunction %TVoid
+%_ptr_Function_TInt = OpTypePointer Function %TInt
 %_ptr_Input_TInt = OpTypePointer Input %TInt
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
 %_ptr_Input_TBool = OpTypePointer Input %TBool
@@ -75,12 +80,27 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-       %test = OpFunction %TInt None %22
-          %x = OpFunctionParameter %TInt
-         %41 = OpLabel
-               OpReturnValue %x
+     %test_2 = OpFunction %TInt None %22
+         %40 = OpLabel
+          %a = OpVariable %_ptr_Function_TInt Function
+          %b = OpVariable %_ptr_Function_TInt Function
+               OpStore %a %TInt_10000
+               OpStore %b %TInt_0
+         %46 = OpLoad %TInt %a
+    %if_cond = OpIEqual %TBool %46 %TInt_0
+               OpSelectionMerge %if_merge None
+               OpBranchConditional %if_cond %if_true %if_false
+   %if_merge = OpLabel
+         %48 = OpLoad %TInt %b
+               OpReturnValue %48
+   %if_false = OpLabel
+               OpBranch %if_merge
+    %if_true = OpLabel
+               OpStore %b %TInt_1
+               OpBranch %if_merge
                OpFunctionEnd
-       %main = OpFunction %TVoid None %23
-         %43 = OpLabel
+       %main = OpFunction %TVoid None %25
+         %50 = OpLabel
+         %51 = OpFunctionCall %TInt %test_2
                OpReturn
                OpFunctionEnd

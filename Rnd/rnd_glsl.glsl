@@ -1,19 +1,17 @@
 #version 300 core
 
-int test(int x) {
-    return x;
+int test_2() {
+    int a = 10000;
+    int b = 0;
+    if (a == 0) {
+        b = 1;
+    } else if (a == 1) {
+        b = 2;
+    }
+    return b;
 }
 
 void main() {
-    if (1 == 2) {
-        test(0);
-    }
-    if (1) {
-        test(1);
-    } else if (0) {
-        test(0);
-    } else {
-        test(2);
-    }
+    test_2();
 }
 

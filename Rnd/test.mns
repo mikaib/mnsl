@@ -1,17 +1,27 @@
-func test(x) {
-    return x;
+// func test_1() {
+//     var a = 10000;
+//     var b = 0;
+//
+//     if (a == 0) {
+//         b = 1;
+//     }
+//
+//     return b;
+// }
+
+func test_2() {
+    var a = 10000;
+    var b = 0;
+
+    if (a == 0) {
+        b = 1;
+    } else if (a == 1) {
+        b = 2;
+    }
+
+    return b;
 }
 
 func main() {
-    if (1 == 2) {
-        test(0);
-    }
-
-    if (true) {
-        test(1);
-    } else if (false) {
-        test(0);
-    } else {
-        test(2);
-    }
+    test_2();
 }

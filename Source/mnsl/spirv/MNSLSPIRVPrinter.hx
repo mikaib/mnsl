@@ -687,9 +687,20 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     }
 
     public function emitBody(body: MNSLNodeChildren, scope: MNSLSPIRVScope): Void {
+        if (body == null || body.length == 0) {
+            return;
+        }
+
         for (nodeIdx in 0...body.length) {
             var node = body[nodeIdx];
-            
+
+            switch (node) {
+                case IfStatement(_, _, _):
+                    emitIfStatement(body, nodeIdx, scope);
+                    break;
+                default:
+            }
+
             emitNode(node, scope, body, nodeIdx);
         }
     }
@@ -730,36 +741,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitStructAccess(on, field, type, info, scope, inBody, at);
             case ArrayAccess(on, index, info):
                 return emitArrayAccess(on, index, MNSLAnalyser.getType(node), info, scope, inBody, at);
-            case IfStatement(cond, body, info):
-                var condChainIdx = at;
-                var condChainStatements: Array<{ cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo }> = [];
-                var condChainElse: Null<MNSLNodeChildren> = null;
-
-                while (condChainIdx < inBody.length) {
-                    var condChainNode = inBody[condChainIdx];
-                    switch (condChainNode) {
-                        case IfStatement(chainCond, chainBody, chainInfo):
-                            if (condChainStatements.length == 0) {
-                                condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
-                            } else {
-                                break; // new block
-                            }
-                        case ElseIfStatement(chainCond, chainBody, chainInfo):
-                            condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
-                        case ElseStatement(chainBody, chainInfo):
-                            condChainElse = chainBody;
-                            break;
-                        default:
-                            break;
-                    }
-                    condChainIdx++;
-                }
-
-                return 0;
-            case ElseIfStatement(cond, body, info):
-                return 0;
-            case ElseStatement(body, info):
-                return 0;
             case Block(body, info):
                 emitBody(body, scope);
                 return 0;
@@ -767,6 +748,80 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 trace("Unhandled node", node);
                 return 0;
         }
+    }
+
+    public function emitIfStatement(inBody: MNSLNodeChildren, at: Int, scope: MNSLSPIRVScope): Int {
+        var condChainIdx = at;
+        var condChainStatements: Array<{ cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo }> = [];
+        var condChainElse: Null<MNSLNodeChildren> = null;
+        var condAfter: MNSLNodeChildren = [];
+
+        while (condChainIdx < inBody.length) {
+            var condChainNode = inBody[condChainIdx];
+            switch (condChainNode) {
+                case IfStatement(chainCond, chainBody, chainInfo):
+                    if (condChainStatements.length == 0) {
+                        condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
+                    } else {
+                        break; // new block
+                    }
+                case ElseIfStatement(chainCond, chainBody, chainInfo):
+                    condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
+                case ElseStatement(chainBody, chainInfo):
+                    condChainElse = chainBody;
+                    break;
+                default:
+                    break;
+            }
+            condChainIdx++;
+        }
+
+        trace("IF STMT:");
+        for (condIdx in 0...condChainStatements.length) {
+            var cond = condChainStatements[condIdx];
+            trace('    ${ condIdx == 0 ? "if" : "else if" } (${cond.cond}) => ${cond.body.join(", ")}');
+        }
+
+        if (condChainElse != null) {
+            trace('    else => ${condChainElse.join(", ")}');
+        }
+
+        condAfter = inBody.slice(condChainIdx);
+        trace(condAfter);
+
+        function emitCond(condInfo: { cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo }, falseBody: MNSLNodeChildren): Int {
+            var mergeLabel = assignId();
+            var falseLabel = assignId();
+            var trueLabel = assignId();
+            var condId = emitNode(condInfo.cond, scope, inBody, at);
+
+            // conditional
+            emitInstruction(MNSLSPIRVOpCode.OpSelectionMerge, [mergeLabel, 0]);
+            emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, trueLabel, falseLabel]);
+            emitDebugLabel(condId, 'if_cond');
+
+            // merge
+            emitInstruction(MNSLSPIRVOpCode.OpLabel, [mergeLabel]);
+            emitDebugLabel(mergeLabel, 'if_merge');
+            emitBody(condAfter, scope);
+
+            // false
+            emitInstruction(MNSLSPIRVOpCode.OpLabel, [falseLabel]);
+            emitDebugLabel(falseLabel, 'if_false');
+            emitBody(falseBody ?? [], scope);
+            emitInstruction(MNSLSPIRVOpCode.OpBranch, [mergeLabel]);
+
+            // true
+            emitInstruction(MNSLSPIRVOpCode.OpLabel, [trueLabel]);
+            emitDebugLabel(trueLabel, 'if_true');
+            emitBody(condInfo.body, scope);
+            emitInstruction(MNSLSPIRVOpCode.OpBranch, [mergeLabel]);
+
+            return mergeLabel;
+        }
+
+        emitCond(condChainStatements[0], condChainElse);
+        return 0;
     }
 
     public function emitStructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
@@ -998,6 +1053,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         var leftId = emitNode(left, scope, inBody, at);
         var rightId = emitNode(right, scope, inBody, at);
+        var leftType = MNSLAnalyser.getType(left);
+        var rightType = MNSLAnalyser.getType(right);
         var resultId = assignId();
 
         switch (op) {
@@ -1037,8 +1094,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSRem, [getType(type), resultId, leftId, rightId]);
                 else throw "Unsupported type for modulo: " + type.toHumanString();
             case MNSLToken.Equal(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                if (leftType.isFloat() || leftType.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (leftType.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (leftType.isBool()) emitInstruction(MNSLSPIRVOpCode.OpLogicalEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
                 else throw "Unsupported type for equality: " + type.toHumanString();
             case MNSLToken.Greater(_):
                 if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
