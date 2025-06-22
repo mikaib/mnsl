@@ -1,17 +1,94 @@
 #version 300 core
 
+int test_1() {
+    int a = 10000;
+    if (a == 0) {
+        return 1;
+    }
+    return 2;
+}
+
 int test_2() {
     int a = 10000;
-    int b = 0;
     if (a == 0) {
-        b = 1;
-    } else if (a == 1) {
-        b = 2;
+        return 1;
     }
-    return b;
+    if (a == 1) {
+        return 2;
+    }
+    return 3;
+}
+
+int test_3() {
+    int a = 10000;
+    if (a == 0) {
+        return 1;
+    } else {
+        if (a == 1) {
+            return 2;
+        }
+        if (a == 2) {
+            return 3;
+        }
+    }
+    return 4;
+}
+
+int test_4() {
+    int a = 10000;
+    if (a == 0) {
+        return 1;
+    } else {
+        if (a == 1) {
+            return 2;
+        } else {
+            if (a == 2) {
+                return 3;
+            } else {
+                return 4;
+            }
+        }
+    }
+    return 5;
+}
+
+int test_5() {
+    int a = 10000;
+    if (a == 0) {
+        return 1;
+    } else {
+        if (a == 1) {
+            return 2;
+        } else {
+            if (a == 2) {
+                return 3;
+            } else {
+                return 4;
+            }
+        }
+        if (a == 4) {
+            return 5;
+        }
+    }
+    return 6;
+}
+
+int test_6() {
+    int a = 1;
+    int b = 1;
+    if (a == b) {
+        return 1;
+    } else {
+        return 2;
+    }
 }
 
 void main() {
+    test_1();
     test_2();
+    test_3();
+    test_4();
+    test_5();
+    test_6();
 }
 
