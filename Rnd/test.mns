@@ -1,7 +1,7 @@
-@input(TexCoord: Vec2)
-@uniform(Texture: Sampler)
-@output(FragColour: Vec4)
+func test() {
+    return 3;
+}
 
 func main() {
-    output.FragColour = texture(uniform.Texture, input.TexCoord);
+    test();
 }

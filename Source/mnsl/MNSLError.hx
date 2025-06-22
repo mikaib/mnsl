@@ -37,4 +37,7 @@ enum MNSLError {
     AnalyserMismatchingEitherType(limits: Array<MNSLType>, node: MNSLNode);
     AnalyserUnknownArraySize(type: MNSLType, node: MNSLNode);
     AnalyserReadOnlyAssignment(node: MNSLNode);
+    AnalyserVariableOutsideFunction(name: String, node: MNSLNode, info: MNSLNodeInfo);
+    AnalyserInvalidReturnType(func: MNSLAnalyserFunction, expected: MNSLType, actual: MNSLType);
+    AnalyserMissingMainFunction;
 }

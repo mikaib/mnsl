@@ -522,6 +522,11 @@ class MNSLAnalyser {
             return node;
         }
 
+        if (ctx.currentFunction == null) {
+            _context.emitError(AnalyserVariableOutsideFunction(name, node, info));
+            return node;
+        }
+
         _solver.addConstraint({
             type: getType(value),
             mustBe: type,
@@ -1415,6 +1420,23 @@ class MNSLAnalyser {
 
         this.checkBranchesOnBody(res, null);
         this.checkForRecursion(res, null);
+
+        var mainFunc: Null<MNSLAnalyserFunction> = null;
+        for (f in this._globalCtx.functions) {
+            if (f.name == "main") {
+                mainFunc = f;
+                break;
+            }
+        }
+
+        if (mainFunc == null) {
+            _context.emitError(AnalyserMissingMainFunction);
+        } else if (!mainFunc.returnType.equals(MNSLType.TVoid)) {
+            _context.emitError(AnalyserInvalidReturnType(mainFunc, MNSLType.TVoid, mainFunc.returnType));
+            _context.emitError(AnalyserMissingMainFunction);
+        } else if (mainFunc.args.length != 0) {
+            _context.emitError(AnalyserMissingMainFunction);
+        }
 
         return res;
     }

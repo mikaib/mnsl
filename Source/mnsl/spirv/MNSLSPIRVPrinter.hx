@@ -109,6 +109,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     }
 
     public function getType(type: MNSLType): Int {
+        if (type.isUnknown()) {
+            type.setType(MNSLType.TVoid);
+        }
+
         for (t in _types.keys()) {
             if (t.equals(type)) {
                 return _types.get(t);
@@ -646,6 +650,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     getFunctionType(returnType, [for (arg in arguments) arg.type]);
                 case VariableDecl(name, type, value, info):
                     getPtr(getType(type), MNSLSPIRVStorageClass.Function);
+
                     if (scope != null) {
                         var varId = assignId();
                         var ptrId = getPtr(getType(type), MNSLSPIRVStorageClass.Function);

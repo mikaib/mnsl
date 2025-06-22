@@ -374,6 +374,12 @@ class MNSLContext {
                 return "Unknown array size for type: " + type + " at " + node;
             case AnalyserReadOnlyAssignment(node):
                 return "Cannot assign to read-only variable: " + node;
+            case AnalyserVariableOutsideFunction(name, node, info):
+                return "Variable " + name + " is not allowed outside of a function at " + node + " at " + info;
+            case AnalyserInvalidReturnType(func, expected, actual):
+                return "Invalid return type for function " + func + ": expected " + expected + ", got " + actual;
+            case AnalyserMissingMainFunction:
+                return "Missing main function, expected a function named 'main' with no parameters returning void.";
             case AnalyserRecursiveFunction(func, chain, info):
                 var chainStr = "";
                 for (i in 0...chain.length) {

@@ -1,22 +1,17 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct main0_out
+static inline __attribute__((always_inline))
+int test()
 {
-    float4 out_FragColour [[color(1)]];
-};
+    return 3;
+}
 
-struct main0_in
+fragment void main0()
 {
-    float2 in_TexCoord [[user(locn0)]];
-};
-
-fragment main0_out main0(main0_in in [[stage_in]], texture2d<float> u_Texture [[texture(0)]], sampler u_TextureSmplr [[sampler(0)]])
-{
-    main0_out out = {};
-    out.out_FragColour = u_Texture.sample(u_TextureSmplr, in.in_TexCoord);
-    return out;
 }
 
