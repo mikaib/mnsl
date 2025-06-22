@@ -269,7 +269,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, requirePtr: Bool = false): { id: Int, isParam: Bool } {
+    public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, requirePtr: Bool = false): { id: Int, isParam: Bool } {
         var stack: Array<{ name: String, type: MNSLType, node: MNSLNode, arrayIndex: MNSLNode }> = [];
         var currScope: MNSLSPIRVScope = scope;
         var currIsParam: Bool = false;
@@ -324,7 +324,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             }
 
             if (name == '__mnsl_eval_tmp') {
-                var funcRet = emitNode(node, scope);
+                var funcRet = emitNode(node, scope, inBody, at);
                 currRetId = funcRet;
                 currIsParam = true;
                 lastType = type;
@@ -332,7 +332,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             }
 
             if (name == '__mnsl_array_access') {
-                var indexId = emitNode(arrayIndex, scope);
+                var indexId = emitNode(arrayIndex, scope, inBody, at);
                 var resId = assignId();
 
                 if (currIsParam) {
@@ -687,33 +687,35 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     }
 
     public function emitBody(body: MNSLNodeChildren, scope: MNSLSPIRVScope): Void {
-        for (node in body) {
-            emitNode(node, scope);
+        for (nodeIdx in 0...body.length) {
+            var node = body[nodeIdx];
+            
+            emitNode(node, scope, body, nodeIdx);
         }
     }
 
-    public function emitNode(node: MNSLNode, scope: MNSLSPIRVScope): Int {
+    public function emitNode(node: MNSLNode, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         switch (node) {
             case VariableDecl(name, type, value, info):
-                return emitVariableDecl(name, type, value, info, scope);
+                return emitVariableDecl(name, type, value, info, scope, inBody, at);
             case VariableAssign(name, value, info):
-                return emitVariableAssign(name, value, info, scope);
+                return emitVariableAssign(name, value, info, scope, inBody, at);
             case Identifier(name, type, info):
-                return emitIdentifier(name, type, info, scope);
+                return emitIdentifier(name, type, info, scope, inBody, at);
             case FunctionDecl(name, returnType, arguments, body, info):
-                return emitFunctionDecl(name, returnType, arguments, body, info, scope);
+                return emitFunctionDecl(name, returnType, arguments, body, info, scope, inBody, at);
             case FunctionCall(name, args, returnType, info):
-                return emitFunctionCall(name, args, returnType, info, scope);
+                return emitFunctionCall(name, args, returnType, info, scope, inBody, at);
             case BinaryOp(left, op, right, type, info):
-                return emitBinaryOp(left, op, right, type, info, scope);
+                return emitBinaryOp(left, op, right, type, info, scope, inBody, at);
             case UnaryOp(op, right, info):
-                return emitUnaryOp(op, right, info, scope);
+                return emitUnaryOp(op, right, info, scope, inBody, at);
             case Return(value, type, info):
-                return emitReturn(value, type, info, scope);
+                return emitReturn(value, type, info, scope, inBody, at);
             case VectorCreation(comp, nodes, info):
-                return emitVectorCreation(comp, nodes, info, scope);
+                return emitVectorCreation(comp, nodes, info, scope, inBody, at);
             case VectorConversion(on, from, to):
-                return emitVectorConversion(on, from, to, scope);
+                return emitVectorConversion(on, from, to, scope, inBody, at);
             case FloatLiteralNode(value, info):
                 return getConst(Std.parseFloat(value), MNSLType.TFloat);
             case IntegerLiteralNode(value, info):
@@ -721,13 +723,43 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             case BooleanLiteralNode(value, info):
                 return getConst(value, MNSLType.TBool);
             case TypeCast(on, from, to):
-                return emitTypeCast(on, from, to, scope);
+                return emitTypeCast(on, from, to, scope, inBody, at);
             case SubExpression(node, info):
-                return emitNode(node, scope);
+                return emitNode(node, scope, inBody, at);
             case StructAccess(on, field, type, info):
-                return emitStructAccess(on, field, type, info, scope);
+                return emitStructAccess(on, field, type, info, scope, inBody, at);
             case ArrayAccess(on, index, info):
-                return emitArrayAccess(on, index, MNSLAnalyser.getType(node), info, scope);
+                return emitArrayAccess(on, index, MNSLAnalyser.getType(node), info, scope, inBody, at);
+            case IfStatement(cond, body, info):
+                var condChainIdx = at;
+                var condChainStatements: Array<{ cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo }> = [];
+                var condChainElse: Null<MNSLNodeChildren> = null;
+
+                while (condChainIdx < inBody.length) {
+                    var condChainNode = inBody[condChainIdx];
+                    switch (condChainNode) {
+                        case IfStatement(chainCond, chainBody, chainInfo):
+                            if (condChainStatements.length == 0) {
+                                condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
+                            } else {
+                                break; // new block
+                            }
+                        case ElseIfStatement(chainCond, chainBody, chainInfo):
+                            condChainStatements.push({ cond: chainCond, body: chainBody, info: chainInfo });
+                        case ElseStatement(chainBody, chainInfo):
+                            condChainElse = chainBody;
+                            break;
+                        default:
+                            break;
+                    }
+                    condChainIdx++;
+                }
+
+                return 0;
+            case ElseIfStatement(cond, body, info):
+                return 0;
+            case ElseStatement(body, info):
+                return 0;
             case Block(body, info):
                 emitBody(body, scope);
                 return 0;
@@ -737,8 +769,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function emitStructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var varDef = getVar(StructAccess(on, field, type, info), scope);
+    public function emitStructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var varDef = getVar(StructAccess(on, field, type, info), scope, inBody, at);
         if (varDef.isParam) {
             return varDef.id;
         }
@@ -751,15 +783,15 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitArrayAccess(on: MNSLNode, index: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var varDef = getVar(ArrayAccess(on, index, info), scope);
+    public function emitArrayAccess(on: MNSLNode, index: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var varDef = getVar(ArrayAccess(on, index, info), scope, inBody, at);
         if (varDef.isParam) {
             return varDef.id;
         }
 
         var typeId = getType(type);
         var resultId = assignId();
-        var indexId = emitNode(index, scope);
+        var indexId = emitNode(index, scope, inBody, at);
 
         emitInstruction(MNSLSPIRVOpCode.OpLoad, [typeId, resultId, varDef.id]);
         emitInstruction(MNSLSPIRVOpCode.OpAccessChain, [
@@ -772,8 +804,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitIdentifier(name: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var varDef = getVar(Identifier(name, type, info), scope);
+    public function emitIdentifier(name: String, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var varDef = getVar(Identifier(name, type, info), scope, inBody, at);
         if (varDef.isParam) {
             return varDef.id;
         }
@@ -786,12 +818,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitVariableAssign(on: MNSLNode, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var varDef = getVar(on, scope, true);
-        var valueId = emitNode(value, scope);
+    public function emitVariableAssign(on: MNSLNode, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var varDef = getVar(on, scope, inBody, at, true);
+        var valueId = emitNode(value, scope, inBody, at);
 
         if (scope.swizzlePointers.exists(varDef.id)) {
-            return emitSwizzleStore(varDef.id, valueId, scope);
+            return emitSwizzleStore(varDef.id, valueId, scope, inBody, at);
         }
 
         emitInstruction(MNSLSPIRVOpCode.OpStore, [varDef.id, valueId]);
@@ -799,7 +831,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return varDef.id;
     }
 
-    public function emitSwizzleStore(swizzleId: Int, valueId: Int, scope: MNSLSPIRVScope): Int {
+    public function emitSwizzleStore(swizzleId: Int, valueId: Int, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         var swizzleInfo = scope.swizzlePointers.get(swizzleId);
         if (swizzleInfo == null) {
             throw "Invalid swizzle pointer: " + swizzleId;
@@ -835,22 +867,22 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return swizzleInfo.basePtr;
     }
 
-    public function emitVariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+    public function emitVariableDecl(name: String, type: MNSLType, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         if (!scope.variables.exists(name)) {
             throw "Pre-emit error: Variable not found in scope: " + name;
         }
 
         var varId = scope.variables.get(name);
         if (value != null) {
-            var valueId = emitNode(value, scope);
+            var valueId = emitNode(value, scope, inBody, at);
             emitInstruction(MNSLSPIRVOpCode.OpStore, [varId.id, valueId]);
         }
 
         return varId.id;
     }
 
-    public function emitVectorConversion(on: MNSLNode, fromComp: Int, toComp: Int, scope: MNSLSPIRVScope): Int {
-        var onId = emitNode(on, scope);
+    public function emitVectorConversion(on: MNSLNode, fromComp: Int, toComp: Int, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var onId = emitNode(on, scope, inBody, at);
         var fromType = MNSLType.fromString('Vec$fromComp');
         var toType = MNSLType.fromString('Vec$toComp');
 
@@ -891,7 +923,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
     }
 
-    public function emitVectorCreation(comp: Int, nodes: Array<MNSLNode>, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+    public function emitVectorCreation(comp: Int, nodes: Array<MNSLNode>, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         if (nodes.length != comp && nodes.length != 1) {
             throw 'Vector creation expects ${comp} components, but got ${nodes.length}';
         }
@@ -901,20 +933,20 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var resId = assignId();
 
         if (nodes.length == 1) {
-            var scalarId = emitTypeCast(nodes[0], MNSLAnalyser.getType(nodes[0]), MNSLType.TFloat, scope);
+            var scalarId = emitTypeCast(nodes[0], MNSLAnalyser.getType(nodes[0]), MNSLType.TFloat, scope, inBody, at);
             var componentIds = [for (i in 0...comp) scalarId];
 
             emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat(componentIds));
             return resId;
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitTypeCast(n, MNSLAnalyser.getType(n), MNSLType.TFloat, scope)]));
+        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [typeId, resId].concat([for (n in nodes) emitTypeCast(n, MNSLAnalyser.getType(n), MNSLType.TFloat, scope, inBody, at)]));
 
         return resId;
     }
 
-    public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType, scope: MNSLSPIRVScope): Int {
-        var onId = emitNode(on, scope);
+    public function emitTypeCast(on: MNSLNode, from: MNSLType, to: MNSLType, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var onId = emitNode(on, scope, inBody, at);
         if (from.equals(to)) {
             return onId;
         }
@@ -937,8 +969,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resId;
     }
 
-    public function emitUnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var rightId = emitNode(right, scope);
+    public function emitUnaryOp(op: MNSLToken, right: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var rightId = emitNode(right, scope, inBody, at);
         var resultId = assignId();
 
         switch (op) {
@@ -963,9 +995,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
-        var leftId = emitNode(left, scope);
-        var rightId = emitNode(right, scope);
+    public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var leftId = emitNode(left, scope, inBody, at);
+        var rightId = emitNode(right, scope, inBody, at);
         var resultId = assignId();
 
         switch (op) {
@@ -1041,7 +1073,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         scope = scope.copy();
 
         var typeId = getFunctionType(returnType, [for (arg in arguments) arg.type]);
@@ -1077,8 +1109,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return id;
     }
 
-    public function emitBuiltinFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, glslMapping: MNSLSPIRVUnifiedStd, scope: MNSLSPIRVScope): Int {
-        var argIds = [for (arg in args) emitNode(arg, scope)];
+    public function emitBuiltinFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, glslMapping: MNSLSPIRVUnifiedStd, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var argIds = [for (arg in args) emitNode(arg, scope, inBody, at)];
         var retId = assignId();
         var typeId = getType(returnType);
 
@@ -1114,10 +1146,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function emitFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+    public function emitFunctionCall(name: String, args: Array<MNSLNode>, returnType: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         for (func in _glslFuncMap) {
             if (func.name == name) {
-                return emitBuiltinFunctionCall(name, args, returnType, info, func.mapping, scope);
+                return emitBuiltinFunctionCall(name, args, returnType, info, func.mapping, scope, inBody, at);
             }
         }
 
@@ -1126,7 +1158,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         var funcId: Int = _functions.get(name);
-        var argIds = [for (arg in args) emitNode(arg, scope)];
+        var argIds = [for (arg in args) emitNode(arg, scope, inBody, at)];
         var retId = assignId();
 
         emitInstruction(MNSLSPIRVOpCode.OpFunctionCall, [getType(returnType), retId, funcId].concat(argIds));
@@ -1134,12 +1166,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return retId;
     }
 
-    public function emitReturn(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope): Int {
+    public function emitReturn(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         switch(value) {
             case VoidNode(_):
                 emitInstruction(MNSLSPIRVOpCode.OpReturn, []);
             default:
-                emitInstruction(MNSLSPIRVOpCode.OpReturnValue, [emitNode(value, scope)]);
+                emitInstruction(MNSLSPIRVOpCode.OpReturnValue, [emitNode(value, scope, inBody, at)]);
         }
 
         return 0;

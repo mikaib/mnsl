@@ -1,15 +1,7 @@
-#pragma clang diagnostic ignored "-Wmissing-prototypes"
-
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
-
-static inline __attribute__((always_inline))
-int test()
-{
-    return 3;
-}
 
 fragment void main0()
 {

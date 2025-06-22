@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 42
+; Bound: 44
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -10,26 +10,27 @@
                OpExecutionMode %main OriginUpperLeft
                OpName %TVec2 "TVec2"
                OpName %TSamplerImage "TSamplerImage"
-               OpName %in_FragCoord "in_FragCoord"
                OpName %TFloat "TFloat"
                OpName %TSampler "TSampler"
-               OpName %in_InstanceID "in_InstanceID"
-               OpName %out_Position "out_Position"
-               OpName %TInt "TInt"
-               OpName %TMat4 "TMat4"
-               OpName %main "main"
-               OpName %TBool "TBool"
-               OpName %TMat3 "TMat3"
                OpName %in_VertexID "in_VertexID"
                OpName %in_FragDepth "in_FragDepth"
+               OpName %x "x"
+               OpName %TInt "TInt"
+               OpName %TMat4 "TMat4"
+               OpName %test "test"
+               OpName %TBool "TBool"
+               OpName %TMat3 "TMat3"
+               OpName %in_FrontFacing "in_FrontFacing"
                OpName %TVoid "TVoid"
                OpName %TMat2 "TMat2"
-               OpName %test "test"
+               OpName %out_PointSize "out_PointSize"
                OpName %TVec4 "TVec4"
-               OpName %in_FrontFacing "in_FrontFacing"
+               OpName %in_FragCoord "in_FragCoord"
                OpName %TVec3 "TVec3"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %out_PointSize "out_PointSize"
+               OpName %in_InstanceID "in_InstanceID"
+               OpName %out_Position "out_Position"
+               OpName %main "main"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -57,7 +58,9 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
-         %22 = OpTypeFunction %TInt
+       %true = OpConstantTrue %TBool
+      %false = OpConstantFalse %TBool
+         %22 = OpTypeFunction %TInt %TInt
          %23 = OpTypeFunction %TVoid
 %_ptr_Input_TInt = OpTypePointer Input %TInt
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
@@ -73,11 +76,11 @@
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
        %test = OpFunction %TInt None %22
-         %38 = OpLabel
-               OpReturnValue %TInt_3
+          %x = OpFunctionParameter %TInt
+         %41 = OpLabel
+               OpReturnValue %x
                OpFunctionEnd
        %main = OpFunction %TVoid None %23
-         %40 = OpLabel
-         %41 = OpFunctionCall %TInt %test
+         %43 = OpLabel
                OpReturn
                OpFunctionEnd

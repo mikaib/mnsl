@@ -1,8 +1,3 @@
-int test()
-{
-    return 3;
-}
-
 void frag_main()
 {
 }
