@@ -55,8 +55,47 @@ func test_3() {
     return y;
 }
 
+func test_4() {
+    var x = 0;
+    var y = 0;
+    while (y < x) {
+        var z = y * 2;
+        var w = x * 3;
+
+        for (var i = z; i < w; i++) {
+            if (i == 0) {
+                z++;
+            } else if (i == 1) {
+                z += 2;
+            } else {
+                z += 3;
+            }
+        }
+
+        if (y == 0) {
+            y += 6;
+        } else if (y == 1) {
+            y += 2;
+        } else {
+            y += 3;
+        }
+
+        for (var j = 0; j < 3; j++) {
+            y += j;
+        }
+
+        for (var j = 0; j < 3; j++) {
+            y += j;
+        }
+
+        y += 9;
+    }
+    return y;
+}
+
 func main() {
     test_1();
     test_2();
     test_3();
+    test_4();
 }

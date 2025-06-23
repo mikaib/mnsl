@@ -702,6 +702,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 case WhileLoop(whileCond, whileBody, whileInfo):
                     emitWhileLoop(whileCond, whileBody, whileInfo, scope, body, nodeIdx, branchTo);
                     return;
+                case ForLoop(forInit, forCond, forInc, forBody, forInfo):
+                    emitForLoop(forInit, forCond, forInc, forBody, forInfo, scope, body, nodeIdx, branchTo);
+                    return;
                 case Return(_, _, _):
                     bodyHasReturned = true;
                 default:
@@ -793,6 +796,52 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [mergeLabel]);
         emitBody(whileAfter, scope, branchTo);
         if (whileAfter.length == 0 && branchTo == null) {
+            emitInstruction(MNSLSPIRVOpCode.OpUnreachable, []);
+        }
+
+        return 0;
+    }
+
+    public function emitForLoop(init: MNSLNode, cond: MNSLNode, inc: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, ?branchTo: Int): Int {
+        var headerLabel = assignId();
+        var loopLabel = assignId();
+        var mergeLabel = assignId();
+        var enterLabel = assignId();
+        var branchToEnter = assignId();
+        var iterLabel = assignId();
+        var forAfter = inBody.slice(at + 1);
+
+        // goto header
+        emitNode(init, scope, inBody, at);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [enterLabel]);
+
+        // enter
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [enterLabel]);
+        emitInstruction(MNSLSPIRVOpCode.OpLoopMerge, [mergeLabel, branchToEnter, 0]);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [headerLabel]);
+
+        // header
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [headerLabel]);
+        var condId = emitNode(cond, scope, inBody, at);
+        emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, loopLabel, mergeLabel]);
+
+        // loop body
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [loopLabel]);
+        emitBody(body, scope, iterLabel);
+
+        // iter body
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [iterLabel]);
+        emitNode(inc, scope, inBody, at);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [branchToEnter]);
+
+        // enter branch
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [branchToEnter]);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [enterLabel]);
+
+        // merge
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [mergeLabel]);
+        emitBody(forAfter, scope, branchTo);
+        if (forAfter.length == 0 && branchTo == null) {
             emitInstruction(MNSLSPIRVOpCode.OpUnreachable, []);
         }
 
