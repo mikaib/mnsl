@@ -707,6 +707,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     return;
                 case Return(_, _, _):
                     bodyHasReturned = true;
+                case Continue(_):
+                    bodyHasReturned = true;
+                case Break(_):
+                    bodyHasReturned = true;
                 default:
             }
 
@@ -754,6 +758,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitStructAccess(on, field, type, info, scope, inBody, at);
             case ArrayAccess(on, index, info):
                 return emitArrayAccess(on, index, MNSLAnalyser.getType(node), info, scope, inBody, at);
+            case Break(_):
+                emitInstruction(MNSLSPIRVOpCode.OpBranch, [scope.getLoopActions().breakBranch]);
+                return 0;
+            case Continue(_):
+                emitInstruction(MNSLSPIRVOpCode.OpBranch, [scope.getLoopActions().continueBranch]);
+                return 0;
             case Block(body, info):
                 emitBody(body, scope);
                 return 0;
@@ -785,8 +795,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, loopLabel, mergeLabel]);
 
         // loop body
+        var newScope = scope.copy();
+        newScope.setLoopActions(mergeLabel, branchToEnter);
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [loopLabel]);
-        emitBody(body, scope, branchToEnter);
+        emitBody(body, newScope, branchToEnter);
 
         // enter branch
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [branchToEnter]);
@@ -826,8 +838,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, loopLabel, mergeLabel]);
 
         // loop body
+        var newScope = scope.copy();
+        newScope.setLoopActions(mergeLabel, branchToEnter);
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [loopLabel]);
-        emitBody(body, scope, iterLabel);
+        emitBody(body, newScope, iterLabel);
 
         // iter body
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [iterLabel]);

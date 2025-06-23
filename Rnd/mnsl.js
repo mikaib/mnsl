@@ -1311,6 +1311,18 @@ mnsl_MNSLContext.prototype = {
 		case 26:
 			var node = error.node;
 			return "Cannot assign to read-only variable: " + Std.string(node);
+		case 27:
+			var name = error.name;
+			var node = error.node;
+			var info = error.info;
+			return "Variable " + name + " is not allowed outside of a function at " + Std.string(node) + " at " + Std.string(info);
+		case 28:
+			var func = error.func;
+			var expected = error.expected;
+			var actual = error.actual;
+			return "Invalid return type for function " + Std.string(func) + ": expected " + Std.string(expected) + ", got " + Std.string(actual);
+		case 29:
+			return "Missing main function, expected a function named 'main' with no parameters returning void.";
 		}
 	}
 	,__class__: mnsl_MNSLContext
@@ -1371,8 +1383,11 @@ var mnsl_MNSLError = $hxEnums["mnsl.MNSLError"] = { __ename__:true,__constructs_
 	,AnalyserMismatchingEitherType: ($_=function(limits,node) { return {_hx_index:24,limits:limits,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserMismatchingEitherType",$_.__params__ = ["limits","node"],$_)
 	,AnalyserUnknownArraySize: ($_=function(type,node) { return {_hx_index:25,type:type,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserUnknownArraySize",$_.__params__ = ["type","node"],$_)
 	,AnalyserReadOnlyAssignment: ($_=function(node) { return {_hx_index:26,node:node,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserReadOnlyAssignment",$_.__params__ = ["node"],$_)
+	,AnalyserVariableOutsideFunction: ($_=function(name,node,info) { return {_hx_index:27,name:name,node:node,info:info,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserVariableOutsideFunction",$_.__params__ = ["name","node","info"],$_)
+	,AnalyserInvalidReturnType: ($_=function(func,expected,actual) { return {_hx_index:28,func:func,expected:expected,actual:actual,__enum__:"mnsl.MNSLError",toString:$estr}; },$_._hx_name="AnalyserInvalidReturnType",$_.__params__ = ["func","expected","actual"],$_)
+	,AnalyserMissingMainFunction: {_hx_name:"AnalyserMissingMainFunction",_hx_index:29,__enum__:"mnsl.MNSLError",toString:$estr}
 };
-mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMissingReturn,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnknownType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserRecursiveFunction,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType,mnsl_MNSLError.AnalyserUnknownArraySize,mnsl_MNSLError.AnalyserReadOnlyAssignment];
+mnsl_MNSLError.__constructs__ = [mnsl_MNSLError.TokenizerInvalidChar,mnsl_MNSLError.TokenizerPreprocessorError,mnsl_MNSLError.TokenizerUnterminatedString,mnsl_MNSLError.ParserInvalidToken,mnsl_MNSLError.ParserInvalidKeyword,mnsl_MNSLError.ParserUnexpectedToken,mnsl_MNSLError.ParserUnexpectedExpression,mnsl_MNSLError.ParserConditionalWithoutIf,mnsl_MNSLError.AnalyserNoImplementation,mnsl_MNSLError.AnalyserDuplicateVariable,mnsl_MNSLError.AnalyserUndeclaredVariable,mnsl_MNSLError.AnalyserReturnOutsideFunction,mnsl_MNSLError.AnalyserMissingReturn,mnsl_MNSLError.AnalyserMismatchingType,mnsl_MNSLError.AnalyserUnknownType,mnsl_MNSLError.AnalyserUnresolvedConstraint,mnsl_MNSLError.AnalyserInvalidAssignment,mnsl_MNSLError.AnalyserInvalidAccess,mnsl_MNSLError.AnalyserInvalidVectorComponent,mnsl_MNSLError.AnalyserRecursiveFunction,mnsl_MNSLError.AnalyserUnknownVectorComponent,mnsl_MNSLError.AnalyserInvalidBinop,mnsl_MNSLError.AnalyserInvalidUnaryOp,mnsl_MNSLError.AnalyserLoopKeywordOutsideLoop,mnsl_MNSLError.AnalyserMismatchingEitherType,mnsl_MNSLError.AnalyserUnknownArraySize,mnsl_MNSLError.AnalyserReadOnlyAssignment,mnsl_MNSLError.AnalyserVariableOutsideFunction,mnsl_MNSLError.AnalyserInvalidReturnType,mnsl_MNSLError.AnalyserMissingMainFunction];
 var mnsl_MNSLPrinter = function(context) {
 	this._output = "";
 	this._indent = 0;
@@ -1710,6 +1725,10 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 	,analyseVariableDeclPost: function(node,name,type,value,ctx,info) {
 		if(ctx.findVariable(name) != null) {
 			this._context.emitError(mnsl_MNSLError.AnalyserDuplicateVariable(name,info));
+			return node;
+		}
+		if(ctx.currentFunction == null) {
+			this._context.emitError(mnsl_MNSLError.AnalyserVariableOutsideFunction(name,node,info));
 			return node;
 		}
 		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,type,null,null,null,null));
@@ -2647,6 +2666,25 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		}
 		this.checkBranchesOnBody(res,null);
 		this.checkForRecursion(res,null);
+		var mainFunc = null;
+		var _g = 0;
+		var _g1 = this._globalCtx.functions;
+		while(_g < _g1.length) {
+			var f = _g1[_g];
+			++_g;
+			if(f.name == "main") {
+				mainFunc = f;
+				break;
+			}
+		}
+		if(mainFunc == null) {
+			this._context.emitError(mnsl_MNSLError.AnalyserMissingMainFunction);
+		} else if(!mainFunc.returnType.equals(new mnsl_analysis_MNSLType("Void"))) {
+			this._context.emitError(mnsl_MNSLError.AnalyserInvalidReturnType(mainFunc,new mnsl_analysis_MNSLType("Void"),mainFunc.returnType));
+			this._context.emitError(mnsl_MNSLError.AnalyserMissingMainFunction);
+		} else if(mainFunc.args.length != 0) {
+			this._context.emitError(mnsl_MNSLError.AnalyserMissingMainFunction);
+		}
 		return res;
 	}
 	,__class__: mnsl_analysis_MNSLAnalyser
@@ -5390,6 +5428,9 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		return words;
 	}
 	,getType: function(type) {
+		if(type._type == "Unknown") {
+			type.setType(new mnsl_analysis_MNSLType("Void"));
+		}
 		var t = this._types.keys();
 		while(t.hasNext()) {
 			var t1 = t.next();
@@ -5478,9 +5519,8 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			this._typeInit.push({ id : id, op : 21, oper : [id,32,1]});
 			break;
 		case "Sampler":
-			var sampledId = id;
-			this._typeInit.push({ id : id, op : 25, oper : [id,this.getType(new mnsl_analysis_MNSLType("Float")),1,0,0,0,1,0]});
-			id = this.assignId();
+			var sampledId = this.assignId();
+			this._typeInit.push({ id : sampledId, op : 25, oper : [sampledId,this.getType(new mnsl_analysis_MNSLType("Float")),1,0,0,0,1,0]});
 			this._typeInit.push({ id : id, op : 27, oper : [id,sampledId]});
 			this.emitDebugLabel(sampledId,"TSamplerImage");
 			break;
@@ -5596,7 +5636,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			throw haxe_Exception.thrown("Invalid node for variable base: " + Std.string(on));
 		}
 	}
-	,getVar: function(on,scope,requirePtr) {
+	,getVar: function(on,scope,inBody,at,requirePtr) {
 		if(requirePtr == null) {
 			requirePtr = false;
 		}
@@ -5667,14 +5707,14 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				return;
 			}
 			if(name == "__mnsl_eval_tmp") {
-				var funcRet = _gthis.emitNode(node,scope);
+				var funcRet = _gthis.emitNode(node,scope,inBody,at);
 				currRetId = funcRet;
 				currIsParam = true;
 				lastType = type;
 				return;
 			}
 			if(name == "__mnsl_array_access") {
-				var indexId = _gthis.emitNode(arrayIndex,scope);
+				var indexId = _gthis.emitNode(arrayIndex,scope,inBody,at);
 				var resId = _gthis.assignId();
 				if(currIsParam) {
 					throw haxe_Exception.thrown("Cannot get pointer to array access of a temporary value");
@@ -6026,15 +6066,52 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			}
 		}
 	}
-	,emitBody: function(body,scope) {
+	,emitBody: function(body,scope,branchTo) {
+		if(body == null) {
+			body = [];
+		}
+		var bodyHasReturned = false;
 		var _g = 0;
-		while(_g < body.length) {
-			var node = body[_g];
-			++_g;
-			this.emitNode(node,scope);
+		var _g1 = body.length;
+		while(_g < _g1) {
+			var nodeIdx = _g++;
+			var node = body[nodeIdx];
+			switch(node._hx_index) {
+			case 2:
+				var _g2 = node.value;
+				var _g3 = node.type;
+				var _g4 = node.info;
+				bodyHasReturned = true;
+				break;
+			case 6:
+				var _g5 = node.condition;
+				var _g6 = node.body;
+				var _g7 = node.info;
+				this.emitIfStatement(body,nodeIdx,scope,branchTo);
+				return;
+			case 11:
+				var whileCond = node.condition;
+				var whileBody = node.body;
+				var whileInfo = node.info;
+				this.emitWhileLoop(whileCond,whileBody,whileInfo,scope,body,nodeIdx,branchTo);
+				return;
+			case 12:
+				var forInit = node.init;
+				var forCond = node.condition;
+				var forInc = node.increment;
+				var forBody = node.body;
+				var forInfo = node.info;
+				this.emitForLoop(forInit,forCond,forInc,forBody,forInfo,scope,body,nodeIdx,branchTo);
+				return;
+			default:
+			}
+			this.emitNode(node,scope,body,nodeIdx);
+		}
+		if(branchTo != null && !bodyHasReturned) {
+			this.emitInstruction(249,[branchTo]);
 		}
 	}
-	,emitNode: function(node,scope) {
+	,emitNode: function(node,scope,inBody,at) {
 		switch(node._hx_index) {
 		case 0:
 			var name = node.name;
@@ -6042,50 +6119,50 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var $arguments = node.$arguments;
 			var body = node.body;
 			var info = node.info;
-			return this.emitFunctionDecl(name,returnType,$arguments,body,info,scope);
+			return this.emitFunctionDecl(name,returnType,$arguments,body,info,scope,inBody,at);
 		case 1:
 			var name = node.name;
 			var args = node.args;
 			var returnType = node.returnType;
 			var info = node.info;
-			return this.emitFunctionCall(name,args,returnType,info,scope);
+			return this.emitFunctionCall(name,args,returnType,info,scope,inBody,at);
 		case 2:
 			var value = node.value;
 			var type = node.type;
 			var info = node.info;
-			return this.emitReturn(value,type,info,scope);
+			return this.emitReturn(value,type,info,scope,inBody,at);
 		case 3:
 			var name = node.name;
 			var type = node.type;
 			var value = node.value;
 			var info = node.info;
-			return this.emitVariableDecl(name,type,value,info,scope);
+			return this.emitVariableDecl(name,type,value,info,scope,inBody,at);
 		case 4:
 			var name = node.name;
 			var value = node.value;
 			var info = node.info;
-			return this.emitVariableAssign(name,value,info,scope);
+			return this.emitVariableAssign(name,value,info,scope,inBody,at);
 		case 5:
 			var name = node.name;
 			var type = node.type;
 			var info = node.info;
-			return this.emitIdentifier(name,type,info,scope);
+			return this.emitIdentifier(name,type,info,scope,inBody,at);
 		case 9:
 			var left = node.left;
 			var op = node.op;
 			var right = node.right;
 			var type = node.type;
 			var info = node.info;
-			return this.emitBinaryOp(left,op,right,type,info,scope);
+			return this.emitBinaryOp(left,op,right,type,info,scope,inBody,at);
 		case 10:
 			var op = node.op;
 			var right = node.right;
 			var info = node.info;
-			return this.emitUnaryOp(op,right,info,scope);
+			return this.emitUnaryOp(op,right,info,scope,inBody,at);
 		case 15:
 			var node1 = node.node;
 			var info = node.info;
-			return this.emitNode(node1,scope);
+			return this.emitNode(node1,scope,inBody,at);
 		case 16:
 			var body = node.body;
 			var info = node.info;
@@ -6096,27 +6173,27 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var field = node.field;
 			var type = node.type;
 			var info = node.info;
-			return this.emitStructAccess(on,field,type,info,scope);
+			return this.emitStructAccess(on,field,type,info,scope,inBody,at);
 		case 18:
 			var on = node.on;
 			var index = node.index;
 			var info = node.info;
-			return this.emitArrayAccess(on,index,mnsl_analysis_MNSLAnalyser.getType(node),info,scope);
+			return this.emitArrayAccess(on,index,mnsl_analysis_MNSLAnalyser.getType(node),info,scope,inBody,at);
 		case 19:
 			var on = node.on;
 			var from = node.from;
 			var to = node.to;
-			return this.emitTypeCast(on,from,to,scope);
+			return this.emitTypeCast(on,from,to,scope,inBody,at);
 		case 22:
 			var comp = node.components;
 			var nodes = node.nodes;
 			var info = node.info;
-			return this.emitVectorCreation(comp,nodes,info,scope);
+			return this.emitVectorCreation(comp,nodes,info,scope,inBody,at);
 		case 23:
 			var on = node.on;
 			var from = node.fromComponents;
 			var to = node.toComponents;
-			return this.emitVectorConversion(on,from,to,scope);
+			return this.emitVectorConversion(on,from,to,scope,inBody,at);
 		case 24:
 			var value = node.value;
 			var info = node.info;
@@ -6130,12 +6207,133 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var info = node.info;
 			return this.getConst(value,new mnsl_analysis_MNSLType("Bool"));
 		default:
-			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 731, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
+			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 761, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
 			return 0;
 		}
 	}
-	,emitStructAccess: function(on,field,type,info,scope) {
-		var varDef = this.getVar(mnsl_parser_MNSLNode.StructAccess(on,field,type,info),scope);
+	,emitWhileLoop: function(cond,body,info,scope,inBody,at,branchTo) {
+		var headerLabel = this.assignId();
+		var loopLabel = this.assignId();
+		var mergeLabel = this.assignId();
+		var enterLabel = this.assignId();
+		var branchToEnter = this.assignId();
+		var whileAfter = inBody.slice(at + 1);
+		this.emitInstruction(249,[enterLabel]);
+		this.emitInstruction(248,[enterLabel]);
+		this.emitInstruction(246,[mergeLabel,branchToEnter,0]);
+		this.emitInstruction(249,[headerLabel]);
+		this.emitInstruction(248,[headerLabel]);
+		var condId = this.emitNode(cond,scope,inBody,at);
+		this.emitInstruction(250,[condId,loopLabel,mergeLabel]);
+		this.emitInstruction(248,[loopLabel]);
+		this.emitBody(body,scope,branchToEnter);
+		this.emitInstruction(248,[branchToEnter]);
+		this.emitInstruction(249,[enterLabel]);
+		this.emitInstruction(248,[mergeLabel]);
+		this.emitBody(whileAfter,scope,branchTo);
+		if(whileAfter.length == 0 && branchTo == null) {
+			this.emitInstruction(255,[]);
+		}
+		return 0;
+	}
+	,emitForLoop: function(init,cond,inc,body,info,scope,inBody,at,branchTo) {
+		var headerLabel = this.assignId();
+		var loopLabel = this.assignId();
+		var mergeLabel = this.assignId();
+		var enterLabel = this.assignId();
+		var branchToEnter = this.assignId();
+		var iterLabel = this.assignId();
+		var forAfter = inBody.slice(at + 1);
+		this.emitNode(init,scope,inBody,at);
+		this.emitInstruction(249,[enterLabel]);
+		this.emitInstruction(248,[enterLabel]);
+		this.emitInstruction(246,[mergeLabel,branchToEnter,0]);
+		this.emitInstruction(249,[headerLabel]);
+		this.emitInstruction(248,[headerLabel]);
+		var condId = this.emitNode(cond,scope,inBody,at);
+		this.emitInstruction(250,[condId,loopLabel,mergeLabel]);
+		this.emitInstruction(248,[loopLabel]);
+		this.emitBody(body,scope,iterLabel);
+		this.emitInstruction(248,[iterLabel]);
+		this.emitNode(inc,scope,inBody,at);
+		this.emitInstruction(249,[branchToEnter]);
+		this.emitInstruction(248,[branchToEnter]);
+		this.emitInstruction(249,[enterLabel]);
+		this.emitInstruction(248,[mergeLabel]);
+		this.emitBody(forAfter,scope,branchTo);
+		if(forAfter.length == 0 && branchTo == null) {
+			this.emitInstruction(255,[]);
+		}
+		return 0;
+	}
+	,emitIfStatement: function(inBody,at,scope,branchTo) {
+		var condChainIdx = at;
+		var condChainStatements = [];
+		var condChainElse = null;
+		_hx_loop1: while(condChainIdx < inBody.length) {
+			var condChainNode = inBody[condChainIdx];
+			switch(condChainNode._hx_index) {
+			case 6:
+				var chainCond = condChainNode.condition;
+				var chainBody = condChainNode.body;
+				var chainInfo = condChainNode.info;
+				if(condChainStatements.length == 0) {
+					condChainStatements.push({ cond : chainCond, body : chainBody, info : chainInfo});
+				} else {
+					break _hx_loop1;
+				}
+				break;
+			case 7:
+				var chainCond1 = condChainNode.condition;
+				var chainBody1 = condChainNode.body;
+				var chainInfo1 = condChainNode.info;
+				condChainStatements.push({ cond : chainCond1, body : chainBody1, info : chainInfo1});
+				break;
+			case 8:
+				var chainBody2 = condChainNode.body;
+				var chainInfo2 = condChainNode.info;
+				condChainElse = chainBody2;
+				break _hx_loop1;
+			default:
+				break _hx_loop1;
+			}
+			++condChainIdx;
+		}
+		var condAfter = inBody.slice(at + condChainStatements.length + (condChainElse != null ? 1 : 0));
+		var condInfo = condChainStatements[0];
+		var mergeLabel = this.assignId();
+		var falseLabel = this.assignId();
+		var trueLabel = this.assignId();
+		var condId = this.emitNode(condInfo.cond,scope,inBody,at);
+		if(condChainStatements.length > 1) {
+			var newElseBody = [];
+			var _g = 1;
+			var _g1 = condChainStatements.length;
+			while(_g < _g1) {
+				var i = _g++;
+				var chain = condChainStatements[i];
+				newElseBody.push(i == 1 ? mnsl_parser_MNSLNode.IfStatement(chain.cond,chain.body,chain.info) : mnsl_parser_MNSLNode.ElseIfStatement(chain.cond,chain.body,chain.info));
+			}
+			var tmp = condChainElse;
+			newElseBody.push(mnsl_parser_MNSLNode.ElseStatement(tmp != null ? tmp : [],condInfo.info));
+			condChainElse = newElseBody;
+		}
+		this.emitInstruction(247,[mergeLabel,0]);
+		this.emitInstruction(250,[condId,trueLabel,falseLabel]);
+		this.emitInstruction(248,[falseLabel]);
+		var tmp = condChainElse;
+		this.emitBody(tmp != null ? tmp : [],scope,mergeLabel);
+		this.emitInstruction(248,[trueLabel]);
+		this.emitBody(condInfo.body,scope,mergeLabel);
+		this.emitInstruction(248,[mergeLabel]);
+		this.emitBody(condAfter,scope,branchTo);
+		if(condAfter.length == 0 && branchTo == null) {
+			this.emitInstruction(255,[]);
+		}
+		return 0;
+	}
+	,emitStructAccess: function(on,field,type,info,scope,inBody,at) {
+		var varDef = this.getVar(mnsl_parser_MNSLNode.StructAccess(on,field,type,info),scope,inBody,at);
 		if(varDef.isParam) {
 			return varDef.id;
 		}
@@ -6144,20 +6342,20 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		this.emitInstruction(61,[typeId,resultId,varDef.id]);
 		return resultId;
 	}
-	,emitArrayAccess: function(on,index,type,info,scope) {
-		var varDef = this.getVar(mnsl_parser_MNSLNode.ArrayAccess(on,index,info),scope);
+	,emitArrayAccess: function(on,index,type,info,scope,inBody,at) {
+		var varDef = this.getVar(mnsl_parser_MNSLNode.ArrayAccess(on,index,info),scope,inBody,at);
 		if(varDef.isParam) {
 			return varDef.id;
 		}
 		var typeId = this.getType(type);
 		var resultId = this.assignId();
-		var indexId = this.emitNode(index,scope);
+		var indexId = this.emitNode(index,scope,inBody,at);
 		this.emitInstruction(61,[typeId,resultId,varDef.id]);
 		this.emitInstruction(65,[this.getPtr(typeId,7),resultId,resultId,indexId]);
 		return resultId;
 	}
-	,emitIdentifier: function(name,type,info,scope) {
-		var varDef = this.getVar(mnsl_parser_MNSLNode.Identifier(name,type,info),scope);
+	,emitIdentifier: function(name,type,info,scope,inBody,at) {
+		var varDef = this.getVar(mnsl_parser_MNSLNode.Identifier(name,type,info),scope,inBody,at);
 		if(varDef.isParam) {
 			return varDef.id;
 		}
@@ -6166,16 +6364,16 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		this.emitInstruction(61,[typeId,resultId,varDef.id]);
 		return resultId;
 	}
-	,emitVariableAssign: function(on,value,info,scope) {
-		var varDef = this.getVar(on,scope,true);
-		var valueId = this.emitNode(value,scope);
+	,emitVariableAssign: function(on,value,info,scope,inBody,at) {
+		var varDef = this.getVar(on,scope,inBody,at,true);
+		var valueId = this.emitNode(value,scope,inBody,at);
 		if(scope.swizzlePointers.h.hasOwnProperty(varDef.id)) {
-			return this.emitSwizzleStore(varDef.id,valueId,scope);
+			return this.emitSwizzleStore(varDef.id,valueId,scope,inBody,at);
 		}
 		this.emitInstruction(62,[varDef.id,valueId]);
 		return varDef.id;
 	}
-	,emitSwizzleStore: function(swizzleId,valueId,scope) {
+	,emitSwizzleStore: function(swizzleId,valueId,scope,inBody,at) {
 		var swizzleInfo = scope.swizzlePointers.h[swizzleId];
 		if(swizzleInfo == null) {
 			throw haxe_Exception.thrown("Invalid swizzle pointer: " + swizzleId);
@@ -6214,19 +6412,19 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		scope.swizzlePointers.remove(swizzleId);
 		return swizzleInfo.basePtr;
 	}
-	,emitVariableDecl: function(name,type,value,info,scope) {
+	,emitVariableDecl: function(name,type,value,info,scope,inBody,at) {
 		if(!Object.prototype.hasOwnProperty.call(scope.variables.h,name)) {
 			throw haxe_Exception.thrown("Pre-emit error: Variable not found in scope: " + name);
 		}
 		var varId = scope.variables.h[name];
 		if(value != null) {
-			var valueId = this.emitNode(value,scope);
+			var valueId = this.emitNode(value,scope,inBody,at);
 			this.emitInstruction(62,[varId.id,valueId]);
 		}
 		return varId.id;
 	}
-	,emitVectorConversion: function(on,fromComp,toComp,scope) {
-		var onId = this.emitNode(on,scope);
+	,emitVectorConversion: function(on,fromComp,toComp,scope,inBody,at) {
+		var onId = this.emitNode(on,scope,inBody,at);
 		var fromType = new mnsl_analysis_MNSLType("Vec" + fromComp);
 		var toType = new mnsl_analysis_MNSLType("Vec" + toComp);
 		if(fromComp == toComp) {
@@ -6270,7 +6468,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			return resultId;
 		}
 	}
-	,emitVectorCreation: function(comp,nodes,info,scope) {
+	,emitVectorCreation: function(comp,nodes,info,scope,inBody,at) {
 		if(nodes.length != comp && nodes.length != 1) {
 			throw haxe_Exception.thrown("Vector creation expects " + comp + " components, but got " + nodes.length);
 		}
@@ -6278,7 +6476,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		var typeId = this.getType(type);
 		var resId = this.assignId();
 		if(nodes.length == 1) {
-			var scalarId = this.emitTypeCast(nodes[0],mnsl_analysis_MNSLAnalyser.getType(nodes[0]),new mnsl_analysis_MNSLType("Float"),scope);
+			var scalarId = this.emitTypeCast(nodes[0],mnsl_analysis_MNSLAnalyser.getType(nodes[0]),new mnsl_analysis_MNSLType("Float"),scope,inBody,at);
 			var _g = [];
 			var _g1 = 0;
 			var _g2 = comp;
@@ -6295,13 +6493,13 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		while(_g1 < nodes.length) {
 			var n = nodes[_g1];
 			++_g1;
-			_g.push(this.emitTypeCast(n,mnsl_analysis_MNSLAnalyser.getType(n),new mnsl_analysis_MNSLType("Float"),scope));
+			_g.push(this.emitTypeCast(n,mnsl_analysis_MNSLAnalyser.getType(n),new mnsl_analysis_MNSLType("Float"),scope,inBody,at));
 		}
 		this.emitInstruction(80,[typeId,resId].concat(_g));
 		return resId;
 	}
-	,emitTypeCast: function(on,from,to,scope) {
-		var onId = this.emitNode(on,scope);
+	,emitTypeCast: function(on,from,to,scope,inBody,at) {
+		var onId = this.emitNode(on,scope,inBody,at);
 		if(from.equals(to)) {
 			return onId;
 		}
@@ -6312,15 +6510,15 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			return resId;
 		}
 		if(from._type == "Int" && to._type == "Float") {
-			haxe_Log.trace(on,{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 927, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitTypeCast"});
+			haxe_Log.trace(on,{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 1113, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitTypeCast"});
 			this.emitInstruction(111,[targetType,resId,onId]);
 			return resId;
 		}
 		this.emitInstruction(124,[targetType,resId,onId]);
 		return resId;
 	}
-	,emitUnaryOp: function(op,right,info,scope) {
-		var rightId = this.emitNode(right,scope);
+	,emitUnaryOp: function(op,right,info,scope,inBody,at) {
+		var rightId = this.emitNode(right,scope,inBody,at);
 		var resultId = this.assignId();
 		switch(op._hx_index) {
 		case 14:
@@ -6347,9 +6545,10 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		}
 		return resultId;
 	}
-	,emitBinaryOp: function(left,op,right,type,info,scope) {
-		var leftId = this.emitNode(left,scope);
-		var rightId = this.emitNode(right,scope);
+	,emitBinaryOp: function(left,op,right,resType,info,scope,inBody,at) {
+		var leftId = this.emitNode(left,scope,inBody,at);
+		var rightId = this.emitNode(right,scope,inBody,at);
+		var type = mnsl_analysis_MNSLAnalyser.getType(left);
 		var resultId = this.assignId();
 		switch(op._hx_index) {
 		case 14:
@@ -6418,6 +6617,8 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				this.emitInstruction(180,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
 			} else if(type._type == "Int") {
 				this.emitInstruction(170,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
+			} else if(type._type == "Bool") {
+				this.emitInstruction(164,[this.getType(new mnsl_analysis_MNSLType("Bool")),resultId,leftId,rightId]);
 			} else {
 				throw haxe_Exception.thrown("Unsupported type for equality: " + type.toHumanString());
 			}
@@ -6493,7 +6694,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		}
 		return resultId;
 	}
-	,emitFunctionDecl: function(name,returnType,$arguments,body,info,scope) {
+	,emitFunctionDecl: function(name,returnType,$arguments,body,info,scope,inBody,at) {
 		scope = scope.copy();
 		var _g = [];
 		var _g1 = 0;
@@ -6528,13 +6729,13 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		}
 		return id;
 	}
-	,emitBuiltinFunctionCall: function(name,args,returnType,info,glslMapping,scope) {
+	,emitBuiltinFunctionCall: function(name,args,returnType,info,glslMapping,scope,inBody,at) {
 		var _g = [];
 		var _g1 = 0;
 		while(_g1 < args.length) {
 			var arg = args[_g1];
 			++_g1;
-			_g.push(this.emitNode(arg,scope));
+			_g.push(this.emitNode(arg,scope,inBody,at));
 		}
 		var argIds = _g;
 		var retId = this.assignId();
@@ -6565,14 +6766,14 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			return retId;
 		}
 	}
-	,emitFunctionCall: function(name,args,returnType,info,scope) {
+	,emitFunctionCall: function(name,args,returnType,info,scope,inBody,at) {
 		var _g = 0;
 		var _g1 = this._glslFuncMap;
 		while(_g < _g1.length) {
 			var func = _g1[_g];
 			++_g;
 			if(func.name == name) {
-				return this.emitBuiltinFunctionCall(name,args,returnType,info,func.mapping,scope);
+				return this.emitBuiltinFunctionCall(name,args,returnType,info,func.mapping,scope,inBody,at);
 			}
 		}
 		if(!Object.prototype.hasOwnProperty.call(this._functions.h,name)) {
@@ -6584,19 +6785,19 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		while(_g1 < args.length) {
 			var arg = args[_g1];
 			++_g1;
-			_g.push(this.emitNode(arg,scope));
+			_g.push(this.emitNode(arg,scope,inBody,at));
 		}
 		var argIds = _g;
 		var retId = this.assignId();
 		this.emitInstruction(57,[this.getType(returnType),retId,funcId].concat(argIds));
 		return retId;
 	}
-	,emitReturn: function(value,type,info,scope) {
+	,emitReturn: function(value,type,info,scope,inBody,at) {
 		if(value._hx_index == 20) {
 			var _g = value.info;
 			this.emitInstruction(253,[]);
 		} else {
-			this.emitInstruction(254,[this.emitNode(value,scope)]);
+			this.emitInstruction(254,[this.emitNode(value,scope,inBody,at)]);
 		}
 		return 0;
 	}

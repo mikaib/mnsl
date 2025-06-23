@@ -7,11 +7,13 @@ class MNSLSPIRVScope {
 
     public var variables: Map<String, { id: Int, isParam: Bool }> = [];
     public var swizzlePointers: Map<Int, { basePtr: Int, components: Array<Int>, vectorType: MNSLType }> = [];
+    public var loopActions: { breakBranch: Int, continueBranch: Int } = { breakBranch: -1, continueBranch: -1 };
 
     public function copy(): MNSLSPIRVScope {
         return {
             variables: variables.copy(),
-            swizzlePointers: swizzlePointers.copy()
+            swizzlePointers: swizzlePointers.copy(),
+            loopActions: { breakBranch: loopActions.breakBranch, continueBranch: loopActions.continueBranch }
         };
     }
 
@@ -41,6 +43,20 @@ class MNSLSPIRVScope {
 
     public function hasSwizzlePointer(basePtr: Int): Bool {
         return swizzlePointers.exists(basePtr);
+    }
+
+    public function setLoopActions(breakBranch: Int, continueBranch: Int): Void {
+        loopActions.breakBranch = breakBranch;
+        loopActions.continueBranch = continueBranch;
+    }
+
+    public function getLoopActions(): { breakBranch: Int, continueBranch: Int } {
+        return loopActions;
+    }
+
+    public function clearLoopActions(): Void {
+        loopActions.breakBranch = -1;
+        loopActions.continueBranch = -1;
     }
 
 }
