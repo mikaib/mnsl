@@ -93,9 +93,57 @@ func test_4() {
     return y;
 }
 
+func test_5() {
+    var sum = 0;
+    for (var i = 0; i < 10; i++) {
+        if (i % 2 == 0) {
+            continue;
+        }
+        if (i == 7) {
+            break;
+        }
+        sum += i;
+    }
+    return sum;
+}
+
+func test_6() {
+    var count = 0;
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            if (i == 1 && j == 1) {
+                continue;
+            }
+            if (i == 2 && j == 0) {
+                break;
+            }
+            count += 1;
+        }
+    }
+    var k = 0;
+    while (k < 3) {
+        var l = 0;
+        while (l < 3) {
+            if (k == 0 && l == 2) {
+                l++;
+                continue;
+            }
+            if (k == 2 && l == 1) {
+                break;
+            }
+            count += 2;
+            l++;
+        }
+        k++;
+    }
+    return count;
+}
+
 func main() {
     test_1();
     test_2();
     test_3();
     test_4();
+    test_5();
+    test_6();
 }

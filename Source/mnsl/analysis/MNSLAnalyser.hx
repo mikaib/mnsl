@@ -610,6 +610,15 @@ class MNSLAnalyser {
                     return findBase(on);
                 case ArrayAccess(on, index, info):
                     return findBase(on);
+                case VectorConversion(on, fromComp, toComp):
+                    return findBase(on);
+                case VectorCreation(comp, values, _):
+                    if (values.length > 0 && values[0] != null) {
+                        return findBase(values[0]);
+                    } else {
+                        _context.emitError(AnalyserInvalidAccess(node));
+                        return null;
+                    }
                 default:
                     _context.emitError(AnalyserInvalidAccess(node));
                     return null;

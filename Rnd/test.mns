@@ -1,20 +1,4 @@
-func test() {
-    var x = 0;
-    var y = 100;
-    while (x < y) {
-        if (y == 10) {
-            y += 5;
-            continue;
-        } else if (y == 50) {
-            break;
-        }
-
-        y++;
-    }
-
-    return y;
-}
-
 func main() {
-    test();
+    var v = vec3(1);
+    v.zyx = (1, 2, 3);
 }
