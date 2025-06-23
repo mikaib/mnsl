@@ -892,7 +892,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var condAfter = inBody.slice(at + condChainStatements.length + (condChainElse != null ? 1 : 0));
         var condInfo = condChainStatements[0];
         var mergeLabel = assignId();
-        var falseLabel = assignId();
+        var falseLabel = condChainElse != null ? assignId() : mergeLabel;
         var trueLabel = assignId();
         var condId = emitNode(condInfo.cond, scope, inBody, at);
 
@@ -916,8 +916,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, trueLabel, falseLabel]);
 
         // false
-        emitInstruction(MNSLSPIRVOpCode.OpLabel, [falseLabel]);
-        emitBody(condChainElse ?? [], scope, mergeLabel);
+        if (condChainElse != null) {
+            emitInstruction(MNSLSPIRVOpCode.OpLabel, [falseLabel]);
+            emitBody(condChainElse ?? [], scope, mergeLabel);
+        }
 
         // true
         emitInstruction(MNSLSPIRVOpCode.OpLabel, [trueLabel]);
