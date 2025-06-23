@@ -792,6 +792,21 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         var trueLabel = assignId();
         var condId = emitNode(condInfo.cond, scope, inBody, at);
 
+        // handle elseif
+        if (condChainStatements.length > 1) {
+            var newElseBody: MNSLNodeChildren = [];
+            for (i in 1...condChainStatements.length) {
+                var chain = condChainStatements[i];
+                newElseBody.push(
+                    i == 1 ? IfStatement(chain.cond, chain.body, chain.info) :
+                    ElseIfStatement(chain.cond, chain.body, chain.info)
+                );
+            }
+
+            newElseBody.push(ElseStatement(condChainElse ?? [], condInfo.info));
+            condChainElse = newElseBody;
+        }
+
         // conditional
         emitInstruction(MNSLSPIRVOpCode.OpSelectionMerge, [mergeLabel, 0]);
         emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, trueLabel, falseLabel]);
