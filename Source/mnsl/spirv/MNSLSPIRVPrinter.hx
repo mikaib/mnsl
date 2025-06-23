@@ -699,6 +699,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 case IfStatement(_, _, _):
                     emitIfStatement(body, nodeIdx, scope, branchTo);
                     return;
+                case WhileLoop(whileCond, whileBody, whileInfo):
+                    emitWhileLoop(whileCond, whileBody, whileInfo, scope, body, nodeIdx, branchTo);
+                    return;
                 case Return(_, _, _):
                     bodyHasReturned = true;
                 default:
@@ -757,6 +760,45 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
+    public function emitWhileLoop(cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, ?branchTo: Int): Int {
+        var headerLabel = assignId();
+        var loopLabel = assignId();
+        var mergeLabel = assignId();
+        var enterLabel = assignId();
+        var branchToEnter = assignId();
+        var whileAfter = inBody.slice(at + 1);
+
+        // goto header
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [enterLabel]);
+
+        // enter
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [enterLabel]);
+        emitInstruction(MNSLSPIRVOpCode.OpLoopMerge, [mergeLabel, branchToEnter, 0]);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [headerLabel]);
+
+        // header
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [headerLabel]);
+        var condId = emitNode(cond, scope, inBody, at);
+        emitInstruction(MNSLSPIRVOpCode.OpBranchConditional, [condId, loopLabel, mergeLabel]);
+
+        // loop body
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [loopLabel]);
+        emitBody(body, scope, branchToEnter);
+
+        // enter branch
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [branchToEnter]);
+        emitInstruction(MNSLSPIRVOpCode.OpBranch, [enterLabel]);
+
+        // merge
+        emitInstruction(MNSLSPIRVOpCode.OpLabel, [mergeLabel]);
+        emitBody(whileAfter, scope, branchTo);
+        if (whileAfter.length == 0 && branchTo == null) {
+            emitInstruction(MNSLSPIRVOpCode.OpUnreachable, []);
+        }
+
+        return 0;
+    }
+
     public function emitIfStatement(inBody: MNSLNodeChildren, at: Int, scope: MNSLSPIRVScope, ?branchTo: Int): Int {
         var condChainIdx = at;
         var condChainStatements: Array<{ cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo }> = [];
@@ -783,7 +825,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
             condChainIdx++;
         }
-
 
         var condAfter = inBody.slice(at + condChainStatements.length + (condChainElse != null ? 1 : 0));
         var condInfo = condChainStatements[0];

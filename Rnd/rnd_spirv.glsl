@@ -1,31 +1,87 @@
 #version 450
 
-int test()
+int test_1()
 {
-    int a = 1;
-    int b = 2;
-    if (a == b)
+    int x = 0;
+    int y = 0;
+    while (y < x)
     {
-        return 1;
+        y++;
     }
-    else
+    return y;
+}
+
+int test_2()
+{
+    int x = 0;
+    int y = 0;
+    while (y < x)
     {
-        if (a < b)
+        if (y == 0)
         {
-            return 2;
+            y++;
         }
         else
         {
-            if (a > b)
+            if (y == 1)
             {
-                return 3;
+                y += 2;
             }
             else
             {
-                return 4;
+                return 1;
             }
         }
+        y++;
     }
+    return y;
+}
+
+int test_3()
+{
+    int x = 0;
+    int y = 0;
+    while (y < x)
+    {
+        int z = y * 2;
+        int w = x * 3;
+        while (z < w)
+        {
+            if (z == 0)
+            {
+                z++;
+            }
+            else
+            {
+                if (z == 1)
+                {
+                    z += 2;
+                }
+                else
+                {
+                    z += 3;
+                }
+            }
+            z++;
+        }
+        if (y == 0)
+        {
+            y += 6;
+        }
+        else
+        {
+            if (y == 1)
+            {
+                y += 2;
+            }
+            else
+            {
+                y += 3;
+            }
+        }
+        y += 9;
+    }
+    return y;
 }
 
 void main()

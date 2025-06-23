@@ -1,37 +1,45 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 64
+; Bound: 152
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %TVec2 "TVec2"
-               OpName %TSamplerImage "TSamplerImage"
-               OpName %a "a"
-               OpName %TFloat "TFloat"
-               OpName %TSampler "TSampler"
-               OpName %in_VertexID "in_VertexID"
-               OpName %in_FragDepth "in_FragDepth"
-               OpName %main "main"
-               OpName %TInt "TInt"
-               OpName %TMat4 "TMat4"
-               OpName %test "test"
-               OpName %TBool "TBool"
-               OpName %TMat3 "TMat3"
+               OpName %test_3 "test_3"
                OpName %in_FrontFacing "in_FrontFacing"
-               OpName %TVoid "TVoid"
-               OpName %TMat2 "TMat2"
-               OpName %out_PointSize "out_PointSize"
-               OpName %TVec4 "TVec4"
-               OpName %in_FragCoord "in_FragCoord"
-               OpName %TVec3 "TVec3"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
+               OpName %in_FragCoord "in_FragCoord"
+               OpName %TSamplerImage "TSamplerImage"
                OpName %in_InstanceID "in_InstanceID"
+               OpName %TSampler "TSampler"
+               OpName %TMat4 "TMat4"
+               OpName %main "main"
+               OpName %TMat3 "TMat3"
+               OpName %in_VertexID "in_VertexID"
+               OpName %y "y"
+               OpName %TMat2 "TMat2"
+               OpName %x "x"
+               OpName %TVec4 "TVec4"
+               OpName %TVec3 "TVec3"
+               OpName %y_0 "y"
+               OpName %x_0 "x"
+               OpName %test_1 "test_1"
+               OpName %TVec2 "TVec2"
+               OpName %TFloat "TFloat"
+               OpName %out_PointSize "out_PointSize"
+               OpName %TInt "TInt"
+               OpName %test_2 "test_2"
+               OpName %w "w"
+               OpName %TBool "TBool"
+               OpName %z "z"
                OpName %out_Position "out_Position"
-               OpName %b "b"
+               OpName %TVoid "TVoid"
+               OpName %y_1 "y"
+               OpName %x_1 "x"
+               OpName %in_FragDepth "in_FragDepth"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -59,9 +67,10 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
-     %TInt_4 = OpConstant %TInt 4
+     %TInt_6 = OpConstant %TInt 6
+     %TInt_9 = OpConstant %TInt 9
          %22 = OpTypeFunction %TInt
-         %25 = OpTypeFunction %TVoid
+         %26 = OpTypeFunction %TVoid
 %_ptr_Function_TInt = OpTypePointer Function %TInt
 %_ptr_Input_TInt = OpTypePointer Input %TInt
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
@@ -76,46 +85,191 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-       %test = OpFunction %TInt None %22
-         %40 = OpLabel
-          %a = OpVariable %_ptr_Function_TInt Function
-          %b = OpVariable %_ptr_Function_TInt Function
-               OpStore %a %TInt_1
-               OpStore %b %TInt_2
-         %46 = OpLoad %TInt %a
-         %47 = OpLoad %TInt %b
-         %48 = OpIEqual %TBool %46 %47
-               OpSelectionMerge %43 None
-               OpBranchConditional %48 %45 %44
+     %test_1 = OpFunction %TInt None %22
+         %41 = OpLabel
+          %x = OpVariable %_ptr_Function_TInt Function
+          %y = OpVariable %_ptr_Function_TInt Function
+               OpStore %x %TInt_0
+               OpStore %y %TInt_0
+               OpBranch %47
+         %47 = OpLabel
+               OpLoopMerge %46 %48 None
+               OpBranch %44
          %44 = OpLabel
-         %52 = OpLoad %TInt %a
-         %53 = OpLoad %TInt %b
-         %54 = OpSLessThan %TBool %52 %53
-               OpSelectionMerge %49 None
-               OpBranchConditional %54 %51 %50
-         %50 = OpLabel
-         %58 = OpLoad %TInt %a
-         %59 = OpLoad %TInt %b
-         %60 = OpSGreaterThan %TBool %58 %59
-               OpSelectionMerge %55 None
-               OpBranchConditional %60 %57 %56
-         %56 = OpLabel
-               OpReturnValue %TInt_4
-         %57 = OpLabel
-               OpReturnValue %TInt_3
-         %55 = OpLabel
-               OpBranch %49
-         %51 = OpLabel
-               OpReturnValue %TInt_2
-         %49 = OpLabel
-               OpBranch %43
+         %49 = OpLoad %TInt %y
+         %50 = OpLoad %TInt %x
+         %51 = OpSLessThan %TBool %49 %50
+               OpBranchConditional %51 %45 %46
          %45 = OpLabel
-               OpReturnValue %TInt_1
-         %43 = OpLabel
-               OpUnreachable
+         %52 = OpLoad %TInt %y
+         %53 = OpIAdd %TInt %52 %TInt_1
+               OpStore %y %53
+               OpBranch %48
+         %48 = OpLabel
+               OpBranch %47
+         %46 = OpLabel
+         %54 = OpLoad %TInt %y
+               OpReturnValue %54
                OpFunctionEnd
-       %main = OpFunction %TVoid None %25
+     %test_2 = OpFunction %TInt None %22
+         %56 = OpLabel
+        %x_0 = OpVariable %_ptr_Function_TInt Function
+        %y_0 = OpVariable %_ptr_Function_TInt Function
+               OpStore %x_0 %TInt_0
+               OpStore %y_0 %TInt_0
+               OpBranch %62
          %62 = OpLabel
-         %63 = OpFunctionCall %TInt %test
+               OpLoopMerge %61 %63 None
+               OpBranch %59
+         %59 = OpLabel
+         %64 = OpLoad %TInt %y_0
+         %65 = OpLoad %TInt %x_0
+         %66 = OpSLessThan %TBool %64 %65
+               OpBranchConditional %66 %60 %61
+         %60 = OpLabel
+         %70 = OpLoad %TInt %y_0
+         %71 = OpIEqual %TBool %70 %TInt_0
+               OpSelectionMerge %67 None
+               OpBranchConditional %71 %69 %68
+         %68 = OpLabel
+         %75 = OpLoad %TInt %y_0
+         %76 = OpIEqual %TBool %75 %TInt_1
+               OpSelectionMerge %72 None
+               OpBranchConditional %76 %74 %73
+         %73 = OpLabel
+               OpReturnValue %TInt_1
+         %74 = OpLabel
+         %77 = OpLoad %TInt %y_0
+         %78 = OpIAdd %TInt %77 %TInt_2
+               OpStore %y_0 %78
+               OpBranch %72
+         %72 = OpLabel
+               OpBranch %67
+         %69 = OpLabel
+         %79 = OpLoad %TInt %y_0
+         %80 = OpIAdd %TInt %79 %TInt_1
+               OpStore %y_0 %80
+               OpBranch %67
+         %67 = OpLabel
+         %81 = OpLoad %TInt %y_0
+         %82 = OpIAdd %TInt %81 %TInt_1
+               OpStore %y_0 %82
+               OpBranch %63
+         %63 = OpLabel
+               OpBranch %62
+         %61 = OpLabel
+         %83 = OpLoad %TInt %y_0
+               OpReturnValue %83
+               OpFunctionEnd
+     %test_3 = OpFunction %TInt None %22
+         %85 = OpLabel
+        %x_1 = OpVariable %_ptr_Function_TInt Function
+        %y_1 = OpVariable %_ptr_Function_TInt Function
+          %z = OpVariable %_ptr_Function_TInt Function
+          %w = OpVariable %_ptr_Function_TInt Function
+               OpStore %x_1 %TInt_0
+               OpStore %y_1 %TInt_0
+               OpBranch %93
+         %93 = OpLabel
+               OpLoopMerge %92 %94 None
+               OpBranch %90
+         %90 = OpLabel
+         %95 = OpLoad %TInt %y_1
+         %96 = OpLoad %TInt %x_1
+         %97 = OpSLessThan %TBool %95 %96
+               OpBranchConditional %97 %91 %92
+         %91 = OpLabel
+         %98 = OpLoad %TInt %y_1
+         %99 = OpIMul %TInt %98 %TInt_2
+               OpStore %z %99
+        %100 = OpLoad %TInt %x_1
+        %101 = OpIMul %TInt %100 %TInt_3
+               OpStore %w %101
+               OpBranch %105
+        %105 = OpLabel
+               OpLoopMerge %104 %106 None
+               OpBranch %102
+        %102 = OpLabel
+        %107 = OpLoad %TInt %z
+        %108 = OpLoad %TInt %w
+        %109 = OpSLessThan %TBool %107 %108
+               OpBranchConditional %109 %103 %104
+        %103 = OpLabel
+        %113 = OpLoad %TInt %z
+        %114 = OpIEqual %TBool %113 %TInt_0
+               OpSelectionMerge %110 None
+               OpBranchConditional %114 %112 %111
+        %111 = OpLabel
+        %118 = OpLoad %TInt %z
+        %119 = OpIEqual %TBool %118 %TInt_1
+               OpSelectionMerge %115 None
+               OpBranchConditional %119 %117 %116
+        %116 = OpLabel
+        %120 = OpLoad %TInt %z
+        %121 = OpIAdd %TInt %120 %TInt_3
+               OpStore %z %121
+               OpBranch %115
+        %117 = OpLabel
+        %122 = OpLoad %TInt %z
+        %123 = OpIAdd %TInt %122 %TInt_2
+               OpStore %z %123
+               OpBranch %115
+        %115 = OpLabel
+               OpBranch %110
+        %112 = OpLabel
+        %124 = OpLoad %TInt %z
+        %125 = OpIAdd %TInt %124 %TInt_1
+               OpStore %z %125
+               OpBranch %110
+        %110 = OpLabel
+        %126 = OpLoad %TInt %z
+        %127 = OpIAdd %TInt %126 %TInt_1
+               OpStore %z %127
+               OpBranch %106
+        %106 = OpLabel
+               OpBranch %105
+        %104 = OpLabel
+        %131 = OpLoad %TInt %y_1
+        %132 = OpIEqual %TBool %131 %TInt_0
+               OpSelectionMerge %128 None
+               OpBranchConditional %132 %130 %129
+        %129 = OpLabel
+        %136 = OpLoad %TInt %y_1
+        %137 = OpIEqual %TBool %136 %TInt_1
+               OpSelectionMerge %133 None
+               OpBranchConditional %137 %135 %134
+        %134 = OpLabel
+        %138 = OpLoad %TInt %y_1
+        %139 = OpIAdd %TInt %138 %TInt_3
+               OpStore %y_1 %139
+               OpBranch %133
+        %135 = OpLabel
+        %140 = OpLoad %TInt %y_1
+        %141 = OpIAdd %TInt %140 %TInt_2
+               OpStore %y_1 %141
+               OpBranch %133
+        %133 = OpLabel
+               OpBranch %128
+        %130 = OpLabel
+        %142 = OpLoad %TInt %y_1
+        %143 = OpIAdd %TInt %142 %TInt_6
+               OpStore %y_1 %143
+               OpBranch %128
+        %128 = OpLabel
+        %144 = OpLoad %TInt %y_1
+        %145 = OpIAdd %TInt %144 %TInt_9
+               OpStore %y_1 %145
+               OpBranch %94
+         %94 = OpLabel
+               OpBranch %93
+         %92 = OpLabel
+        %146 = OpLoad %TInt %y_1
+               OpReturnValue %146
+               OpFunctionEnd
+       %main = OpFunction %TVoid None %26
+        %148 = OpLabel
+        %149 = OpFunctionCall %TInt %test_1
+        %150 = OpFunctionCall %TInt %test_2
+        %151 = OpFunctionCall %TInt %test_3
                OpReturn
                OpFunctionEnd
