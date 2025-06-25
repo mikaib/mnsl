@@ -81,40 +81,40 @@ class MNSLAnalyser {
                name: "sin",
                remap: "__mnsl_sin",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "cos",
                remap: "__mnsl_cos",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "tan",
                remap: "__mnsl_tan",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TMat2, MNSLType.TMat3, MNSLType.TMat4])
            },
            {
                name: "normalize",
                remap: "__mnsl_normalize",
                args: [
-                   { name: "v", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "v", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "dot",
                remap: "__mnsl_dot",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.TFloat
            },
@@ -131,7 +131,7 @@ class MNSLAnalyser {
                name: "length",
                remap: "__mnsl_length",
                args: [
-                   { name: "v", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "v", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
                returnType: MNSLType.TFloat
            },
@@ -139,168 +139,168 @@ class MNSLAnalyser {
                name: "reflect",
                remap: "__mnsl_reflect",
                args: [
-                   { name: "I", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "N", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "I", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "N", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "refract",
                remap: "__mnsl_refract",
                args: [
-                   { name: "I", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "N", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "I", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "N", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
                    { name: "eta", type: MNSLType.TFloat }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "pow",
                remap: "__mnsl_pow",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat]) },
+                   { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4, MNSLType.TFloat])
            },
            {
                name: "exp",
                remap: "__mnsl_exp",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "log",
                remap: "__mnsl_log",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "sqrt",
                remap: "__mnsl_sqrt",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "abs",
                remap: "__mnsl_abs",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "clamp",
                remap: "__mnsl_clamp",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "minVal", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "maxVal", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "minVal", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "maxVal", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "mix",
                remap: "__mnsl_mix",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "a", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "a", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "step",
                remap: "__mnsl_step",
                args: [
-                   { name: "edge", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "edge", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "smoothstep",
                remap: "__mnsl_smoothstep",
                args: [
-                   { name: "edge0", type: MNSLType.Template("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "edge1", type: MNSLType.Template("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "x", type: MNSLType.Template("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "edge0", type: MNSLType.CreateTemplate("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "edge1", type: MNSLType.CreateTemplate("E", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "x", type: MNSLType.CreateTemplate("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("X", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "max",
                remap: "__mnsl_max",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "min",
                remap: "__mnsl_min",
                args: [
-                   { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                   { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                   { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                ],
-               returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                 name: "atan",
                 remap: "__mnsl_atan",
                 args: [
-                     { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                     { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                     { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                     { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "acos",
                remap: "__mnsl_acos",
                 args: [
-                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                    { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                 name: "asin",
                 remap: "__mnsl_asin",
                 args: [
-                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                    { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                 name: "mod",
                 remap: "__mnsl_mod",
                 args: [
-                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
-                    { name: "y", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                    { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) },
+                    { name: "y", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                name: "fract",
                remap: "__mnsl_fract",
                 args: [
-                     { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                     { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            },
            {
                 name: "floor",
                 remap: "__mnsl_floor",
                 args: [
-                    { name: "x", type: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+                    { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
-                returnType: MNSLType.Template("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+                returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
            }
        ];
 

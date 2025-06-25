@@ -18,11 +18,11 @@ class MNSLType {
     public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
 
-    public static function Template(T: String, ?limits: Array<MNSLType>): MNSLType {
+    public static function CreateTemplate(T: String, ?limits: Array<MNSLType>): MNSLType {
         return new MNSLType('Template<$T>', true, limits);
     }
 
-    public static function Array(T: String, size: Int): MNSLType {
+    public static function CreateArray(T: String, size: Int): MNSLType {
         return new MNSLType('Array<$T, $size>', false, []);
     }
 

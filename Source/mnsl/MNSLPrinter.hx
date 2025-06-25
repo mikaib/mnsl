@@ -7,8 +7,8 @@ class MNSLPrinter {
     private var _ast: MNSLNodeChildren;
     private var _output: String;
     private var _indent: Int;
-    private var _inline: Bool;
-    private var _inlineCounter: Int;
+    private var _sameLine: Bool;
+    private var _sameLineCounter: Int;
 
     /**
      * Creates a new printer.
@@ -19,18 +19,18 @@ class MNSLPrinter {
         _indent = 0;
         _ast = context.getAST();
         _context = context;
-        _inline = false;
-        _inlineCounter = 0;
+        _sameLine = false;
+        _sameLineCounter = 0;
     }
 
     /**
      * Enables inline printing.
      */
     public function enableInline(): Void {
-        _inlineCounter++;
+        _sameLineCounter++;
 
-        if (_inlineCounter >= 1) {
-            _inline = true;
+        if (_sameLineCounter >= 1) {
+            _sameLine = true;
         }
     }
 
@@ -38,10 +38,10 @@ class MNSLPrinter {
      * Disables inline printing.
      */
     public function disableInline(): Void {
-        _inlineCounter--;
+        _sameLineCounter--;
 
-        if (_inlineCounter <= 0) {
-            _inline = false;
+        if (_sameLineCounter <= 0) {
+            _sameLine = false;
         }
     }
 
@@ -74,7 +74,7 @@ class MNSLPrinter {
      * @param args The arguments to format the content.
      */
     public function printlnIndented(content: String, ...args: Dynamic): Void {
-        if (_inline) {
+        if (_sameLine) {
             return println(content, ...args);
         }
 
@@ -87,7 +87,7 @@ class MNSLPrinter {
      * @param args The arguments to format the content.
      */
     public function println(content: String, ...args: Dynamic): Void {
-        _output += template(content, args) + (_inline ? "" : "\n");
+        _output += template(content, args) + (_sameLine ? "" : "\n");
     }
 
     /**
@@ -105,7 +105,7 @@ class MNSLPrinter {
      * @param args The arguments to format the content.
      */
     public function printIndented(content: String, ...args: Dynamic): Void {
-        if (_inline) {
+        if (_sameLine) {
             return print(content, ...args);
         }
 

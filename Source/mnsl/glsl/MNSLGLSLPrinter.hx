@@ -104,7 +104,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
                 }
 
-                println(")" + (_inline ? "" : ";"));
+                println(")" + (_sameLine ? "" : ";"));
 
             case VariableDecl(name, type, value, info):
                 if (value == null) {
