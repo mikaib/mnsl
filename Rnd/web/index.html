@@ -90,7 +90,7 @@
             height: 100%;
         }
 
-        /* Tab System */
+
         .tab-container {
             display: flex;
             flex-direction: column;
@@ -147,7 +147,6 @@
             display: block;
         }
 
-        /* Preview Canvas */
         #preview-canvas {
             width: 100%;
             height: 100%;
@@ -208,7 +207,6 @@
             cursor: not-allowed;
         }
 
-        /* CodeMirror customization */
         .CodeMirror {
             position: absolute !important;
             top: 0 !important;
@@ -242,7 +240,6 @@
             padding: 0 !important;
         }
 
-        /* MNSL Syntax highlighting */
         .cm-mnsl-annotation { color: #7ee787; font-weight: 600; }
         .cm-mnsl-keyword { color: #ff7b72; font-weight: 600; }
         .cm-mnsl-string { color: #a5d6ff; }
@@ -256,7 +253,7 @@
         .cm-mnsl-variable { color: #ffa657; }
         .cm-mnsl-punctuation { color: #c9d1d9; }
 
-        #output-display {
+        #output-display, #spirv-display {
             width: 100%;
             height: 100%;
             background: #0d1117;
@@ -270,6 +267,62 @@
             white-space: pre-wrap;
             overflow-y: auto;
             resize: none;
+        }
+
+        .spirv-content {
+            width: 100%;
+            height: 100%;
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .spirv-content h1, .spirv-content h2, .spirv-content h3 {
+            color: #f85149;
+            margin-bottom: 12px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .spirv-content h2 {
+            color: #238636;
+            font-size: 14px;
+        }
+
+        .spirv-content h3 {
+            color: #d2a8ff;
+            font-size: 12px;
+        }
+
+        .spirv-content pre {
+            background: #21262d;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 4px solid #30363d;
+            overflow-x: auto;
+        }
+
+        .spirv-content .spirv-instruction {
+            color: #79c0ff;
+        }
+
+        .spirv-content .spirv-type {
+            color: #f2cc60;
+        }
+
+        .spirv-content .spirv-id {
+            color: #ffa657;
+        }
+
+        .spirv-content .spirv-comment {
+            color: #8b949e;
+            font-style: italic;
         }
 
         .config-section {
@@ -329,7 +382,6 @@
             font-weight: 500;
         }
 
-        /* Channel Configuration */
         .channel-item {
             display: flex;
             align-items: center;
@@ -434,6 +486,7 @@
                 <div class="tab-headers">
                     <div class="tab-header active" data-tab="preview">Preview</div>
                     <div class="tab-header" data-tab="glsl">GLSL Output</div>
+                    <div class="tab-header" data-tab="spirv">SPIR-V Output</div>
                 </div>
                 <div class="tab-content">
                     <div class="tab-pane active" id="preview-tab">
@@ -453,6 +506,15 @@
                     </div>
                     <div class="tab-pane" id="glsl-tab">
                         <textarea id="output-display" readonly placeholder="GLSL compilation output will appear here..."></textarea>
+                    </div>
+                    <div class="tab-pane" id="spirv-tab">
+                        <div style="display: flex; align-items: center; background: linear-gradient(90deg, #21262d 60%, #238636 100%); border-radius: 0px 0px 6px 6px; padding: 8px 16px; margin-bottom: 0px; box-shadow: 0 2px 8px rgba(35,134,54,0.08);">
+                            <input type="checkbox" id="spirv-binary-toggle" style="appearance: none; width: 20px; height: 20px; border: 2px solid #238636; border-radius: 4px; background: #161b22; margin-right: 12px; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, background 0.2s;">
+                            <span style="font-size: 13px; color: #e6edf3; font-weight: 600; letter-spacing: 0.5px;">Raw output</span>
+                        </div>
+                        <div id="spirv-display" class="spirv-content">
+                            <p style="color: #8b949e; font-style: italic;">Nothing to display yet!</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -545,8 +607,138 @@
     </div>
 </div>
 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+
+<iframe id="worker-template" style="display: none;" srcdoc='
+        <!DOCTYPE html>
+        <html>
+        <head><title>SPIRV Worker</title></head>
+        <body>
+            <script src="./spirv-dis.js"></script>
+            <script>
+                window.addEventListener("message", function(event) {
+                    if (event.data.type === "PROCESS_SPIRV") {
+                        const binaryData = new Uint8Array(event.data.data);
+
+                        try {
+                            const inputPath = "/input.spv";
+                            Module.FS.writeFile(inputPath, binaryData);
+
+                            let output = "";
+
+                            let result;
+                            if (Module.callMain) {
+                                result = Module.callMain([inputPath, "-o", "/tmp/output.spvasm"]);
+                            } else if (Module.main) {
+                                result = Module.main(4, ["spirv-dis", inputPath, "-o", "/tmp/output.spvasm"]);
+                            }
+
+                            if (result !== 0) {
+                                throw new Error("SPIRV disassembly failed with exit code " + result);
+                            }
+
+                            try {
+                                Module.FS.unlink(inputPath);
+                            } catch (e) {}
+
+                            var outputPath = "/tmp/output.spvasm";
+                            try {
+                                output = Module.FS.readFile(outputPath, { encoding: "utf8" });
+                                Module.FS.unlink(outputPath);
+                            } catch (e) {
+                                throw new Error("Failed to read output file: " + e.message);
+                            }
+
+                            parent.postMessage({
+                                type: "SPIRV_RESULT",
+                                success: true,
+                                exitCode: result,
+                                output: output,
+                            }, "*");
+
+                        } catch (error) {
+                            parent.postMessage({
+                                type: "SPIRV_RESULT",
+                                success: false,
+                                error: error.message
+                            }, "*");
+                        }
+                    }
+                });
+
+                Module.onRuntimeInitialized = function() {
+                    parent.postMessage({type: "SPIRV_READY"}, "*");
+                };
+            </script>
+        </body>
+        </html>
+    '></iframe>
+
+<script>
+    async function processSpirvBinary(binaryData, options = {}) {
+        const { timeout = 10000, args = [] } = options;
+
+        return new Promise((resolve, reject) => {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.srcdoc = document.getElementById('worker-template').srcdoc;
+
+            let isResolved = false;
+            const timeoutId = setTimeout(() => {
+                if (!isResolved) {
+                    isResolved = true;
+                    cleanup();
+                    reject(new Error('Processing timeout'));
+                }
+            }, timeout);
+
+            function cleanup() {
+                clearTimeout(timeoutId);
+                window.removeEventListener('message', messageHandler);
+                if (iframe.parentNode) {
+                    iframe.remove();
+                }
+            }
+
+            function messageHandler(event) {
+                if (event.source !== iframe.contentWindow) return;
+
+                if (event.data.type === 'SPIRV_READY') {
+                    iframe.contentWindow.postMessage({
+                        type: 'PROCESS_SPIRV',
+                        data: Array.from(binaryData),
+                        args: args
+                    }, '*');
+
+                } else if (event.data.type === 'SPIRV_RESULT') {
+                    if (!isResolved) {
+                        isResolved = true;
+                        cleanup();
+
+                        if (event.data.success) {
+                            resolve({
+                                success: true,
+                                exitCode: event.data.exitCode,
+                                output: event.data.output,
+                                error: event.data.error
+                            });
+                        } else {
+                            resolve({
+                                success: false,
+                                error: event.data.error
+                            });
+                        }
+                    }
+                }
+            }
+
+            window.addEventListener('message', messageHandler);
+            document.body.appendChild(iframe);
+        });
+    }
+</script>
 <script>
     class ShaderToy {
         constructor(canvas) {
@@ -750,17 +942,6 @@
             const gl = this.gl;
             gl.useProgram(this.program);
 
-            console.log("set uniforms", this.program);
-
-            const numUniforms = gl.getProgramParameter(this.program, gl.ACTIVE_UNIFORMS);
-            console.log('Number of active uniforms:', numUniforms);
-
-            for (let i = 0; i < numUniforms; i++) {
-                const uniformInfo = gl.getActiveUniform(this.program, i);
-                console.log(`Uniform ${i}: ${uniformInfo.name}, type: ${uniformInfo.type}`);
-            }
-
-
             this.uniforms = {
                 iTime: gl.getUniformLocation(this.program, 'u_iTime'),
                 iResolution: gl.getUniformLocation(this.program, 'u_iResolution'),
@@ -769,8 +950,6 @@
                 iChannel2: gl.getUniformLocation(this.program, 'u_iChannel2'),
                 iChannel3: gl.getUniformLocation(this.program, 'u_iChannel3'),
             };
-
-            console.log("uniforms", this.uniforms);
 
             this.attributes = {
                 position: gl.getAttribLocation(this.program, 'position')
@@ -1112,6 +1291,106 @@ func main() {
         });
     }
 
+    window.setSpirvContent = function(htmlContent) {
+        const spirvDisplay = document.getElementById('spirv-display');
+        if (spirvDisplay) {
+            spirvDisplay.innerHTML = htmlContent + "<br><br>";
+        }
+    };
+
+    window.setSpirvOutput = function(spirvText) {
+        const spirvDisplay = document.getElementById('spirv-display');
+        if (!spirvDisplay) return;
+
+        const formattedContent = formatSpirvContent(spirvText);
+        spirvDisplay.innerHTML = formattedContent;
+    };
+
+    function formatSpirvContent(spirvText) {
+        if (!spirvText || spirvText.trim() === '') {
+            return '<p style="color: #8b949e; font-style: italic;">Nothing to display yet!</p>';
+        }
+
+        const lines = spirvText.split('\n');
+        let html = '';
+
+        for (let line of lines) {
+            var content = escapeHtml(line);
+            var parts = content.split(/\s+/);
+            var leadingSpaces = line.match(/^\s*/)[0].length;
+            var hasHadEq = !line.includes('=');
+
+            for (var partIdx = 0; partIdx < parts.length; partIdx++) {
+                var part = parts[partIdx];
+                if (part.startsWith('Op')) {
+                    parts[partIdx] = `<span style="color: #c9d1d9;">${part}</span>`;
+                } else if (part.startsWith('%')) {
+                    parts[partIdx] = hasHadEq ? `<span style="color: #f18e0c;">${part}</span>` : `<span style="color: #0c87f1;">${part}</span>`;;
+                } else if (part.startsWith('"') && part.endsWith('"')) {
+                    parts[partIdx] = `<span style="color: #63ce08;">${part}</span>`;
+                } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(part)) {
+                    parts[partIdx] = `<span style="color: #13b3fd;">${part}</span>`;
+                } else if (/^\d+$/.test(part)) {
+                    parts[partIdx] = `<span style="color: #f85149;">${part}</span>`;
+                }
+            }
+
+            html += `<div style="margin-bottom: 4px; font-family: monospace; font-size: 12px; line-height: 1.4;">${' '.repeat(leadingSpaces)}${parts.join(' ')}</div>`;
+        }
+
+        return html;
+    }
+
+    window.clearSpirvContent = function() {
+        setSpirvContent('<p style="color: #8b949e; font-style: italic;">Nothing to show yet!</p>');
+    };
+
+    window.setSpirvError = function(errorMessage) {
+        const errorHtml = `
+        <div style="color: #f85149; background: rgba(248, 81, 73, 0.1); padding-left: 12px; border-radius: 4px; border-left: 4px solid #f85149;">
+            <pre style="background: transparent; padding: 0; margin: 0; border: none; white-space: pre-wrap;">${escapeHtml(errorMessage)}</pre>
+        </div>
+    `;
+        setSpirvContent(errorHtml);
+    };
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    window.setSpirvBinary = function(binaryData) {
+        if (!binaryData) {
+            clearSpirvContent();
+            return;
+        }
+
+        let html = '';
+
+        for (let i = 0; i < binaryData.length; i += 16) {
+            const offset = i.toString(16).padStart(8, '0');
+            let hexPart = '';
+            let asciiPart = '';
+
+            for (let j = 0; j < 16; j++) {
+                if (i + j < binaryData.length) {
+                    const byte = binaryData[i + j] ? binaryData[i + j] : 0;
+                    hexPart += byte.toString(16).padStart(2, '0') + ' ';
+                    asciiPart += (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
+                } else {
+                    hexPart += '   ';
+                    asciiPart += ' ';
+                }
+            }
+
+            html += `<span style="color: #8b949e;">${offset}:</span> <span style="color: #79c0ff;">${hexPart}</span> <span style="color: #a5d6ff;">${asciiPart}</span>\n`;
+        }
+
+        html += '</pre>';
+        setSpirvContent(html);
+    };
+
     function updateChannel(channel, type) {
         if (!shaderToy) return;
 
@@ -1148,12 +1427,44 @@ func main() {
         reader.readAsDataURL(file);
     }
 
-    function compileAndUpdate() {
+    const spirvToggle = document.getElementById('spirv-binary-toggle');
+    let isBinaryMode = spirvToggle.checked;
+    let currentSpirvText;
+    let currentSpirvBinary;
+    spirvToggle.addEventListener('change', function() {
+        if (this.checked) {
+            isBinaryMode = true;
+            this.style.background = '#238636';
+            this.style.borderColor = '#238636';
+            this.style.backgroundImage = "url('data:image/svg+xml;utf8,<svg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\"><polyline points=\"5,11 9,15 15,7\" style=\"fill:none;stroke:white;stroke-width:2\"/></svg>')";
+            this.style.backgroundRepeat = 'no-repeat';
+            this.style.backgroundPosition = 'center';
+
+            if (currentSpirvBinary) {
+                window.setSpirvBinary(currentSpirvBinary);
+            }
+        } else {
+            isBinaryMode = false;
+            this.style.background = '#161b22';
+            this.style.borderColor = '#238636';
+            this.style.backgroundImage = '';
+
+            if (currentSpirvText) {
+                window.setSpirvContent(formatSpirvContent(currentSpirvText));
+            }
+        }
+    });
+
+    spirvToggle.dispatchEvent(new Event('change'));
+
+    async function compileAndUpdate() {
         const code = editor.getValue();
         const optimized = document.getElementById('optimizer-enabled').checked;
 
         try {
-            const glslCode = window.compile ? window.compile(code, optimized) : generateDefaultShader(code);
+            const codeList = window.compile ? window.compile(code, optimized) : generateDefaultShader(code);
+            const glslCode = codeList[0];
+            const spirvCode = codeList[1];
 
             const output = document.getElementById('output-display');
             output.value = glslCode;
@@ -1161,12 +1472,26 @@ func main() {
 
             shaderToy.updateShader(glslCode);
 
+            var spirvParsed = await processSpirvBinary(spirvCode, {
+                timeout: 15000,
+                args: []
+            });
+
+            currentSpirvText = spirvParsed.output;
+            currentSpirvBinary = spirvCode;
+
+            if (isBinaryMode) {
+                window.setSpirvBinary(currentSpirvBinary);
+            } else {
+                window.setSpirvContent(formatSpirvContent(currentSpirvText));
+            }
         } catch (error) {
             const output = document.getElementById('output-display');
             output.value = `Compilation Error:\n\n${error.message}`;
             output.className = 'output-error';
 
             shaderToy.showError(error.message);
+            window.setSpirvError(error.message);
         }
     }
 

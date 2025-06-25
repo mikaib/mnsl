@@ -1,4 +1,4 @@
 -L mnsl
 -D MNSL_NO_SYS
--js mnsl.js
+-js web/mnsl.js
 --main Demo

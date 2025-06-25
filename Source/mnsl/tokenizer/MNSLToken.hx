@@ -26,6 +26,7 @@ enum MNSLToken {
     Assign(info: MNSLTokenInfo);
     Equal(info: MNSLTokenInfo);
     Colon(info: MNSLTokenInfo);
+    Arrow(info: MNSLTokenInfo);
     Spread(info: MNSLTokenInfo);
     And(info: MNSLTokenInfo);
     Or(info: MNSLTokenInfo);

@@ -1,88 +1,17 @@
 #version 300 core
 
-int test_1() {
-    int a = 10000;
-    int b = 0;
-    if (a == 0) {
-        b = 1;
-    }
-    return b;
-}
-
-int test_2() {
-    int a = 10000;
-    int b = 0;
-    if (a == 0) {
-        b = 1;
-    }
-    if (a == 1) {
-        b = 2;
-    }
-    return b;
-}
-
-int test_3() {
-    int a = 10000;
-    int b = 0;
-    if (a == 0) {
-        b = 1;
-    } else {
-        if (a == 1) {
-            b = 2;
-        }
-        if (a == 2) {
-            b = 3;
-        }
-    }
-    return b;
-}
-
-int test_4() {
-    int a = 10000;
-    int b = 0;
-    if (a == 0) {
-        b = 1;
-    } else {
-        if (a == 1) {
-            b = 2;
-        } else {
-            if (a == 2) {
-                b = 3;
-            } else {
-                b = 4;
-            }
-        }
-    }
-    return b;
-}
-
-int test_5() {
-    int a = 10000;
-    int b = 0;
-    if (a == 0) {
-        b = 1;
-    } else {
-        if (a == 1) {
-            b = 2;
-        } else {
-            if (a == 2) {
-                b = 3;
-            } else {
-                b = 4;
-            }
-        }
-        if (a == 4) {
-            b = 5;
-        }
-    }
-    return b;
-}
+in vec2 in_TexCoord;
+out vec4 out_FragColour;
+uniform float u_iTime;
+uniform vec2 u_iResolution;
+uniform sampler2D u_iChannel0;
+uniform sampler2D u_iChannel1;
+uniform sampler2D u_iChannel2;
+uniform sampler2D u_iChannel3;
 
 void main() {
-    test_1();
-    test_2();
-    test_3();
-    test_4();
-    test_5();
+    vec4 uv = gl_FragCoord / vec4(u_iResolution.xy, 0.0, 1.0);
+    vec3 col = vec3(0.5) + vec3(0.5) * cos(vec3(u_iTime) + uv.xyx + vec3(0, 2, 4));
+    out_FragColour = vec4(col.xyz, 1.0);
 }
 

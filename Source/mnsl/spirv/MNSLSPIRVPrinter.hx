@@ -1126,12 +1126,11 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         if (from.isInt() && to.isFloat()) {
-            trace(on);
             emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [targetType, resId, onId]);
             return resId;
         }
 
-        emitInstruction(MNSLSPIRVOpCode.OpBitcast, [targetType, resId, onId]);
+        emitInstruction(MNSLSPIRVOpCode.OpBitcast, [targetType, resId, onId]); // TODO: review
         return resId;
     }
 
@@ -1303,7 +1302,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     throw "mod() requires 2 arguments";
                 }
 
-                emitInstruction(MNSLSPIRVOpCode.OpFMod, [typeId, retId].concat(argIds));
+                emitInstruction(MNSLSPIRVOpCode.OpFRem, [typeId, retId].concat(argIds)); // TODO: review
                 return retId;
 
             default:

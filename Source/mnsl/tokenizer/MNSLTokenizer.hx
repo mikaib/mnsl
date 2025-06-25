@@ -196,6 +196,13 @@ class MNSLTokenizer {
                     column++;
 
                 case '-':
+                    if (source.charAt(position + 1) == '>') {
+                        appendToken(MNSLToken.Arrow({ line: line, column: column, length: 2, position: initialPosition }));
+                        position += 2;
+                        column += 2;
+                        continue;
+                    }
+
                     appendToken(MNSLToken.Minus({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;
                     column++;
@@ -206,7 +213,6 @@ class MNSLTokenizer {
                         position++;
                         column++;
                     }
-
                 case '+':
                     appendToken(MNSLToken.Plus({ line: line, column: column, length: 1, position: initialPosition }));
                     position++;

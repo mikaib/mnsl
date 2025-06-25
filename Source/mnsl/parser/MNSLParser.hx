@@ -985,7 +985,11 @@ class MNSLParser {
             returnType.setTypeStrUnsafe(type);
         }
 
-        var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
+        if (peekCurrentTokenType(0) == "Arrow") {
+            currentIndex++;
+        }
+
+        var bodyBlock = peekCurrentTokenType(0) != 'LeftBrace' ? [Identifier("return", getTokenInfo(peekCurrentToken(0)))].concat(getBlock(None, Semicolon(null), 1)): getBlock(LeftBrace(null), RightBrace(null));
         var body = new MNSLParser(context, bodyBlock)._runInternal();
 
         append(FunctionDecl(

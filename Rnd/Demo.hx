@@ -1,5 +1,8 @@
 import mnsl.MNSL;
 import mnsl.MNSLContext;
+import haxe.io.UInt8Array;
+import haxe.io.Bytes;
+import haxe.io.BytesData;
 
 class Demo {
 
@@ -7,7 +10,7 @@ class Demo {
         js.Syntax.code('window.compile = {0}', compile);
     }
 
-    public static function compile(code: String, optimize: Bool) {
+    public static function compile(code: String, optimize: Bool): Array<Dynamic> {
         var shader: MNSLContext;
 
         if (optimize) shader = MNSL.fromSource(code, {});
@@ -24,7 +27,12 @@ class Demo {
             versionDirective: GLSL_ES
         });
 
-        return glsl;
+        var spirv: Bytes = shader.emitSPIRV({
+            shaderType: SPIRV_SHADER_TYPE_FRAGMENT
+        });
+
+        var spirvArr: UInt8Array = UInt8Array.fromBytes(spirv);
+        return [glsl, spirvArr];
     }
 
 }

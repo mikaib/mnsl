@@ -1,118 +1,38 @@
-int test_1()
-{
-    int a = 10000;
-    int b = 0;
-    if (a == 0)
-    {
-        b = 1;
-    }
-    return b;
-}
+uniform float u_iTime;
+uniform float2 u_iResolution;
+uniform sampler2D u_iChannel0;
+uniform sampler2D u_iChannel1;
+uniform sampler2D u_iChannel2;
+uniform sampler2D u_iChannel3;
 
-int test_2()
-{
-    int a = 10000;
-    int b = 0;
-    if (a == 0)
-    {
-        b = 1;
-    }
-    if (a == 1)
-    {
-        b = 2;
-    }
-    return b;
-}
+static float4 gl_FragCoord;
+static float2 in_TexCoord;
+static float4 out_FragColour;
 
-int test_3()
+struct SPIRV_Cross_Input
 {
-    int a = 10000;
-    int b = 0;
-    if (a == 0)
-    {
-        b = 1;
-    }
-    else
-    {
-        if (a == 1)
-        {
-            b = 2;
-        }
-        if (a == 2)
-        {
-            b = 3;
-        }
-    }
-    return b;
-}
+    float2 in_TexCoord : TEXCOORD0;
+    float4 gl_FragCoord : VPOS;
+};
 
-int test_4()
+struct SPIRV_Cross_Output
 {
-    int a = 10000;
-    int b = 0;
-    if (a == 0)
-    {
-        b = 1;
-    }
-    else
-    {
-        if (a == 1)
-        {
-            b = 2;
-        }
-        else
-        {
-            if (a == 2)
-            {
-                b = 3;
-            }
-            else
-            {
-                b = 4;
-            }
-        }
-    }
-    return b;
-}
-
-int test_5()
-{
-    int a = 10000;
-    int b = 0;
-    if (a == 0)
-    {
-        b = 1;
-    }
-    else
-    {
-        if (a == 1)
-        {
-            b = 2;
-        }
-        else
-        {
-            if (a == 2)
-            {
-                b = 3;
-            }
-            else
-            {
-                b = 4;
-            }
-        }
-        if (a == 4)
-        {
-            b = 5;
-        }
-    }
-    return b;
-}
+    float4 out_FragColour : COLOR1;
+};
 
 void frag_main()
 {
+    float4 uv = gl_FragCoord / float4(u_iResolution.xy, 0.0f, 1.0f);
+    float3 col = 0.5f.xxx + (0.5f.xxx * cos((u_iTime.xxx + uv.xyx) + float3(float(0), float(2), float(4))));
+    out_FragColour = float4(col.xyz, 1.0f);
 }
 
-void main()
+SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
 {
+    gl_FragCoord = stage_input.gl_FragCoord + float4(0.5f, 0.5f, 0.0f, 0.0f);
+    in_TexCoord = stage_input.in_TexCoord;
     frag_main();
+    SPIRV_Cross_Output stage_output;
+    stage_output.out_FragColour = float4(out_FragColour);
+    return stage_output;
 }
