@@ -2,6 +2,7 @@ package mnsl.glsl;
 
 @:structInit
 class MNSLGLSLConfig {
+    public var shaderType: MNSLGLSLShaderType;
     public var version: MNSLGLSLVersion;
     public var versionDirective: MNSLGLSLVersionDirective;
     public var useAttributeAndVaryingKeywords: Null<Bool> = null;

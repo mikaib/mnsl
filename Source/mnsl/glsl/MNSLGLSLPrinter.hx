@@ -4,12 +4,16 @@ import mnsl.parser.MNSLNode;
 import mnsl.parser.MNSLNodeChildren;
 import mnsl.tokenizer.MNSLToken;
 import mnsl.parser.MNSLShaderDataKind;
-import mnsl.parser.MNSLParser;
 import mnsl.analysis.MNSLType;
 
 class MNSLGLSLPrinter extends MNSLPrinter {
 
     private var _config: MNSLGLSLConfig;
+    private var _prefixes = {
+        input: "in_",
+        output: "out_",
+        uniform: "u_"
+    };
 
     private var _types: Map<String, String> = [
         "Void" => "void",
@@ -58,6 +62,15 @@ class MNSLGLSLPrinter extends MNSLPrinter {
         var versionInt: Int = config.version;
         config.useAttributeAndVaryingKeywords = config.useAttributeAndVaryingKeywords ?? (versionInt < 130);
         config.usePrecision = config.usePrecision ?? (config.versionDirective == GLSL_ES);
+
+        switch (config.shaderType) {
+            case GLSL_SHADER_TYPE_VERTEX:
+                _prefixes.input = "in_";
+                _prefixes.output = "frag_";
+            case GLSL_SHADER_TYPE_FRAGMENT:
+                _prefixes.input = "frag_";
+                _prefixes.output = "out_";
+        }
     }
 
     /**
@@ -322,7 +335,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     for (data in _context.getShaderData()) {
                         if (data.name == field && data.kind == MNSLShaderDataKind.Output) {
-                            print("out_" + data.name);
+                            print(_prefixes.output + data.name);
                             return;
                         }
                     }
@@ -336,7 +349,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     for (data in _context.getShaderData()) {
                         if (data.name == field && data.kind == MNSLShaderDataKind.Input) {
-                            print("in_" + data.name);
+                            print(_prefixes.input + data.name);
                             return;
                         }
                     }
@@ -345,7 +358,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 if (on.match(Identifier("uniform", _))) {
                     for (data in _context.getShaderData()) {
                         if (data.name == field && data.kind == MNSLShaderDataKind.Uniform) {
-                            print("u_" + data.name);
+                            print(_prefixes.uniform + data.name);
                             return;
                         }
                     }
@@ -428,9 +441,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("attribute {0} in_{1};", getTypeStr(data.type), data.name);
+                        println("attribute {0} {1}{2};", getTypeStr(data.type), _prefixes.input, data.name);
                     } else {
-                        println("in {0} in_{1};", getTypeStr(data.type), data.name);
+                        println("in {0} {1}{2};", getTypeStr(data.type), _prefixes.input, data.name);
                     }
 
                 case MNSLShaderDataKind.Output:
@@ -440,17 +453,17 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                     dataOutputLength++;
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("varying {0} out_{1};", getTypeStr(data.type), data.name);
+                        println("varying {0} {1}{2};", getTypeStr(data.type), _prefixes.output, data.name);
                     } else {
-                        println("out {0} out_{1};", getTypeStr(data.type), data.name);
+                        println("out {0} {1}{2};", getTypeStr(data.type), _prefixes.output, data.name);
                     }
 
                 case MNSLShaderDataKind.Uniform:
                     dataOutputLength++;
                     if (data.type.isArray()) {
-                        println("uniform {0} u_{1}[{2}];", getTypeStr(data.type.getArrayBaseType()), data.name, data.type.getArraySize());
+                        println("uniform {0} {1}{2}[{3}];", getTypeStr(data.type.getArrayBaseType()), _prefixes.uniform, data.name, data.type.getArraySize());
                     } else {
-                        println("uniform {0} u_{1};", getTypeStr(data.type.getArrayBaseType()), data.name);
+                        println("uniform {0} {1}{2};", getTypeStr(data.type.getArrayBaseType()), _prefixes.uniform, data.name);
                     }
             }
         }
