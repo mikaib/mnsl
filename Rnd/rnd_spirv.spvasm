@@ -95,13 +95,13 @@
        %main = OpFunction %TVoid None %22
          %47 = OpLabel
          %48 = OpLoad %TVec3 %in_Position
-         %49 = OpLoad %TMat4 %u_MVP
-         %50 = OpVectorTimesMatrix %TVec3 %48 %49
-         %52 = OpCompositeExtract %TFloat %50 0
-         %53 = OpCompositeExtract %TFloat %50 1
-         %54 = OpCompositeExtract %TFloat %50 2
-         %51 = OpCompositeConstruct %TVec4 %52 %53 %54 %TFloat_1
-               OpStore %out_Position %51
+         %50 = OpCompositeExtract %TFloat %48 0
+         %51 = OpCompositeExtract %TFloat %48 1
+         %52 = OpCompositeExtract %TFloat %48 2
+         %49 = OpCompositeConstruct %TVec4 %50 %51 %52 %TFloat_1
+         %53 = OpLoad %TMat4 %u_MVP
+         %54 = OpVectorTimesMatrix %TVec4 %49 %53
+               OpStore %out_Position %54
          %55 = OpLoad %TVec4 %in_Colour
                OpStore %out_Colour %55
          %56 = OpLoad %TVec2 %in_TexCoords

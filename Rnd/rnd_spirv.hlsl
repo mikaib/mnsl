@@ -23,7 +23,7 @@ struct SPIRV_Cross_Output
 
 void frag_main()
 {
-    gl_Position = float4(mul(u_MVP, in_Position), 1.0f);
+    gl_Position = mul(u_MVP, float4(in_Position, 1.0f));
     out_Colour = in_Colour;
     out_TexCoords = in_TexCoords;
 }

@@ -10,7 +10,7 @@ layout(location = 4) out vec2 out_TexCoords;
 
 void main()
 {
-    gl_Position = vec4(in_Position * u_MVP, 1.0);
+    gl_Position = vec4(in_Position, 1.0) * u_MVP;
     out_Colour = in_Colour;
     out_TexCoords = in_TexCoords;
 }

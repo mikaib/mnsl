@@ -8,7 +8,7 @@ out vec2 frag_TexCoords;
 uniform mat4 u_MVP;
 
 void main() {
-    gl_Position = vec4(in_Position * u_MVP, 1.0);
+    gl_Position = vec4(in_Position, 1.0) * u_MVP;
     frag_Colour = in_Colour;
     frag_TexCoords = in_TexCoords;
 }

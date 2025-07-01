@@ -201,11 +201,21 @@ class MNSLSolver {
             return true;
         }
 
-        if (c.type.isVector() && c.mustBe.isMatrix() && c._isBinaryOp) return true;
-        if (c.type.isMatrix() && c.mustBe.isVector() && c._isBinaryOp && c._isLeftSide) {
+        if (c.type.isVector() && c.mustBe.isMatrix() && c._isBinaryOp) {
+            if (c.type.getVectorComponents() != c.mustBe.getMatrixWidth()) {
+                addReplacement({
+                    node: c.ofNode,
+                    to: VectorConversion(c.ofNode, c.type.getVectorComponents(), c.mustBe.getMatrixWidth())
+                });
+            }
+
+            return true;
+        }
+
+        if (c.type.isMatrix() && c.mustBe.isVector() && c._isBinaryOp) {
             addReplacement({
                 node: c.ofNode,
-                to: ImplicitTypeCast(c.ofNode, c.mustBe)
+                to: ImplicitTypeCast(c.ofNode, MNSLType.fromString('Vec${c.type.getMatrixWidth()}'))
             });
 
             return true;
