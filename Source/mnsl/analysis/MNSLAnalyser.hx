@@ -1157,6 +1157,10 @@ class MNSLAnalyser {
      */
     public function checkTypeValidity(node: MNSLNode): Void {
         var t = getType(node);
+        if (t == null) {
+            return;
+        }
+
         if (t.isDefined() && !_types.contains(t.toBaseString())) {
             _context.emitError(AnalyserUnknownType(t, node));
             return;
