@@ -373,12 +373,12 @@ class MNSLAnalyser {
         for (pi in 0...params.length) {
             var p: Dynamic = params[pi];
 
-            if (Std.isOfType(p, MNSLNode)) {
+            if (Std.isOfType(p, MNSLNode) && Type.getEnumName(Type.getEnum(p)) == "MNSLNode") {
                 params[pi] = execAtNode(p, ctx);
                 continue;
             }
 
-            if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode)) {
+            if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode) && Type.getEnumName(Type.getEnum(p[0])) == "MNSLNode") {
                 params[pi] = execAtBody(p, ctx);
                 continue;
             }
@@ -1325,9 +1325,9 @@ class MNSLAnalyser {
                 continue;
             }
 
-            if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode)) {
+            if (Std.isOfType(p, MNSLNodeChildren) && p[0] != null && Std.isOfType(p[0], MNSLNode) && Type.getEnumName(Type.getEnum(p[0])) == "MNSLNode") {
                 params[i] = applyReplacements(p, replacements, exceptions);
-            } else if (Std.isOfType(p, MNSLNode)) {
+            } else if (Std.isOfType(p, MNSLNode) && Type.getEnumName(Type.getEnum(p)) == "MNSLNode") {
                 params[i] = applyReplacementsToNode(p, replacements, exceptions);
             }
         }
@@ -1413,9 +1413,9 @@ class MNSLAnalyser {
                     var pNode: Dynamic = params[p];
                     if (pNode == null) continue;
 
-                    if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode)) {
+                    if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode) && Type.getEnumName(Type.getEnum(pNode[0])) == "MNSLNode") {
                         checkBranchesOnBody(pNode, inFunction);
-                    } else if (Std.isOfType(pNode, MNSLNode)) {
+                    } else if (Std.isOfType(pNode, MNSLNode) && Type.getEnumName(Type.getEnum(pNode)) == "MNSLNode") {
                         checkBranchesOnNode(pNode, inFunction);
                     }
                 }
@@ -1515,9 +1515,9 @@ class MNSLAnalyser {
                         var pNode: Dynamic = params[p];
                         if (pNode == null) continue;
 
-                        if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode)) {
+                        if (Std.isOfType(pNode, MNSLNodeChildren) && pNode[0] != null && Std.isOfType(pNode[0], MNSLNode) && Type.getEnumName(Type.getEnum(pNode[0])) == "MNSLNode") {
                             checkForRecursion(pNode, inFunction);
-                        } else if (Std.isOfType(pNode, MNSLNode)) {
+                        } else if (Std.isOfType(pNode, MNSLNode) && Type.getEnumName(Type.getEnum(pNode)) == "MNSLNode") {
                             checkForRecursion([pNode], inFunction);
                         }
                     }
