@@ -24,7 +24,8 @@ class Demo {
 
         var glsl: String = shader.emitGLSL({
             version: GLSL_VER_300,
-            versionDirective: GLSL_ES
+            versionDirective: GLSL_ES,
+            shaderType: GLSL_SHADER_TYPE_FRAGMENT
         });
 
         var spirv: Bytes = shader.emitSPIRV({

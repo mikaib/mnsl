@@ -416,7 +416,7 @@ class MNSLAnalyser {
     /**
      * Get the type of a specific node (if available).
      */
-    public static function getType(node: MNSLNode): MNSLType {
+    public static function getType(node: MNSLNode, skipImplicitCast: Bool = false): MNSLType {
         if (node == null) {
             return MNSLType.TUnknown;
         }
@@ -449,6 +449,9 @@ class MNSLAnalyser {
             case TypeCast(on, from, to):
                 return to;
 
+            case ImplicitTypeCast(on, to):
+                return skipImplicitCast ? getType(on) : to;
+
             case SubExpression(value, _):
                 return getType(value);
 
@@ -470,6 +473,9 @@ class MNSLAnalyser {
 
             case VectorCreation(comp, values, _):
                 return MNSLType.fromString('Vec$comp');
+
+            case MatrixCreation(size, values, _):
+                return MNSLType.fromString('Mat$size');
 
             case IntegerLiteralNode(value, _):
                 return MNSLType.TInt;
@@ -685,6 +691,41 @@ class MNSLAnalyser {
                     }
                 }
 
+            case ArrayAccess(accessOn, accessIndex, accessInfo):
+                var t = getType(accessOn);
+
+                if (t.isArray()) {
+                    _solver.addConstraint({
+                        type: getType(value),
+                        mustBe: t.getArrayBaseType(),
+                        ofNode: value,
+                    });
+
+                    return node;
+                }
+
+                if (t.isMatrix()) {
+                    _solver.addConstraint({
+                        type: getType(value),
+                        mustBe: MNSLType.fromString('Vec${t.getMatrixWidth()}'),
+                        ofNode: value,
+                    });
+
+                    return node;
+                }
+
+                if (t.isVector()) { // The expression is expected to be already transformed when accessing a list vector / single vector. So this will only happen when a row of a matrix is accessed, in which case we expect a Float.
+                    _solver.addConstraint({
+                        type: getType(value),
+                        mustBe: MNSLType.TFloat,
+                        ofNode: value,
+                    });
+
+                    return node;
+                }
+
+                _context.emitError(AnalyserInvalidAccess(node));
+                return node;
             default:
         }
 
@@ -996,7 +1037,7 @@ class MNSLAnalyser {
              ofNode: right,
              _operationOperator: opName,
              _isBinaryOp: true,
-             _optional: true
+             _optional: false // TODO: review
          });
 
         _solver.addConstraint({
@@ -1005,7 +1046,7 @@ class MNSLAnalyser {
             ofNode: left,
             _operationOperator: opName,
             _isBinaryOp: true,
-            _optional: true
+            _optional: false // TODO: review
         });
 
         var resType = switch(op) {

@@ -152,6 +152,7 @@ class MNSLSolver {
             return true;
         }
 
+        if (c.type.isVector() && c.mustBe.isNumerical() && c._isBinaryOp) return true;
         if (c.type.isNumerical() && c.mustBe.isVector()) {
             var componentsOfMustBe = c.mustBe.getVectorComponents();
 
@@ -163,6 +164,7 @@ class MNSLSolver {
             return true;
         }
 
+        if (c.type.isBool() && c.type.isNumerical() && c._isBinaryOp) return true;
         if (c.type.isNumerical() && c.mustBe.isBool()) {
             addReplacement({
                 node: c.ofNode,
@@ -184,6 +186,26 @@ class MNSLSolver {
             addReplacement({
                 node: c.ofNode,
                 to: TypeCast(c.ofNode, c.type, c.mustBe)
+            });
+
+            return true;
+        }
+
+        if (c.type.isMatrix() && c.mustBe.isNumerical() && c._isBinaryOp) return true;
+        if (c.type.isNumerical() && c.mustBe.isMatrix()) {
+            addReplacement({
+                node: c.ofNode,
+                to: MatrixCreation(c.mustBe.getMatrixWidth(), [for (i in 0...c.mustBe.getMatrixWidth()*c.mustBe.getMatrixWidth()) c.ofNode], null)
+            });
+
+            return true;
+        }
+
+        if (c.type.isVector() && c.mustBe.isMatrix() && c._isBinaryOp) return true;
+        if (c.type.isMatrix() && c.mustBe.isVector()) {
+            addReplacement({
+                node: c.ofNode,
+                to: ImplicitTypeCast(c.ofNode, c.mustBe)
             });
 
             return true;

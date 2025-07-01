@@ -773,12 +773,12 @@
                 precision mediump float;
 
                 in vec2 position;
-                out vec4 in_FragCoord;
-                out vec2 in_TexCoord;
+                out vec4 frag_FragCoord;
+                out vec2 frag_TexCoord;
 
                 void main() {
-                    in_TexCoord = position * 0.5 + 0.5;
-                    in_FragCoord = vec4(position * 0.5 + 0.5, 0.0, 1.0);
+                    frag_TexCoord = position * 0.5 + 0.5;
+                    frag_FragCoord = vec4(position * 0.5 + 0.5, 0.0, 1.0);
                     gl_Position = vec4(position, 0.0, 1.0);
                 }
         `;

@@ -913,6 +913,14 @@ class MNSLParser {
             return;
         }
 
+        if (name == "mat2" || name == "mat3" || name == "mat4") {
+            var comp: Int = Std.parseInt(name.substr(3));
+            var info: MNSLNodeInfo = MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])]);
+
+            append(MatrixCreation(comp, args, info));
+            return;
+        }
+
         append(FunctionCall(
             name,
             args,

@@ -36,12 +36,16 @@ enum MNSLNode {
     StructAccess(on: MNSLNode, field: String, type: MNSLType, info: MNSLNodeInfo);
     ArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
     TypeCast(on: MNSLNode, from: MNSLType, to: MNSLType);
+    ImplicitTypeCast(on: MNSLNode, to: MNSLType);
     VoidNode(info: MNSLNodeInfo);
     TypeWrapper(type: MNSLType);
 
     // vector operations
     VectorCreation(components: Int, nodes: MNSLNodeChildren, info: MNSLNodeInfo);
     VectorConversion(on: MNSLNode, fromComponents: Int, toComponents: Int);
+
+    // matrix operations
+    MatrixCreation(size: Int, nodes: MNSLNodeChildren, info: MNSLNodeInfo);
 
     // literals
     IntegerLiteralNode(value: String, info: MNSLNodeInfo);

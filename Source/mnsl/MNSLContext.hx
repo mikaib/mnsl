@@ -145,6 +145,12 @@ class MNSLContext {
                 case VectorCreation(comp, values, info):
                     log(indentStr + name + '[Vec$comp]');
                     printAST(values, indent + 1);
+                case MatrixCreation(size, values, info):
+                    log(indentStr + name + '[Mat$size]');
+                    printAST(values, indent + 1);
+                case ImplicitTypeCast(on, to):
+                    log(indentStr + name + '[$to]');
+                    printAST([on], indent + 1);
                 case Identifier(identifierName, type, info):
                     log(indentStr + name + '[$identifierName: $type]');
                 case IntegerLiteralNode(value, info):

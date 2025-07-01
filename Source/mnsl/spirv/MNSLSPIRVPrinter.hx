@@ -744,6 +744,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitVectorCreation(comp, nodes, info, scope, inBody, at);
             case VectorConversion(on, from, to):
                 return emitVectorConversion(on, from, to, scope, inBody, at);
+            case MatrixCreation(size, nodes, info):
+                return emitMatrixCreation(size, nodes, info, scope, inBody, at);
             case FloatLiteralNode(value, info):
                 return getConst(Std.parseFloat(value), MNSLType.TFloat);
             case IntegerLiteralNode(value, info):
@@ -752,6 +754,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return getConst(value, MNSLType.TBool);
             case TypeCast(on, from, to):
                 return emitTypeCast(on, from, to, scope, inBody, at);
+            case ImplicitTypeCast(on, to):
+                return emitNode(on, scope, inBody, at);
             case SubExpression(node, info):
                 return emitNode(node, scope, inBody, at);
             case StructAccess(on, field, type, info):
@@ -771,6 +775,37 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 trace("Unhandled node", node);
                 return 0;
         }
+    }
+
+    public function emitMatrixCreation(size: Int, nodes: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        if (nodes.length != size * size) {
+            throw 'Matrix creation expects ${size * size} elements, got ${nodes.length}';
+        }
+
+        var id = assignId();
+        var type = MNSLType.fromString('Mat${size}');
+        var matrixType = getType(type);
+        var vectorType = getType(MNSLType.fromString('Vec${size}'));
+
+        var columnVectors = [];
+
+        for (col in 0...size) {
+            var colVecId = assignId();
+            var colElements = [];
+
+            for (row in 0...size) {
+                var elementIdx = col * size + row;
+                var elementId = emitNode(nodes[elementIdx], scope, inBody, at);
+                colElements.push(elementId);
+            }
+
+            emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [vectorType, colVecId].concat(colElements));
+            columnVectors.push(colVecId);
+        }
+
+        emitInstruction(MNSLSPIRVOpCode.OpCompositeConstruct, [matrixType, id].concat(columnVectors));
+
+        return id;
     }
 
     public function emitWhileLoop(cond: MNSLNode, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, ?branchTo: Int): Int {
@@ -1163,27 +1198,61 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     public function emitBinaryOp(left: MNSLNode, op: MNSLToken, right: MNSLNode, resType: MNSLType, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         var leftId = emitNode(left, scope, inBody, at);
         var rightId = emitNode(right, scope, inBody, at);
-        var type = MNSLAnalyser.getType(left);
+        var leftType = MNSLAnalyser.getType(left, true);
+        var rightType = MNSLAnalyser.getType(right, true);
+        var resultType = MNSLAnalyser.getType(right);
+
         var resultId = assignId();
 
         switch (op) {
             case MNSLToken.Plus(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFAdd, [getType(type), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIAdd, [getType(type), resultId, leftId, rightId]);
-                else throw "Unsupported type for addition: " + type.toHumanString();
-            case MNSLToken.Minus(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFSub, [getType(type), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpISub, [getType(type), resultId, leftId, rightId]);
-                else throw "Unsupported type for subtraction: " + type.toHumanString();
-            case MNSLToken.Star(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFMul, [getType(type), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIMul, [getType(type), resultId, leftId, rightId]);
-                else throw "Unsupported type for multiplication: " + type.toHumanString();
-            case MNSLToken.Slash(_):
-                if (type.isFloat() || type.isVector()) {
-                    var leftType = MNSLAnalyser.getType(left);
-                    var rightType = MNSLAnalyser.getType(right);
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFAdd, [getType(resultType), resultId, leftId, rightId]);
+                else if (resultType.isMatrix())
+                    emitInstruction(MNSLSPIRVOpCode.OpFAdd, [getType(resultType), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpIAdd, [getType(resultType), resultId, leftId, rightId]);
+                else throw "Unsupported type for addition: " + resultType.toHumanString();
 
+            case MNSLToken.Minus(_):
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFSub, [getType(resultType), resultId, leftId, rightId]);
+                else if (resultType.isMatrix())
+                    emitInstruction(MNSLSPIRVOpCode.OpFSub, [getType(resultType), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpISub, [getType(resultType), resultId, leftId, rightId]);
+                else throw "Unsupported type for subtraction: " + resultType.toHumanString();
+
+            case MNSLToken.Star(_):
+                if (leftType.isMatrix() && rightType.isMatrix()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpMatrixTimesMatrix, [getType(resultType), resultId, leftId, rightId]);
+                }
+                else if (leftType.isMatrix() && rightType.isVector()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpMatrixTimesVector, [getType(resultType), resultId, leftId, rightId]);
+                }
+                else if (leftType.isVector() && rightType.isMatrix()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpVectorTimesMatrix, [getType(resultType), resultId, leftId, rightId]);
+                }
+                else if (leftType.isMatrix() && rightType.isFloat()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpMatrixTimesScalar, [getType(resultType), resultId, leftId, rightId]);
+                }
+                else if (leftType.isFloat() && rightType.isMatrix()) {
+                    emitInstruction(MNSLSPIRVOpCode.OpMatrixTimesScalar, [getType(resultType), resultId, rightId, leftId]);
+                }
+                else if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFMul, [getType(resultType), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpIMul, [getType(resultType), resultId, leftId, rightId]);
+                else throw "Unsupported type for multiplication: " + resultType.toHumanString();
+
+            case MNSLToken.Slash(_):
+                if (leftType.isMatrix() && rightType.isFloat()) {
+                    var invScalarId = assignId();
+
+                    emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(MNSLType.TFloat), invScalarId, getConst(1.0, MNSLType.TFloat), rightId]);
+                    emitInstruction(MNSLSPIRVOpCode.OpMatrixTimesScalar, [getType(resultType), resultId, leftId, invScalarId]);
+                }
+                else if (resultType.isFloat() || resultType.isVector()) {
                     if (leftType.isInt()) {
                         var leftConvId = assignId();
                         emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [getType(MNSLType.TFloat), leftConvId, leftId]);
@@ -1196,43 +1265,71 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                         rightId = rightConvId;
                     }
 
-                    emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(type), resultId, leftId, rightId]);
-                } else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSDiv, [getType(type), resultId, leftId, rightId]);
-                else throw "Unsupported type for division: " + type.toHumanString();
+                    emitInstruction(MNSLSPIRVOpCode.OpFDiv, [getType(resultType), resultId, leftId, rightId]);
+                }
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSDiv, [getType(resultType), resultId, leftId, rightId]);
+                else throw "Unsupported type for division: " + resultType.toHumanString();
+
             case MNSLToken.Percent(_):
-                if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSRem, [getType(type), resultId, leftId, rightId]);
-                else throw "Unsupported type for modulo: " + type.toHumanString();
+                if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSRem, [getType(resultType), resultId, leftId, rightId]);
+                else throw "Unsupported type for modulo: " + resultType.toHumanString();
+
             case MNSLToken.Equal(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpIEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isBool()) emitInstruction(MNSLSPIRVOpCode.OpLogicalEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for equality: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpIEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isBool())
+                    emitInstruction(MNSLSPIRVOpCode.OpLogicalEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for equality: " + resultType.toHumanString();
+
             case MNSLToken.Greater(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for greater than: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSGreaterThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for greater than: " + resultType.toHumanString();
+
             case MNSLToken.GreaterEqual(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for greater than or equal: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSGreaterThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for greater than or equal: " + resultType.toHumanString();
+
             case MNSLToken.Less(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for less than: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSLessThan, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for less than: " + resultType.toHumanString();
+
             case MNSLToken.LessEqual(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpSLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for less than or equal: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpSLessThanEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for less than or equal: " + resultType.toHumanString();
+
             case MNSLToken.NotEqual(_):
-                if (type.isFloat() || type.isVector()) emitInstruction(MNSLSPIRVOpCode.OpFOrdNotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else if (type.isInt()) emitInstruction(MNSLSPIRVOpCode.OpINotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for not equal: " + type.toHumanString();
+                if (resultType.isFloat() || resultType.isVector())
+                    emitInstruction(MNSLSPIRVOpCode.OpFOrdNotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else if (resultType.isInt())
+                    emitInstruction(MNSLSPIRVOpCode.OpINotEqual, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for not equal: " + resultType.toHumanString();
+
             case MNSLToken.And(_):
-                if (type.isBool()) emitInstruction(MNSLSPIRVOpCode.OpLogicalAnd, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for logical AND: " + type.toHumanString();
+                if (resultType.isBool())
+                    emitInstruction(MNSLSPIRVOpCode.OpLogicalAnd, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for logical AND: " + resultType.toHumanString();
+
             case MNSLToken.Or(_):
-                if (type.isBool()) emitInstruction(MNSLSPIRVOpCode.OpLogicalOr, [getType(MNSLType.TBool), resultId, leftId, rightId]);
-                else throw "Unsupported type for logical OR: " + type.toHumanString();
+                if (resultType.isBool())
+                    emitInstruction(MNSLSPIRVOpCode.OpLogicalOr, [getType(MNSLType.TBool), resultId, leftId, rightId]);
+                else throw "Unsupported type for logical OR: " + resultType.toHumanString();
+
             default:
                 throw "Unsupported binary operator: " + op;
         }

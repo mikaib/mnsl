@@ -284,6 +284,22 @@ class MNSLGLSLPrinter extends MNSLPrinter {
 
                 print(")");
 
+            case MatrixCreation(size, nodes, info):
+                print("mat");
+                print('$size');
+                print("(");
+
+                for (i in 0 ... nodes.length) {
+                    enableInline();
+                    printNode(nodes[i]);
+                    disableInline();
+                    if (i < nodes.length - 1) {
+                        print(", ");
+                    }
+                }
+
+                print(")");
+
             case IntegerLiteralNode(value, info):
                 print(value);
 
@@ -322,6 +338,9 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printNode(on);
                 disableInline();
                 print(")");
+
+            case ImplicitTypeCast(on, to):
+                printNode(on);
 
             case Block(body, info):
                 printNodeChildren(body);
