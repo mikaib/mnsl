@@ -202,7 +202,7 @@ class MNSLSolver {
         }
 
         if (c.type.isVector() && c.mustBe.isMatrix() && c._isBinaryOp) return true;
-        if (c.type.isMatrix() && c.mustBe.isVector() && c._isBinaryOp && c._isRightSide) {
+        if (c.type.isMatrix() && c.mustBe.isVector() && c._isBinaryOp && c._isLeftSide) {
             addReplacement({
                 node: c.ofNode,
                 to: ImplicitTypeCast(c.ofNode, c.mustBe)
