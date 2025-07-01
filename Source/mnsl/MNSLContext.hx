@@ -61,6 +61,8 @@ class MNSLContext {
 
         var optimized = optimizer.run();
         _finalAst = optimized;
+
+        printAST(_finalAst);
     }
 
     /**

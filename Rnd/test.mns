@@ -1,62 +1,18 @@
-@uniform(matA: Mat3)
-@uniform(matB: Mat3)
-@uniform(arrA: Float[10])
-@uniform(arrB: Vec3[10])
-@uniform(arrC: Mat3[10])
+// input
+@input(Position: Vec3)
+@input(Colour: Vec4)
+@input(TexCoords: Vec2)
 
-// main function
+// output
+@output(Colour: Vec4)
+@output(TexCoords: Vec2)
+
+// uniforms
+@uniform(MVP: Mat4)
+
+// main
 func main() {
-    var a0 = uniform.arrA;
-    var a1 = a0[0];
-    var a2 = uniform.arrB;
-
-    var v0 = vec3(1.0, 2.0, 3.0);
-    var v1 = v0.y;
-    var v2 = v0[1];
-
-    var m0 = uniform.matA;
-    var mr0 = m0[0];
-    var mrc0 = m0[0][0];
-
-    var row = 1;
-    var col = 2;
-    var mrc1 = m0[row][col];
-
-    var idx = 1;
-    a0[idx] = 5.0;
-    v0[0] = 5.0;
-    m0[idx].x = 5.0;
-    m0[idx].y = 6.0;
-    m0[idx] = (1.0, 2.0, 3.0);
-    m0[idx] = 5.0;
-    a2[idx].x = 5.0;
-    a2[idx][1] = 6.0;
-    a2[idx] = 7.0;
-    m0[idx][idx] = 4;
-
-    var p0 = uniform.matA * uniform.matB;
-    var p1 = uniform.matB * uniform.matA;
-    var p2 = uniform.matA * 2.0;
-    var p3 = 2.0 * uniform.matA;
-    var p5 = uniform.matA * (1.0, 2.0, 3.0);
-    var p6 = (1.0, 2.0, 3.0) * uniform.matA;
-    var p7 = uniform.arrC[idx] * uniform.matA;
-    var p8 = uniform.arrC[idx][idx] * uniform.matA;
-    var p9 = uniform.arrC[idx][idx][idx] * uniform.matA;
-
-    var m1 = mat3(
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0
-    );
-
-    var m2 = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    var m3: Mat3 = 6.0;
-    var m4: Mat4 = 8.0;
+    output.Position  = input.Position * uniform.MVP;
+    output.Colour    = input.Colour;
+    output.TexCoords = input.TexCoords;
 }
