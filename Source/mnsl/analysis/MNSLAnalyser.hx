@@ -453,11 +453,17 @@ class MNSLAnalyser {
                 return getType(value);
 
             case ArrayAccess(on, index, info):
-                var base = getType(on).getArrayBaseType();
-                if (base.isVector()) {
+                var type = getType(on);
+
+                if (type.isVector()) {
                     return MNSLType.TFloat;
                 }
-                return base;
+
+                if (type.isMatrix()) {
+                    return MNSLType.fromString('Vec${type.getMatrixWidth()}');
+                }
+
+                return type.getArrayBaseType();
 
             case VectorConversion(on, fromComp, toComp):
                 return MNSLType.fromString('Vec$toComp');
@@ -1084,8 +1090,16 @@ class MNSLAnalyser {
      */
     public function analyseArrayAccessPost(node: MNSLNode, on: MNSLNode, index: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
         var t = getType(on);
+        switch (on) {
+            case ArrayAccess(subOn, _, _):
+                var type = getType(subOn);
+                if (type.isMatrix()) {
+                    t = MNSLType.CreateArray("Float", type.getMatrixWidth());
+                }
+            default:
+        }
 
-        if (!t.isArray() && !t.isVector()) {
+        if (!t.isArray() && !t.isVector() && !t.isMatrix()) {
             _context.emitError(AnalyserInvalidArrayAccess(on, index, info));
             return node;
         }
@@ -1111,6 +1125,14 @@ class MNSLAnalyser {
                     _context.emitError(AnalyserInvalidVectorArrayAccess(on, index, info));
                     return node;
             }
+        }
+
+        if (t.isMatrix()) {
+            _solver.addConstraint({
+                type: getType(index),
+                mustBe: MNSLType.TInt,
+                ofNode: index,
+            });
         }
 
         return node;

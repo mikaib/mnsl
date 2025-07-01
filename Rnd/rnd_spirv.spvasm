@@ -1,43 +1,49 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 63
+; Bound: 83
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %a0 "a0"
-               OpName %u_arr "u_arr"
-               OpName %u_matB "u_matB"
-               OpName %TCubeSamplerImage "TCubeSamplerImage"
                OpName %main "main"
                OpName %u_matA "u_matA"
-               OpName %TSamplerImage "TSamplerImage"
+               OpName %TCubeSamplerImage "TCubeSamplerImage"
                OpName %out_PointSize "out_PointSize"
+               OpName %TSamplerImage "TSamplerImage"
+               OpName %out_Position "out_Position"
                OpName %TSampler "TSampler"
                OpName %TMat4 "TMat4"
-               OpName %out_Position "out_Position"
-               OpName %TMat3 "TMat3"
-               OpName %TMat2 "TMat2"
+               OpName %mrc1 "mrc1"
                OpName %in_FragDepth "in_FragDepth"
-               OpName %TVec4 "TVec4"
-               OpName %TVec3 "TVec3"
-               OpName %TArray_Float__10_ "TArray<Float, 10>"
+               OpName %TMat3 "TMat3"
+               OpName %col "col"
+               OpName %TMat2 "TMat2"
+               OpName %row "row"
                OpName %in_FrontFacing "in_FrontFacing"
-               OpName %TVec2 "TVec2"
-               OpName %TFloat "TFloat"
+               OpName %TVec4 "TVec4"
+               OpName %mrc0 "mrc0"
+               OpName %TVec3 "TVec3"
+               OpName %mr0 "mr0"
+               OpName %TArray_Float__10_ "TArray<Float, 10>"
                OpName %in_FragCoord "in_FragCoord"
-               OpName %TInt "TInt"
+               OpName %TVec2 "TVec2"
+               OpName %m0 "m0"
                OpName %in_InstanceID "in_InstanceID"
-               OpName %TBool "TBool"
+               OpName %TFloat "TFloat"
                OpName %v2 "v2"
-               OpName %TVoid "TVoid"
+               OpName %TInt "TInt"
                OpName %v1 "v1"
                OpName %in_VertexID "in_VertexID"
+               OpName %TBool "TBool"
                OpName %v0 "v0"
+               OpName %TVoid "TVoid"
                OpName %a1 "a1"
+               OpName %u_arr "u_arr"
+               OpName %a0 "a0"
+               OpName %u_matB "u_matB"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -76,6 +82,8 @@
 %_ptr_Function_TArray_Float__10_ = OpTypePointer Function %TArray_Float__10_
 %_ptr_Function_TFloat = OpTypePointer Function %TFloat
 %_ptr_Function_TVec3 = OpTypePointer Function %TVec3
+%_ptr_Function_TMat3 = OpTypePointer Function %TMat3
+%_ptr_Function_TInt = OpTypePointer Function %TInt
 %_ptr_UniformConstant_TMat3 = OpTypePointer UniformConstant %TMat3
 %_ptr_UniformConstant_TArray_Float__10_ = OpTypePointer UniformConstant %TArray_Float__10_
 %_ptr_Input_TInt = OpTypePointer Input %TInt
@@ -95,24 +103,48 @@
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
        %main = OpFunction %TVoid None %22
-         %49 = OpLabel
+         %51 = OpLabel
          %a0 = OpVariable %_ptr_Function_TArray_Float__10_ Function
          %a1 = OpVariable %_ptr_Function_TFloat Function
          %v0 = OpVariable %_ptr_Function_TVec3 Function
          %v1 = OpVariable %_ptr_Function_TFloat Function
          %v2 = OpVariable %_ptr_Function_TFloat Function
-         %55 = OpLoad %TArray_Float__10_ %u_arr
-               OpStore %a0 %55
-         %56 = OpAccessChain %_ptr_Function_TFloat %a0 %TInt_0
-         %57 = OpLoad %TFloat %56
-               OpStore %a1 %57
-         %58 = OpCompositeConstruct %TVec3 %TFloat_1 %TFloat_2 %TFloat_3
-               OpStore %v0 %58
-         %59 = OpLoad %TVec3 %v0
-         %60 = OpCompositeExtract %TFloat %59 1
-               OpStore %v1 %60
-         %61 = OpLoad %TVec3 %v0
-         %62 = OpCompositeExtract %TFloat %61 1
-               OpStore %v2 %62
+         %m0 = OpVariable %_ptr_Function_TMat3 Function
+        %mr0 = OpVariable %_ptr_Function_TVec3 Function
+       %mrc0 = OpVariable %_ptr_Function_TFloat Function
+        %row = OpVariable %_ptr_Function_TInt Function
+        %col = OpVariable %_ptr_Function_TInt Function
+       %mrc1 = OpVariable %_ptr_Function_TFloat Function
+         %63 = OpLoad %TArray_Float__10_ %u_arr
+               OpStore %a0 %63
+         %64 = OpAccessChain %_ptr_Function_TFloat %a0 %TInt_0
+         %65 = OpLoad %TFloat %64
+               OpStore %a1 %65
+         %66 = OpCompositeConstruct %TVec3 %TFloat_1 %TFloat_2 %TFloat_3
+               OpStore %v0 %66
+         %67 = OpLoad %TVec3 %v0
+         %68 = OpCompositeExtract %TFloat %67 1
+               OpStore %v1 %68
+         %69 = OpLoad %TVec3 %v0
+         %70 = OpCompositeExtract %TFloat %69 1
+               OpStore %v2 %70
+         %71 = OpLoad %TMat3 %u_matA
+               OpStore %m0 %71
+         %72 = OpAccessChain %_ptr_Function_TVec3 %m0 %TInt_0
+         %73 = OpLoad %TVec3 %72
+               OpStore %mr0 %73
+         %74 = OpAccessChain %_ptr_Function_TVec3 %m0 %TInt_0
+         %75 = OpIAdd %TInt %TInt_0 %TInt_1
+         %76 = OpAccessChain %_ptr_Function_TFloat %74 %75
+         %77 = OpLoad %TFloat %76
+               OpStore %mrc0 %77
+               OpStore %row %TInt_1
+               OpStore %col %TInt_2
+         %78 = OpLoad %TInt %row
+         %79 = OpAccessChain %_ptr_Function_TVec3 %m0 %78
+         %80 = OpLoad %TInt %col
+         %81 = OpAccessChain %_ptr_Function_TFloat %79 %80
+         %82 = OpLoad %TFloat %81
+               OpStore %mrc1 %82
                OpReturn
                OpFunctionEnd

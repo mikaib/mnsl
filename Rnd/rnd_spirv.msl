@@ -152,7 +152,7 @@ inline void spvArrayCopyFromDeviceToThreadGroup1(threadgroup T (&dst)[A], device
     }
 }
 
-fragment void main0(constant spvUnsafeArray<float, 10>& u_arr [[buffer(0)]])
+fragment void main0(constant float3x3& u_matA [[buffer(0)]], constant spvUnsafeArray<float, 10>& u_arr [[buffer(1)]])
 {
     spvUnsafeArray<float, 10> a0;
     spvArrayCopyFromConstantToStack1(a0.elements, u_arr);
@@ -160,5 +160,11 @@ fragment void main0(constant spvUnsafeArray<float, 10>& u_arr [[buffer(0)]])
     float3 v0 = float3(1.0, 2.0, 3.0);
     float v1 = v0.y;
     float v2 = v0.y;
+    float3x3 m0 = u_matA;
+    float3 mr0 = m0[0];
+    float mrc0 = m0[0][0 + 1];
+    int row = 1;
+    int col = 2;
+    float mrc1 = m0[row][col];
 }
 
