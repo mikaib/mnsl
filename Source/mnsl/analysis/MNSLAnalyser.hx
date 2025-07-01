@@ -32,7 +32,11 @@ class MNSLAnalyser {
         "r" => { comp: 0, char: "x" },
         "g" => { comp: 1, char: "y" },
         "b" => { comp: 2, char: "z" },
-        "a" => { comp: 3, char: "w" }
+        "a" => { comp: 3, char: "w" },
+        "0" => { comp: 0, char: "x" },
+        "1" => { comp: 1, char: "y" },
+        "2" => { comp: 2, char: "z" },
+        "3" => { comp: 3, char: "w" }
     ];
     private var _solver: MNSLSolver;
 
@@ -449,7 +453,11 @@ class MNSLAnalyser {
                 return getType(value);
 
             case ArrayAccess(on, index, info):
-                return getType(on).getArrayBaseType();
+                var base = getType(on).getArrayBaseType();
+                if (base.isVector()) {
+                    return MNSLType.TFloat;
+                }
+                return base;
 
             case VectorConversion(on, fromComp, toComp):
                 return MNSLType.fromString('Vec$toComp');
@@ -1069,6 +1077,46 @@ class MNSLAnalyser {
     }
 
     /**
+     * Run on an array access node (post)
+     * @param node The array access node to run on.
+     * @param on The node to access the array from.
+     * @param index The index of the array access.
+     */
+    public function analyseArrayAccessPost(node: MNSLNode, on: MNSLNode, index: MNSLNode, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        var t = getType(on);
+
+        if (!t.isArray() && !t.isVector()) {
+            _context.emitError(AnalyserInvalidArrayAccess(on, index, info));
+            return node;
+        }
+
+        if (t.isVector()) {
+            if (index == null) {
+                _context.emitError(AnalyserInvalidArrayAccess(on, index, info));
+                return node;
+            }
+
+            switch (index) {
+                case IntegerLiteralNode(valueStr, _):
+                    var idx = _vectorAccess.get(valueStr);
+                    var comp = idx?.comp ?? -1;
+
+                    if (comp < 0 || comp >= t.getVectorComponents()) {
+                        _context.emitError(AnalyserInvalidVectorComponent(comp, info));
+                        return node;
+                    }
+
+                    return StructAccess(on, idx.char, MNSLType.TFloat, info);
+                default:
+                    _context.emitError(AnalyserInvalidVectorArrayAccess(on, index, info));
+                    return node;
+            }
+        }
+
+        return node;
+    }
+
+    /**
      * Run on the given node after the children are processed.
      * @param node The node to run on.
      * @param changeTo A function to change the node.
@@ -1113,6 +1161,9 @@ class MNSLAnalyser {
 
             case ForLoop(init, condition, increment, body, info):
                 return analyseConditionalPost(node, condition, body, ctx, info);
+
+            case ArrayAccess(on, index, info):
+                return analyseArrayAccessPost(node, on, index, ctx, info);
 
             case Continue(info):
                 return analyseLoopKeyword(node, ctx, info);

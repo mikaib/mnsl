@@ -1,45 +1,43 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 85
+; Bound: 63
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
-               OpEntryPoint Fragment %main "main" %in_FragCoord_0 %in_TexCoord %out_FragColour %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
+               OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %u_iTime "u_iTime"
-               OpName %out_Position "out_Position"
+               OpName %a0 "a0"
+               OpName %u_arr "u_arr"
+               OpName %u_matB "u_matB"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %out_FragColour "out_FragColour"
-               OpName %in_FragDepth "in_FragDepth"
+               OpName %main "main"
+               OpName %u_matA "u_matA"
                OpName %TSamplerImage "TSamplerImage"
-               OpName %in_TexCoord "in_TexCoord"
-               OpName %in_FrontFacing "in_FrontFacing"
+               OpName %out_PointSize "out_PointSize"
                OpName %TSampler "TSampler"
-               OpName %in_FragCoord "in_FragCoord"
                OpName %TMat4 "TMat4"
-               OpName %in_InstanceID "in_InstanceID"
+               OpName %out_Position "out_Position"
                OpName %TMat3 "TMat3"
-               OpName %in_FragCoord_0 "in_FragCoord"
                OpName %TMat2 "TMat2"
-               OpName %in_VertexID "in_VertexID"
+               OpName %in_FragDepth "in_FragDepth"
                OpName %TVec4 "TVec4"
                OpName %TVec3 "TVec3"
-               OpName %u_iChannel3 "u_iChannel3"
-               OpName %u_iChannel2 "u_iChannel2"
+               OpName %TArray_Float__10_ "TArray<Float, 10>"
+               OpName %in_FrontFacing "in_FrontFacing"
                OpName %TVec2 "TVec2"
-               OpName %u_iChannel1 "u_iChannel1"
                OpName %TFloat "TFloat"
-               OpName %col "col"
+               OpName %in_FragCoord "in_FragCoord"
                OpName %TInt "TInt"
-               OpName %uv "uv"
-               OpName %u_iChannel0 "u_iChannel0"
+               OpName %in_InstanceID "in_InstanceID"
                OpName %TBool "TBool"
+               OpName %v2 "v2"
                OpName %TVoid "TVoid"
-               OpName %main "main"
-               OpName %u_iResolution "u_iResolution"
-               OpName %out_PointSize "out_PointSize"
+               OpName %v1 "v1"
+               OpName %in_VertexID "in_VertexID"
+               OpName %v0 "v0"
+               OpName %a1 "a1"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -47,15 +45,9 @@
                OpDecorate %in_FragCoord BuiltIn FragCoord
                OpDecorate %in_InstanceID BuiltIn InstanceId
                OpDecorate %in_VertexID BuiltIn VertexId
-               OpDecorate %u_iChannel3 RelaxedPrecision
-               OpDecorate %u_iChannel2 RelaxedPrecision
-               OpDecorate %u_iChannel1 RelaxedPrecision
-               OpDecorate %u_iChannel0 RelaxedPrecision
-               OpDecorate %u_iResolution RelaxedPrecision
-               OpDecorate %u_iTime RelaxedPrecision
-               OpDecorate %out_FragColour Location 1
-               OpDecorate %in_TexCoord Location 0
-               OpDecorate %in_FragCoord_0 BuiltIn FragCoord
+               OpDecorate %u_arr RelaxedPrecision
+               OpDecorate %u_matB RelaxedPrecision
+               OpDecorate %u_matA RelaxedPrecision
       %TVoid = OpTypeVoid
       %TBool = OpTypeBool
        %TInt = OpTypeInt 32 1
@@ -76,30 +68,25 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
- %TFloat_0_5 = OpConstant %TFloat 0.5
-     %TInt_4 = OpConstant %TInt 4
+    %TInt_10 = OpConstant %TInt 10
+   %TFloat_2 = OpConstant %TFloat 2
+   %TFloat_3 = OpConstant %TFloat 3
+%TArray_Float__10_ = OpTypeArray %TFloat %TInt_10
          %22 = OpTypeFunction %TVoid
-%_ptr_Function_TVec4 = OpTypePointer Function %TVec4
+%_ptr_Function_TArray_Float__10_ = OpTypePointer Function %TArray_Float__10_
+%_ptr_Function_TFloat = OpTypePointer Function %TFloat
 %_ptr_Function_TVec3 = OpTypePointer Function %TVec3
-%_ptr_Input_TVec4 = OpTypePointer Input %TVec4
-%_ptr_Input_TVec2 = OpTypePointer Input %TVec2
-%_ptr_Output_TVec4 = OpTypePointer Output %TVec4
-%_ptr_UniformConstant_TFloat = OpTypePointer UniformConstant %TFloat
-%_ptr_UniformConstant_TVec2 = OpTypePointer UniformConstant %TVec2
-%_ptr_UniformConstant_TSampler = OpTypePointer UniformConstant %TSampler
+%_ptr_UniformConstant_TMat3 = OpTypePointer UniformConstant %TMat3
+%_ptr_UniformConstant_TArray_Float__10_ = OpTypePointer UniformConstant %TArray_Float__10_
 %_ptr_Input_TInt = OpTypePointer Input %TInt
+%_ptr_Input_TVec4 = OpTypePointer Input %TVec4
 %_ptr_Input_TBool = OpTypePointer Input %TBool
 %_ptr_Input_TFloat = OpTypePointer Input %TFloat
+%_ptr_Output_TVec4 = OpTypePointer Output %TVec4
 %_ptr_Output_TFloat = OpTypePointer Output %TFloat
-%in_FragCoord_0 = OpVariable %_ptr_Input_TVec4 Input
-%in_TexCoord = OpVariable %_ptr_Input_TVec2 Input
-%out_FragColour = OpVariable %_ptr_Output_TVec4 Output
-    %u_iTime = OpVariable %_ptr_UniformConstant_TFloat UniformConstant
-%u_iResolution = OpVariable %_ptr_UniformConstant_TVec2 UniformConstant
-%u_iChannel0 = OpVariable %_ptr_UniformConstant_TSampler UniformConstant
-%u_iChannel1 = OpVariable %_ptr_UniformConstant_TSampler UniformConstant
-%u_iChannel2 = OpVariable %_ptr_UniformConstant_TSampler UniformConstant
-%u_iChannel3 = OpVariable %_ptr_UniformConstant_TSampler UniformConstant
+     %u_matA = OpVariable %_ptr_UniformConstant_TMat3 UniformConstant
+     %u_matB = OpVariable %_ptr_UniformConstant_TMat3 UniformConstant
+      %u_arr = OpVariable %_ptr_UniformConstant_TArray_Float__10_ UniformConstant
 %in_VertexID = OpVariable %_ptr_Input_TInt Input
 %in_InstanceID = OpVariable %_ptr_Input_TInt Input
 %in_FragCoord = OpVariable %_ptr_Input_TVec4 Input
@@ -108,39 +95,24 @@
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
        %main = OpFunction %TVoid None %22
-         %54 = OpLabel
-         %uv = OpVariable %_ptr_Function_TVec4 Function
-        %col = OpVariable %_ptr_Function_TVec3 Function
-         %57 = OpLoad %TVec4 %in_FragCoord_0
-         %58 = OpLoad %TVec2 %u_iResolution
-         %59 = OpVectorShuffle %TVec2 %58 %58 0 1
-         %61 = OpCompositeExtract %TFloat %59 0
-         %62 = OpCompositeExtract %TFloat %59 1
-         %60 = OpCompositeConstruct %TVec4 %61 %62 %TFloat_0 %TFloat_1
-         %63 = OpFDiv %TVec4 %57 %60
-               OpStore %uv %63
-         %64 = OpCompositeConstruct %TVec3 %TFloat_0_5 %TFloat_0_5 %TFloat_0_5
-         %65 = OpCompositeConstruct %TVec3 %TFloat_0_5 %TFloat_0_5 %TFloat_0_5
-         %67 = OpLoad %TFloat %u_iTime
-         %66 = OpCompositeConstruct %TVec3 %67 %67 %67
-         %68 = OpLoad %TVec4 %uv
-         %69 = OpVectorShuffle %TVec3 %68 %68 0 1 0
-         %70 = OpFAdd %TVec3 %66 %69
-         %72 = OpConvertSToF %TFloat %TInt_0
-         %73 = OpConvertSToF %TFloat %TInt_2
-         %74 = OpConvertSToF %TFloat %TInt_4
-         %71 = OpCompositeConstruct %TVec3 %72 %73 %74
-         %75 = OpFAdd %TVec3 %70 %71
-         %76 = OpExtInst %TVec3 %1 Cos %75
-         %77 = OpFMul %TVec3 %65 %76
-         %78 = OpFAdd %TVec3 %64 %77
-               OpStore %col %78
-         %79 = OpLoad %TVec3 %col
-         %80 = OpVectorShuffle %TVec3 %79 %79 0 1 2
-         %82 = OpCompositeExtract %TFloat %80 0
-         %83 = OpCompositeExtract %TFloat %80 1
-         %84 = OpCompositeExtract %TFloat %80 2
-         %81 = OpCompositeConstruct %TVec4 %82 %83 %84 %TFloat_1
-               OpStore %out_FragColour %81
+         %49 = OpLabel
+         %a0 = OpVariable %_ptr_Function_TArray_Float__10_ Function
+         %a1 = OpVariable %_ptr_Function_TFloat Function
+         %v0 = OpVariable %_ptr_Function_TVec3 Function
+         %v1 = OpVariable %_ptr_Function_TFloat Function
+         %v2 = OpVariable %_ptr_Function_TFloat Function
+         %55 = OpLoad %TArray_Float__10_ %u_arr
+               OpStore %a0 %55
+         %56 = OpAccessChain %_ptr_Function_TFloat %a0 %TInt_0
+         %57 = OpLoad %TFloat %56
+               OpStore %a1 %57
+         %58 = OpCompositeConstruct %TVec3 %TFloat_1 %TFloat_2 %TFloat_3
+               OpStore %v0 %58
+         %59 = OpLoad %TVec3 %v0
+         %60 = OpCompositeExtract %TFloat %59 1
+               OpStore %v1 %60
+         %61 = OpLoad %TVec3 %v0
+         %62 = OpCompositeExtract %TFloat %61 1
+               OpStore %v2 %62
                OpReturn
                OpFunctionEnd

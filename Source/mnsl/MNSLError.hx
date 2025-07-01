@@ -39,5 +39,7 @@ enum MNSLError {
     AnalyserReadOnlyAssignment(node: MNSLNode);
     AnalyserVariableOutsideFunction(name: String, node: MNSLNode, info: MNSLNodeInfo);
     AnalyserInvalidReturnType(func: MNSLAnalyserFunction, expected: MNSLType, actual: MNSLType);
+    AnalyserInvalidArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
+    AnalyserInvalidVectorArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
     AnalyserMissingMainFunction;
 }

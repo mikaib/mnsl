@@ -36,7 +36,8 @@ class Test {
 
         var glsl: String = shader.emitGLSL({
             version: GLSL_VER_300,
-            versionDirective: GLSL_CORE
+            versionDirective: GLSL_CORE,
+            shaderType: GLSL_SHADER_TYPE_VERTEX
         });
 
         var spirv = shader.emitSPIRV({

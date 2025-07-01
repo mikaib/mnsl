@@ -391,6 +391,10 @@ class MNSLContext {
                 return "Recursive function detected: " + func + " in chain: " + chainStr + " at " + info;
             case AnalyserLoopKeywordOutsideLoop(node, info):
                 return EnumValueTools.getName(node) + " outside of loop at " + info;
+            case AnalyserInvalidArrayAccess(on, index, info):
+                return "Invalid array access on " + on + " with index " + index + " at " + info;
+            case AnalyserInvalidVectorArrayAccess(on, index, info):
+                return "Invalid vector array access on " + on + " with index " + index + " at " + info + " (index must be a constant integer!)";
             case AnalyserMismatchingEitherType(limits, node):
                 var limitStr = "";
                 for (limitIdx in 0...limits.length) {
