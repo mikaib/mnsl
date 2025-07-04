@@ -110,12 +110,14 @@ class MNSLGLSLPrinter extends MNSLPrinter {
             case FunctionCall(name, args, type, info):
                 printIndented("{0}(", name);
 
+                enableInline();
                 for (arg in args) {
                     printNode(arg);
                     if (arg != args[args.length - 1]) {
                         print(", ");
                     }
                 }
+                disableInline();
 
                 println(")" + (_sameLine ? "" : ";"));
 

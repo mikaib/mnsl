@@ -25,6 +25,13 @@ class MNSLSPIRVScope {
         variables.set(name, { id: id, isParam: true });
     }
 
+    public function remapVar(name: String, remapTo: Int): Void {
+        var curr = variables.get(name);
+        curr.id = remapTo;
+
+        variables.set(name, curr);
+    }
+
     public function getVariable(name: String): { id: Int, isParam: Bool } {
         return variables.get(name);
     }

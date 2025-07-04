@@ -18,21 +18,22 @@ class Test {
             // optimizerPlugins: [],
         });
 
-        if (shader.hasWarnings()) {
-            for (warning in shader.getWarnings()) {
-                Sys.println(YELLOW + shader.warningToString(warning) + RESET);
-            }
-        }
 
-        if(shader.hasErrors()) {
-            for (error in shader.getErrors()) {
-                Sys.println(RED + shader.errorToString(error) + RESET);
-            }
-            Sys.println("\n" + RED + BOLD + 'Failed to compile with ' +
-                YELLOW + '${shader.getWarnings().length}' + RED + ' warnings and ' +
-                RED + '${shader.getErrors().length}' + RED + ' errors.' + RESET);
-            return;
-        }
+//        if (shader.hasWarnings()) {
+//            for (warning in shader.getWarnings()) {
+//                Sys.println(YELLOW + shader.warningToString(warning) + RESET);
+//            }
+//        }
+//
+//        if(shader.hasErrors()) {
+//            for (error in shader.getErrors()) {
+//                Sys.println(RED + shader.errorToString(error) + RESET);
+//            }
+//            Sys.println("\n" + RED + BOLD + 'Failed to compile with ' +
+//                YELLOW + '${shader.getWarnings().length}' + RED + ' warnings and ' +
+//                RED + '${shader.getErrors().length}' + RED + ' errors.' + RESET);
+//            return;
+//        }
 
         var glsl: String = shader.emitGLSL({
             version: GLSL_VER_300,

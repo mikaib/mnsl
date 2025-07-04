@@ -1,28 +1,23 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct main0_out
+static inline __attribute__((always_inline))
+int test(int x)
 {
-    float4 out_Colour [[color(3)]];
-    float2 out_TexCoords [[color(4)]];
-    float4 gl_Position;
-};
+    int v = x;
+    x *= 5;
+    x = 5;
+    int t = x;
+    return x;
+}
 
-struct main0_in
+fragment void main0()
 {
-    float3 in_Position [[user(locn0)]];
-    float4 in_Colour [[user(locn1)]];
-    float2 in_TexCoords [[user(locn2)]];
-};
-
-fragment main0_out main0(main0_in in [[stage_in]], constant float4x4& u_MVP [[buffer(0)]])
-{
-    main0_out out = {};
-    out.gl_Position = float4(in.in_Position, 1.0) * u_MVP;
-    out.out_Colour = in.in_Colour;
-    out.out_TexCoords = in.in_TexCoords;
-    return out;
+    int _48 = test(3);
+    int v = _48;
 }
 

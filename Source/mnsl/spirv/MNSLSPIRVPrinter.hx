@@ -464,15 +464,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             idx++;
         }
 
-        if (requirePtr && currIsParam) {
-            if (stack.length == 1 && scope.variables.exists("__mnsl_param_" + stack[0].name)) {
-                return { id: scope.variables.get("__mnsl_param_" + stack[0].name).id, isParam: false };
-            }
-
-            var accessPath = stack.map(e -> e.name).join(".");
-            throw "Cannot get pointer to computed value: " + accessPath;
-        }
-
         if (requirePtr && !currIsParam) {
             return { id: currRetId, isParam: false };
         }
@@ -657,20 +648,6 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                         emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
                         emitDebugLabel(varId, name);
                         scope.setVariable(name, varId);
-                    }
-                case VariableAssign(name, value, info):
-                    if (scope != null &&
-                        scope.variables.exists(getVarBaseName(name)) &&
-                        scope.variables.get(getVarBaseName(name)).isParam &&
-                        !scope.variables.exists("__mnsl_param_" + getVarBaseName(name))
-                    ) {
-
-                        // this is a parameter assignment, we need to create a temporary variable as they are read-only
-                        var varId = assignId();
-                        var ptrId = getPtr(getType(MNSLAnalyser.getType(value)), MNSLSPIRVStorageClass.Function);
-                        emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
-                        emitDebugLabel(varId, "__mnsl_param_" + getVarBaseName(name));
-                        scope.setVariable("__mnsl_param_" + getVarBaseName(name), varId);
                     }
                 default:
             }

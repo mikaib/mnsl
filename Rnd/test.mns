@@ -1,18 +1,13 @@
-// input
-@input(Position: Vec3)
-@input(Colour: Vec4)
-@input(TexCoords: Vec2)
+func test(x) {
+    var v = x;
 
-// output
-@output(Colour: Vec4)
-@output(TexCoords: Vec2)
+    x *= 5;
+    x = 5;
+    var t = x;
 
-// uniforms
-@uniform(MVP: Mat4)
+    return x;
+}
 
-// main
 func main() {
-    output.Position  = input.Position * uniform.MVP;
-    output.Colour    = input.Colour;
-    output.TexCoords = input.TexCoords;
+    var v = test(3);
 }

@@ -5,6 +5,7 @@ import mnsl.tokenizer.MNSLToken;
 import mnsl.tokenizer.MNSLTokenInfo;
 import mnsl.analysis.MNSLFuncArgs;
 import mnsl.analysis.MNSLType;
+import haxe.PosInfos;
 
 class MNSLParser {
 
@@ -13,6 +14,7 @@ class MNSLParser {
     private var context: MNSLContext;
     private var ast: MNSLNodeChildren;
     private var dataList: Array<MNSLShaderData>;
+    private var localNodeDefs: Map<String, MNSLNode>;
 
     private var keywords: Array<String> = [
         "func",
@@ -47,12 +49,13 @@ class MNSLParser {
      * Given a list of tokens, this function will parse them and return an AST.
      * @param tokens The list of tokens to parse.
      */
-    public function new(context: MNSLContext, tokens: Array<MNSLToken>){
+    public function new(context: MNSLContext, tokens: Array<MNSLToken>, ?localNodeDefs: Map<String, MNSLNode>) {
         this.tokens = tokens;
         this.currentIndex = 0;
         this.ast = [];
         this.context = context;
         this.dataList = [];
+        this.localNodeDefs = localNodeDefs ?? [];
     }
 
     /**
@@ -95,6 +98,9 @@ class MNSLParser {
 
                 case Dot(_):
                     parseStructAccess(token);
+
+                case Arrow(_):
+                    parseArrowChain(token);
 
                 case At(_):
                     parseMeta(token);
@@ -390,6 +396,11 @@ class MNSLParser {
             }
 
             append(parsed[0]);
+            return;
+        }
+
+        if (localNodeDefs.exists(value)) {
+            append(localNodeDefs.get(value));
             return;
         }
 
@@ -890,7 +901,7 @@ class MNSLParser {
         var args: MNSLNodeChildren = [];
 
         for (argTokens in argsTokens) {
-            var c = new MNSLParser(context, argTokens);
+            var c = new MNSLParser(context, argTokens, localNodeDefs);
             var arg = c._runInternal();
             if (arg.length == 0) {
                 context.emitError(ParserUnexpectedToken(argTokens[0], info));
@@ -1007,6 +1018,47 @@ class MNSLParser {
             body,
             MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(bodyBlock[bodyBlock.length - 1])])
         ));
+    }
+
+    /**
+     * Parse an arrow chain operator.
+     * @param token The token that is the arrow operator.
+     */
+    public function parseArrowChain(token: MNSLToken): Void {
+        var left: MNSLNode = pop();
+        if (left == null) {
+            context.emitError(ParserUnexpectedExpression(left, null));
+            return;
+        }
+
+        var rightTokens: Array<MNSLToken> = [];
+        while (currentIndex < tokens.length && !tokens[currentIndex].match(Semicolon(_))) {
+            rightTokens.push(tokens[currentIndex]);
+            currentIndex++;
+        }
+
+        trace(rightTokens);
+
+        if (rightTokens.length == 0) {
+            context.emitError(ParserUnexpectedToken(tokens[currentIndex], null));
+            return;
+        }
+
+        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens, [
+            "_" => left
+        ])._runInternal();
+
+        if (right.length == 0) {
+            context.emitError(ParserUnexpectedToken(rightTokens[0], null));
+            return;
+        }
+
+        if (right.length > 1) {
+            context.emitError(ParserUnexpectedExpression(right[1], null));
+            return;
+        }
+
+        append(right[0]);
     }
 
     /**

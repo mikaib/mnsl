@@ -1,17 +1,17 @@
 #version 450
 
-uniform mat4 u_MVP;
-
-layout(location = 0) in vec3 in_Position;
-layout(location = 1) in vec4 in_Colour;
-layout(location = 2) in vec2 in_TexCoords;
-layout(location = 3) out vec4 out_Colour;
-layout(location = 4) out vec2 out_TexCoords;
+int test(int x)
+{
+    int v = x;
+    x *= 5;
+    x = 5;
+    int t = x;
+    return x;
+}
 
 void main()
 {
-    gl_Position = vec4(in_Position, 1.0) * u_MVP;
-    out_Colour = in_Colour;
-    out_TexCoords = in_TexCoords;
+    int _48 = test(3);
+    int v = _48;
 }
 
