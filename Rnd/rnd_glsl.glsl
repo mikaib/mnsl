@@ -1,14 +1,26 @@
 #version 300 core
 
-int test(int x) {
-    int v = x;
-    x = x * 5;
-    x = 5;
-    int t = x;
-    return x;
+int multiply(int x, int y) {
+    return x * y;
+}
+
+int squared(int x) {
+    return x * x;
+}
+
+float halfOf(int x) {
+    return float(x) / float(2);
 }
 
 void main() {
-    int v = test(3);
+    int x = squared(multiply(int(halfOf(multiply(1, 2))), 3));
+    float y = float(5) / float(2);
+    float a1 = float(5) / 2.0;
+    float a2 = 2.0 / float(5);
+    float a3 = 2.0 / 5.0;
+    vec2 v1 = vec2(1, 2) / vec2(2);
+    vec2 v2 = vec2(2) / vec2(1, 2);
+    vec2 v3 = vec2(1, 2) / vec2(3, 4);
+    float v = float(5) / float(2);
 }
 

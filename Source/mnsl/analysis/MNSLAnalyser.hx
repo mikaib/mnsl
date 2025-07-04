@@ -1068,25 +1068,21 @@ class MNSLAnalyser {
             case And(_): MNSLType.TBool;
             case Or(_): MNSLType.TBool;
             case Slash (_): {
-                if ((leftType.isInt() || !leftType.isDefined()) && rightType.isNumerical()) {
-                    _solver.addConstraint({
-                        type: leftType,
-                        mustBe: MNSLType.TFloat,
-                        ofNode: left,
-                        _optional: true
-                    });
-                }
+                _solver.addConstraint({
+                    type: leftType,
+                    mustBe: MNSLType.TFloat,
+                    ofNode: left,
+                    _optional: true
+                });
 
-                if ((rightType.isInt() || !rightType.isDefined()) && leftType.isNumerical()) {
-                    _solver.addConstraint({
-                        type: rightType,
-                        mustBe: MNSLType.TFloat,
-                        ofNode: right,
-                        _optional: true
-                    });
-                }
+                _solver.addConstraint({
+                    type: rightType,
+                    mustBe: MNSLType.TFloat,
+                    ofNode: right,
+                    _optional: true
+                });
 
-                rightType.isInt() ? MNSLType.TFloat : rightType;
+                rightType;
             }
             default: rightType;
         }

@@ -2377,13 +2377,9 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		var resType;
 		switch(op._hx_index) {
 		case 17:
-			if((leftType._type == "Int" || !(leftType._type != "Unknown" && !leftType._tempType)) && (rightType._type == "Float" || rightType._type == "Int")) {
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
-			}
-			if((rightType._type == "Int" || !(rightType._type != "Unknown" && !rightType._tempType)) && (leftType._type == "Float" || leftType._type == "Int")) {
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
-			}
-			resType = rightType._type == "Int" ? new mnsl_analysis_MNSLType("Float") : rightType;
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
+			resType = rightType;
 			break;
 		case 22:
 			resType = new mnsl_analysis_MNSLType("Bool");
@@ -6123,20 +6119,6 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			enter(entry.name,entry.type,entry.node,idx == stack.length - 1,entry.arrayIndex);
 			++idx;
 		}
-		if(requirePtr && currIsParam) {
-			if(stack.length == 1 && Object.prototype.hasOwnProperty.call(scope.variables.h,"__mnsl_param_" + stack[0].name)) {
-				return { id : scope.variables.h["__mnsl_param_" + stack[0].name].id, isParam : false};
-			}
-			var result = new Array(stack.length);
-			var _g = 0;
-			var _g1 = stack.length;
-			while(_g < _g1) {
-				var i = _g++;
-				result[i] = stack[i].name;
-			}
-			var accessPath = result.join(".");
-			throw haxe_Exception.thrown("Cannot get pointer to computed value: " + accessPath);
-		}
 		if(requirePtr && !currIsParam) {
 			return { id : currRetId, isParam : false};
 		}
@@ -6277,56 +6259,20 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 					scope.setVariable(name1,varId);
 				}
 				break;
-			case 4:
-				var name2 = node.name;
+			case 26:
 				var value1 = node.value;
 				var info2 = node.info;
-				var tmp;
-				var tmp1;
-				var tmp2;
-				if(scope != null) {
-					var this1 = scope.variables;
-					var key = this.getVarBaseName(name2);
-					tmp2 = Object.prototype.hasOwnProperty.call(this1.h,key);
-				} else {
-					tmp2 = false;
-				}
-				if(tmp2) {
-					var this2 = scope.variables;
-					var key1 = this.getVarBaseName(name2);
-					tmp1 = this2.h[key1].isParam;
-				} else {
-					tmp1 = false;
-				}
-				if(tmp1) {
-					var this3 = scope.variables;
-					var key2 = "__mnsl_param_" + this.getVarBaseName(name2);
-					tmp = !Object.prototype.hasOwnProperty.call(this3.h,key2);
-				} else {
-					tmp = false;
-				}
-				if(tmp) {
-					var varId1 = this.assignId();
-					var ptrId1 = this.getPtr(this.getType(mnsl_analysis_MNSLAnalyser.getType(value1)),7);
-					this.emitInstruction(59,[ptrId1,varId1,7]);
-					this.emitDebugLabel(varId1,"__mnsl_param_" + this.getVarBaseName(name2));
-					scope.setVariable("__mnsl_param_" + this.getVarBaseName(name2),varId1);
-				}
-				break;
-			case 26:
-				var value2 = node.value;
-				var info3 = node.info;
-				this.getConst(Std.parseInt(value2),new mnsl_analysis_MNSLType("Int"));
+				this.getConst(Std.parseInt(value1),new mnsl_analysis_MNSLType("Int"));
 				break;
 			case 27:
-				var value3 = node.value;
-				var info4 = node.info;
-				this.getConst(parseFloat(value3),new mnsl_analysis_MNSLType("Float"));
+				var value2 = node.value;
+				var info3 = node.info;
+				this.getConst(parseFloat(value2),new mnsl_analysis_MNSLType("Float"));
 				break;
 			case 29:
-				var value4 = node.value;
-				var info5 = node.info;
-				this.getConst(value4,new mnsl_analysis_MNSLType("Bool"));
+				var value3 = node.value;
+				var info4 = node.info;
+				this.getConst(value3,new mnsl_analysis_MNSLType("Bool"));
 				break;
 			default:
 			}
@@ -6499,7 +6445,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var info = node.info;
 			return this.getConst(value,new mnsl_analysis_MNSLType("Bool"));
 		default:
-			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 775, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
+			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 752, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
 			return 0;
 		}
 	}
@@ -7325,6 +7271,11 @@ mnsl_spirv_MNSLSPIRVScope.prototype = {
 	}
 	,setParameter: function(name,id) {
 		this.variables.h[name] = { id : id, isParam : true};
+	}
+	,remapVar: function(name,remapTo) {
+		var curr = this.variables.h[name];
+		curr.id = remapTo;
+		this.variables.h[name] = curr;
 	}
 	,getVariable: function(name) {
 		return this.variables.h[name];

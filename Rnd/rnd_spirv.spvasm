@@ -1,39 +1,50 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 49
+; Bound: 107
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
-               OpName %TVec2 "TVec2"
-               OpName %TSamplerImage "TSamplerImage"
-               OpName %TFloat "TFloat"
-               OpName %TSampler "TSampler"
                OpName %in_VertexID "in_VertexID"
-               OpName %in_FragDepth "in_FragDepth"
-               OpName %x "x"
-               OpName %v "v"
-               OpName %TInt "TInt"
-               OpName %TMat4 "TMat4"
-               OpName %test "test"
-               OpName %TBool "TBool"
-               OpName %TMat3 "TMat3"
-               OpName %in_FrontFacing "in_FrontFacing"
-               OpName %main "main"
-               OpName %TVoid "TVoid"
-               OpName %TMat2 "TMat2"
-               OpName %out_PointSize "out_PointSize"
-               OpName %TVec4 "TVec4"
-               OpName %in_FragCoord "in_FragCoord"
-               OpName %t "t"
-               OpName %TVec3 "TVec3"
+               OpName %a3 "a3"
+               OpName %a2 "a2"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %in_InstanceID "in_InstanceID"
+               OpName %y "y"
+               OpName %a1 "a1"
+               OpName %x "x"
+               OpName %TSamplerImage "TSamplerImage"
+               OpName %y_0 "y"
+               OpName %multiply "multiply"
+               OpName %TSampler "TSampler"
+               OpName %x_0 "x"
+               OpName %TMat4 "TMat4"
+               OpName %out_PointSize "out_PointSize"
+               OpName %TMat3 "TMat3"
+               OpName %main "main"
+               OpName %TMat2 "TMat2"
                OpName %out_Position "out_Position"
-               OpName %v_0 "v"
+               OpName %TVec4 "TVec4"
+               OpName %TVec3 "TVec3"
+               OpName %in_FragDepth "in_FragDepth"
+               OpName %TVec2 "TVec2"
+               OpName %x_1 "x"
+               OpName %TFloat "TFloat"
+               OpName %in_FrontFacing "in_FrontFacing"
+               OpName %TInt "TInt"
+               OpName %halfOf "halfOf"
+               OpName %TBool "TBool"
+               OpName %v "v"
+               OpName %in_FragCoord "in_FragCoord"
+               OpName %TVoid "TVoid"
+               OpName %v3 "v3"
+               OpName %in_InstanceID "in_InstanceID"
+               OpName %x_2 "x"
+               OpName %v2 "v2"
+               OpName %squared "squared"
+               OpName %v1 "v1"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -62,9 +73,16 @@
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
      %TInt_5 = OpConstant %TInt 5
-         %22 = OpTypeFunction %TInt %TInt
+   %TFloat_2 = OpConstant %TFloat 2
+   %TFloat_5 = OpConstant %TFloat 5
+     %TInt_4 = OpConstant %TInt 4
+         %22 = OpTypeFunction %TInt %TInt %TInt
+         %23 = OpTypeFunction %TInt %TInt
+         %24 = OpTypeFunction %TFloat %TInt
          %25 = OpTypeFunction %TVoid
 %_ptr_Function_TInt = OpTypePointer Function %TInt
+%_ptr_Function_TFloat = OpTypePointer Function %TFloat
+%_ptr_Function_TVec2 = OpTypePointer Function %TVec2
 %_ptr_Input_TInt = OpTypePointer Input %TInt
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
 %_ptr_Input_TBool = OpTypePointer Input %TBool
@@ -78,22 +96,81 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-       %test = OpFunction %TInt None %22
+   %multiply = OpFunction %TInt None %22
           %x = OpFunctionParameter %TInt
-         %41 = OpLabel
-        %v_0 = OpVariable %_ptr_Function_TInt Function
-          %t = OpVariable %_ptr_Function_TInt Function
-               OpStore %v_0 %x
-         %44 = OpIMul %TInt %x %TInt_5
-               OpStore %x %44
-               OpStore %x %TInt_5
-               OpStore %t %x
-               OpReturnValue %x
+          %y = OpFunctionParameter %TInt
+         %49 = OpLabel
+         %50 = OpIMul %TInt %x %y
+               OpReturnValue %50
+               OpFunctionEnd
+    %squared = OpFunction %TInt None %23
+        %x_2 = OpFunctionParameter %TInt
+         %53 = OpLabel
+         %54 = OpIMul %TInt %x_2 %x_2
+               OpReturnValue %54
+               OpFunctionEnd
+     %halfOf = OpFunction %TFloat None %24
+        %x_1 = OpFunctionParameter %TInt
+         %57 = OpLabel
+         %58 = OpConvertSToF %TFloat %x_1
+         %59 = OpConvertSToF %TFloat %TInt_2
+         %60 = OpFDiv %TFloat %58 %59
+               OpReturnValue %60
                OpFunctionEnd
        %main = OpFunction %TVoid None %25
-         %46 = OpLabel
-          %v = OpVariable %_ptr_Function_TInt Function
-         %48 = OpFunctionCall %TInt %test %TInt_3
-               OpStore %v %48
+         %62 = OpLabel
+        %x_0 = OpVariable %_ptr_Function_TInt Function
+        %y_0 = OpVariable %_ptr_Function_TFloat Function
+         %a1 = OpVariable %_ptr_Function_TFloat Function
+         %a2 = OpVariable %_ptr_Function_TFloat Function
+         %a3 = OpVariable %_ptr_Function_TFloat Function
+         %v1 = OpVariable %_ptr_Function_TVec2 Function
+         %v2 = OpVariable %_ptr_Function_TVec2 Function
+         %v3 = OpVariable %_ptr_Function_TVec2 Function
+          %v = OpVariable %_ptr_Function_TFloat Function
+         %72 = OpFunctionCall %TInt %multiply %TInt_1 %TInt_2
+         %73 = OpFunctionCall %TFloat %halfOf %72
+         %74 = OpConvertFToS %TInt %73
+         %75 = OpFunctionCall %TInt %multiply %74 %TInt_3
+         %76 = OpFunctionCall %TInt %squared %75
+               OpStore %x_0 %76
+         %77 = OpConvertSToF %TFloat %TInt_5
+         %78 = OpConvertSToF %TFloat %TInt_2
+         %79 = OpFDiv %TFloat %77 %78
+               OpStore %y_0 %79
+         %80 = OpConvertSToF %TFloat %TInt_5
+         %81 = OpFDiv %TFloat %80 %TFloat_2
+               OpStore %a1 %81
+         %82 = OpConvertSToF %TFloat %TInt_5
+         %83 = OpFDiv %TFloat %TFloat_2 %82
+               OpStore %a2 %83
+         %84 = OpFDiv %TFloat %TFloat_2 %TFloat_5
+               OpStore %a3 %84
+         %86 = OpConvertSToF %TFloat %TInt_1
+         %87 = OpConvertSToF %TFloat %TInt_2
+         %85 = OpCompositeConstruct %TVec2 %86 %87
+         %89 = OpConvertSToF %TFloat %TInt_2
+         %88 = OpCompositeConstruct %TVec2 %89 %89
+         %90 = OpFDiv %TVec2 %85 %88
+               OpStore %v1 %90
+         %92 = OpConvertSToF %TFloat %TInt_2
+         %91 = OpCompositeConstruct %TVec2 %92 %92
+         %94 = OpConvertSToF %TFloat %TInt_1
+         %95 = OpConvertSToF %TFloat %TInt_2
+         %93 = OpCompositeConstruct %TVec2 %94 %95
+         %96 = OpFDiv %TVec2 %91 %93
+               OpStore %v2 %96
+         %98 = OpConvertSToF %TFloat %TInt_1
+         %99 = OpConvertSToF %TFloat %TInt_2
+         %97 = OpCompositeConstruct %TVec2 %98 %99
+        %101 = OpConvertSToF %TFloat %TInt_3
+        %102 = OpConvertSToF %TFloat %TInt_4
+        %100 = OpCompositeConstruct %TVec2 %101 %102
+        %103 = OpFDiv %TVec2 %97 %100
+               OpStore %v3 %103
+        %104 = OpConvertSToF %TFloat %TInt_5
+        %105 = OpConvertSToF %TFloat %TInt_2
+        %106 = OpFDiv %TFloat %104 %105
+               OpStore %v %106
                OpReturn
                OpFunctionEnd
