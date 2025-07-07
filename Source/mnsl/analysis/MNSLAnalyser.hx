@@ -362,6 +362,13 @@ class MNSLAnalyser {
                         type: arg.type
                     });
                 }
+
+                var f = ctx.findFunction(params[0], args.map(a -> a.type), true);
+                ctx.currentFunction = f;
+
+                if (f.isTemplate) {
+                    return Block([], null);
+                }
             }
 
             // hack to make continue; and break; work correctly
@@ -511,15 +518,22 @@ class MNSLAnalyser {
      * @param args The arguments of the function.
      */
     public function analyseFunctionDeclPre(node: MNSLNode, name: String, returnType: MNSLType, args: MNSLFuncArgs, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+        if (ctx.currentFunction != null) {
+            _context.emitError(AnalyserFunctionInsideFunction(name, info));
+        }
+
         if (!returnType.isDefined()) {
             returnType.setType(MNSLType.TVoid);
             returnType.setTempType(true);
         }
 
         for (arg in args) {
+            if (arg.type == null) {
+                arg.type = MNSLType.TUnknown;
+            }
+
             if (!arg.type.isDefined()) {
-                arg.type.setType(MNSLType.TVoid);
-                arg.type.setTempType(true);
+                arg.type.setType(MNSLType.TUnknown);
             }
         }
 
@@ -527,11 +541,15 @@ class MNSLAnalyser {
             name: name,
             returnType: returnType,
             args: args,
-            hasImplementation: true
+            hasImplementation: true,
+            internal: false,
+            node: node,
+            atIdx: _ast.indexOf(node) + 1,
+            scope: ctx.copy(), // used when we re-analyse the function with specific type params. doing this will avoid illegal access to things in the scope that should not be accessible.
+            isTemplate: args.filter(a -> a.type.isTemplate()).length > 0 || returnType.isTemplate()
         };
 
         ctx.functions.push(f);
-        ctx.currentFunction = f;
 
         return node;
     }
@@ -855,10 +873,13 @@ class MNSLAnalyser {
         }
 
         var templates: Map<String, MNSLType> = [];
+        var argTypes: Array<MNSLType> = []; // this is here because order is important!
+
         for (i in 0...args.length) {
             var arg = args[i];
             var argType = getType(arg);
 
+            trace(name, f.args[i].type.isTemplate(), f.args[i]);
             if (f.args[i].type.isTemplate()) {
                 if (!templates.exists(f.args[i].type.getTemplateName())) {
                     var t = MNSLType.TUnknown;
@@ -873,6 +894,7 @@ class MNSLAnalyser {
                     ofNode: arg
                 });
 
+                argTypes.push(templates.get(f.args[i].type.getTemplateName()));
                 continue;
             }
 
@@ -881,6 +903,8 @@ class MNSLAnalyser {
                 mustBe: f.args[i].type,
                 ofNode: arg,
             });
+
+            argTypes.push(f.args[i].type);
         }
 
         if (f.returnType.isTemplate()) {
@@ -900,6 +924,12 @@ class MNSLAnalyser {
                 ofNode: node,
             });
         }
+
+        f.usages.push({
+            varyingArgTypes: argTypes,
+            varyingRetType: f.returnType.isTemplate() ? templates.get(f.returnType.getTemplateName()) : f.returnType,
+            callNode: node,
+        });
 
         return node;
     }
@@ -1551,10 +1581,102 @@ class MNSLAnalyser {
     }
 
     /**
+     * Deep copy a node.
+     */
+    public function deepCopy(node: MNSLNode, newInfo: MNSLNodeInfo): MNSLNode {
+        var name = EnumValueTools.getName(node);
+        var params = EnumValueTools.getParameters(node);
+        var eenum = Type.getEnum(node);
+
+        for (pIdx in 0...params.length) {
+            var p: Dynamic = params[pIdx];
+            if (Std.isOfType(p, MNSLNodeInfo)) {
+                params[pIdx] = newInfo;
+            }
+
+            if (Std.isOfType(p, MNSLType)) {
+                params[pIdx] = p.copy();
+            }
+
+            if (isNode(p)) {
+                params[pIdx] = deepCopy(p, newInfo);
+            }
+
+            if (Std.isOfType(p, MNSLNodeChildren) && isNode(p[0])) {
+                var newChildren: MNSLNodeChildren = [];
+                for (child in ( p : Array<MNSLNode> )) {
+                    newChildren.push(deepCopy(child, newInfo));
+                }
+
+                params[pIdx] = newChildren;
+            }
+        }
+
+        return Type.createEnum(eenum, name, params);
+    }
+
+    /**
+     * Extracts individual function for generic functions.
+     * @param body The body to insert the generic function into.
+     */
+    public function applyGenerics(res: MNSLNodeChildren): MNSLNodeChildren {
+        var usageOffset = 0;
+        var toRename: Array<{ node: MNSLNode, returnType: MNSLType, argTypes: Array<MNSLType>, originalName: String }> = [];
+
+        for (f in this._globalCtx.functions) {
+            if (f.internal || !f.isTemplate || f.scope == null || f.node == null || f.atIdx < 0) {
+                continue;
+            }
+
+            for (usage in f.usages) {
+                switch (usage.callNode) {
+                    case FunctionCall(fcName, fcArgs, fcRet, fcInfo):
+                        switch (f.node) {
+                            case FunctionDecl(_, _, _, fBody, fInfo):
+                                var tempName: String = '__mnsl_generic_$usageOffset';
+                                var args: MNSLFuncArgs = [for (idx in 0...f.args.length) { name: f.args[idx].name, type: usage.varyingArgTypes[idx] }];
+
+                                var fNode = deepCopy(FunctionDecl(tempName, usage.varyingRetType, args, fBody, fInfo), fcInfo);
+                                var retType = switch(fNode) { // the type has been cloned using deepCopy, we need to extract it.
+                                    case FunctionDecl(_, nRetType, _, _ ,_):
+                                        nRetType;
+                                    default:
+                                        usage.varyingRetType;
+                                }
+
+                                var fRes = execAtBody([
+                                    fNode
+                                ], f.scope);
+
+                                _solver.addReplacement({
+                                    node: usage.callNode,
+                                    to: FunctionCall(tempName, fcArgs, retType, fcInfo),
+                                });
+
+                                _solver.solve();
+
+                                res.insert(f.atIdx + usageOffset, fRes[0]);
+                                usageOffset++;
+                            default:
+                                null;
+                        }
+                    default:
+                        null;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    /**
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
         var res = execAtBody(this._ast, this._globalCtx);
+        this._solver.solve();
+
+        res = this.applyGenerics(res);
 
         if (!this._solver.solve()) {
             var unresolvedConstraints = this._solver.getUnresolvedConstraints();

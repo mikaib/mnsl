@@ -18,4 +18,5 @@ class MNSLConstraint {
     public function toString(): String {
         return "MNSLConstraint(" + type.toHumanString() + " = " + mustBe.toHumanString() + " in " + ofNode + ")";
     }
+
 }

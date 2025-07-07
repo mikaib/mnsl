@@ -1,0 +1,13 @@
+func div(x, y) -> x * y;
+func add(x, y) -> x + y;
+func squared(x) -> x * x;
+func halfOf(x) -> x * 0.5;
+
+// TODO: Optimiser should make this better!!
+// TODO: Optimiser should make this better!!
+// TODO: Optimiser should make this better!!
+func main() {
+    var x = ( squared(5), halfOf(10) ) -> add(_[0], _[1]) -> div(_, _);
+
+    var F = V -> dot(_, H) -> max(_, 0.0) -> fresnelSchlick(_, F0);
+}

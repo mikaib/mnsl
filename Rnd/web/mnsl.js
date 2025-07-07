@@ -1002,6 +1002,7 @@ var mnsl_MNSLContext = function(source,options) {
 	var res = parser.run();
 	this._finalAst = res.ast;
 	this._finalData = res.dataList;
+	this.printAST(this._finalAst);
 	var analyser = new mnsl_analysis_MNSLAnalyser(this,res.ast);
 	var output = analyser.run();
 	this._finalAst = output;
@@ -1022,7 +1023,7 @@ mnsl_MNSLContext.prototype = {
 		return this._options;
 	}
 	,log: function(message) {
-		haxe_Log.trace(message,{ fileName : "mnsl/MNSLContext.hx", lineNumber : 78, className : "mnsl.MNSLContext", methodName : "log"});
+		haxe_Log.trace(message,{ fileName : "mnsl/MNSLContext.hx", lineNumber : 80, className : "mnsl.MNSLContext", methodName : "log"});
 	}
 	,printAST: function(ast,indent) {
 		if(indent == null) {
@@ -1869,8 +1870,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			++_g;
 			var _this = arg.type;
 			if(!(_this._type != "Unknown" && !_this._tempType)) {
-				arg.type.setType(new mnsl_analysis_MNSLType("Void"));
-				arg.type.setTempType(true);
+				arg.type.setType(new mnsl_analysis_MNSLType("Unknown"));
 			}
 		}
 		var f = new mnsl_analysis_MNSLAnalyserFunction(name,args,returnType,true,null);
@@ -4685,7 +4685,7 @@ mnsl_parser_MNSLNodeInfo.prototype = {
 	,__class__: mnsl_parser_MNSLNodeInfo
 };
 var mnsl_parser_MNSLParser = function(context,tokens,localNodeDefs) {
-	this.operators = ["Plus","Minus","Star","Slash","Percent","Equal","NotEqual","Greater","GreaterEqual","Less","LessEqual","And","Or","Not"];
+	this.operators = ["Plus","Minus","Star","Slash","Percent","Equal","NotEqual","Greater","GreaterEqual","Less","LessEqual","And","Or","Not","Arrow"];
 	this.keywords = ["func","return","var","if","else","while","for","break","continue"];
 	this.tokens = tokens;
 	this.currentIndex = 0;
@@ -4696,6 +4696,19 @@ var mnsl_parser_MNSLParser = function(context,tokens,localNodeDefs) {
 	this.localNodeDefs = tmp != null ? tmp : new haxe_ds_StringMap();
 };
 mnsl_parser_MNSLParser.__name__ = "mnsl.parser.MNSLParser";
+mnsl_parser_MNSLParser.isNode = function(value) {
+	if(value != null && js_Boot.__instanceof(value,mnsl_parser_MNSLNode)) {
+		var e = Type.getEnum(value);
+		if(e.__ename__ != "MNSLNode") {
+			var e = Type.getEnum(value);
+			return e.__ename__ == "mnsl.parser.MNSLNode";
+		} else {
+			return true;
+		}
+	} else {
+		return false;
+	}
+};
 mnsl_parser_MNSLParser.prototype = {
 	getDataList: function() {
 		return this.dataList;
@@ -4784,7 +4797,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var accessBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBracket(null),mnsl_tokenizer_MNSLToken.RightBracket(null),1);
-		var accessCtx = new mnsl_parser_MNSLParser(this.context,accessBlock);
+		var accessCtx = new mnsl_parser_MNSLParser(this.context,accessBlock,this.localNodeDefs);
 		var access = accessCtx._runInternal();
 		if(access.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(accessBlock[0],null));
@@ -4911,7 +4924,7 @@ mnsl_parser_MNSLParser.prototype = {
 		while(_g < parts.length) {
 			var part = parts[_g];
 			++_g;
-			var parser = new mnsl_parser_MNSLParser(this.context,part);
+			var parser = new mnsl_parser_MNSLParser(this.context,part,this.localNodeDefs);
 			var parsed = parser._runInternal();
 			if(parsed.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(part[0],null));
@@ -4931,7 +4944,7 @@ mnsl_parser_MNSLParser.prototype = {
 	}
 	,parseIdentifier: function(value,info) {
 		if(this.context.getDefine(value) != null) {
-			var parseCtx = new mnsl_parser_MNSLParser(this.context,this.context.getDefine(value));
+			var parseCtx = new mnsl_parser_MNSLParser(this.context,this.context.getDefine(value),this.localNodeDefs);
 			var parsed = parseCtx._runInternal();
 			if(parsed.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(this.context.getDefine(value)[0],info));
@@ -4945,7 +4958,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		if(Object.prototype.hasOwnProperty.call(this.localNodeDefs.h,value)) {
-			this.append(this.localNodeDefs.h[value]);
+			this.append(this.deepCopy(this.localNodeDefs.h[value],mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)));
 			return;
 		}
 		if(this.keywords.indexOf(value) != -1) {
@@ -4970,6 +4983,38 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		this.append(mnsl_parser_MNSLNode.Identifier(value,new mnsl_analysis_MNSLType("Unknown"),mnsl_parser_MNSLNodeInfo.fromTokenInfo(info)));
+	}
+	,deepCopy: function(node,newInfo) {
+		var name = $hxEnums[node.__enum__].__constructs__[node._hx_index]._hx_name;
+		var params = Type.enumParameters(node);
+		var eenum = Type.getEnum(node);
+		var _g = 0;
+		var _g1 = params.length;
+		while(_g < _g1) {
+			var pIdx = _g++;
+			var p = params[pIdx];
+			if(((p) instanceof mnsl_parser_MNSLNodeInfo)) {
+				params[pIdx] = newInfo;
+			}
+			if(((p) instanceof mnsl_analysis_MNSLType)) {
+				params[pIdx] = p.copy();
+			}
+			if(mnsl_parser_MNSLParser.isNode(p)) {
+				params[pIdx] = this.deepCopy(p,newInfo);
+			}
+			if(((p) instanceof Array) && mnsl_parser_MNSLParser.isNode(p[0])) {
+				var newChildren = [];
+				var _g2 = 0;
+				var _g3 = p;
+				while(_g2 < _g3.length) {
+					var child = _g3[_g2];
+					++_g2;
+					newChildren.push(this.deepCopy(child,newInfo));
+				}
+				params[pIdx] = newChildren;
+			}
+		}
+		return Type.createEnum(eenum,name,params);
 	}
 	,parseKeyword: function(value,info) {
 		switch(value) {
@@ -5017,7 +5062,7 @@ mnsl_parser_MNSLParser.prototype = {
 		while(_g < conditionTokens.length) {
 			var conditionTokens1 = conditionTokens[_g];
 			++_g;
-			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1);
+			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1,this.localNodeDefs);
 			var cond = c._runInternal();
 			if(cond.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(conditionTokens1[0],info));
@@ -5038,7 +5083,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var bodyBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.WhileLoop(conditions[0],body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(conditionBlock[conditionBlock.length - 1])])));
 	}
 	,parseForStmt: function(value,info) {
@@ -5048,9 +5093,9 @@ mnsl_parser_MNSLParser.prototype = {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(forParamBlock[0],info));
 			return;
 		}
-		var initBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[0])._runInternal();
-		var conditionBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[1])._runInternal();
-		var incrementBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[2])._runInternal();
+		var initBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[0],this.localNodeDefs)._runInternal();
+		var conditionBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[1],this.localNodeDefs)._runInternal();
+		var incrementBlock = new mnsl_parser_MNSLParser(this.context,forParamTokens[2],this.localNodeDefs)._runInternal();
 		if(initBlock.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(forParamTokens[0][0],info));
 			return;
@@ -5076,7 +5121,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var bodyBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.ForLoop(initBlock[0],conditionBlock[0],incrementBlock[0],body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(forParamBlock[forParamBlock.length - 1])])));
 	}
 	,parseIfStmt: function(value,info) {
@@ -5087,7 +5132,7 @@ mnsl_parser_MNSLParser.prototype = {
 		while(_g < conditionTokens.length) {
 			var conditionTokens1 = conditionTokens[_g];
 			++_g;
-			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1);
+			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1,this.localNodeDefs);
 			var cond = c._runInternal();
 			if(cond.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(conditionTokens1[0],info));
@@ -5108,7 +5153,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var bodyBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.IfStatement(conditions[0],body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(conditionBlock[conditionBlock.length - 1])])));
 	}
 	,parseElseStmt: function(value,info) {
@@ -5118,7 +5163,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var bodyBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.ElseStatement(body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(bodyBlock[bodyBlock.length - 1])])));
 	}
 	,parseElseIfStmt: function(value,info) {
@@ -5134,7 +5179,7 @@ mnsl_parser_MNSLParser.prototype = {
 		while(_g < conditionTokens.length) {
 			var conditionTokens1 = conditionTokens[_g];
 			++_g;
-			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1);
+			var c = new mnsl_parser_MNSLParser(this.context,conditionTokens1,this.localNodeDefs);
 			var cond = c._runInternal();
 			if(cond.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(conditionTokens1[0],info));
@@ -5155,7 +5200,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var bodyBlock = this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.ElseIfStatement(conditions[0],body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(conditionBlock[conditionBlock.length - 1])])));
 	}
 	,parseVarDecl: function(value,info) {
@@ -5178,7 +5223,7 @@ mnsl_parser_MNSLParser.prototype = {
 		if(nextToken == "Assign") {
 			this.currentIndex++;
 			var valueBlock = this.getBlock(mnsl_tokenizer_MNSLToken.None,mnsl_tokenizer_MNSLToken.Semicolon(null),1);
-			var c = new mnsl_parser_MNSLParser(this.context,valueBlock);
+			var c = new mnsl_parser_MNSLParser(this.context,valueBlock,this.localNodeDefs);
 			var value = c._runInternal();
 			if(value.length == 0) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(valueBlock[0],info));
@@ -5201,7 +5246,7 @@ mnsl_parser_MNSLParser.prototype = {
 		var name = this.pop();
 		this.currentIndex--;
 		var assignBlock = this.getBlock(mnsl_tokenizer_MNSLToken.None,mnsl_tokenizer_MNSLToken.Semicolon(null),1);
-		var c = new mnsl_parser_MNSLParser(this.context,assignBlock);
+		var c = new mnsl_parser_MNSLParser(this.context,assignBlock,this.localNodeDefs);
 		var value = c._runInternal();
 		if(value.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(assignBlock[0],info));
@@ -5229,7 +5274,7 @@ mnsl_parser_MNSLParser.prototype = {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(this.tokens[this.currentIndex],null));
 			return;
 		}
-		var right = new mnsl_parser_MNSLParser(this.context,rightTokens)._runInternal();
+		var right = new mnsl_parser_MNSLParser(this.context,rightTokens,this.localNodeDefs)._runInternal();
 		if(right.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(rightTokens[0],null));
 			return;
@@ -5246,7 +5291,7 @@ mnsl_parser_MNSLParser.prototype = {
 			return;
 		}
 		var returnBlock = this.getBlock(mnsl_tokenizer_MNSLToken.None,mnsl_tokenizer_MNSLToken.Semicolon(null),1);
-		var c = new mnsl_parser_MNSLParser(this.context,returnBlock);
+		var c = new mnsl_parser_MNSLParser(this.context,returnBlock,this.localNodeDefs);
 		var ret = c._runInternal();
 		if(ret.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(returnBlock[0],info));
@@ -5307,7 +5352,7 @@ mnsl_parser_MNSLParser.prototype = {
 		while(_g < paramsTokens.length) {
 			var paramTokens = paramsTokens[_g];
 			++_g;
-			var c = new mnsl_parser_MNSLParser(this.context,paramTokens);
+			var c = new mnsl_parser_MNSLParser(this.context,paramTokens,this.localNodeDefs);
 			var name1 = c.getCurrentTokenValue();
 			if(name1 == null) {
 				this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(paramTokens[0],info));
@@ -5343,7 +5388,7 @@ mnsl_parser_MNSLParser.prototype = {
 			this.currentIndex++;
 		}
 		var bodyBlock = this.peekCurrentTokenType(0) != "LeftBrace" ? [mnsl_tokenizer_MNSLToken.Identifier("return",this.getTokenInfo(this.peekCurrentToken(0)))].concat(this.getBlock(mnsl_tokenizer_MNSLToken.None,mnsl_tokenizer_MNSLToken.Semicolon(null),1)) : this.getBlock(mnsl_tokenizer_MNSLToken.LeftBrace(null),mnsl_tokenizer_MNSLToken.RightBrace(null));
-		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock)._runInternal();
+		var body = new mnsl_parser_MNSLParser(this.context,bodyBlock,this.localNodeDefs)._runInternal();
 		this.append(mnsl_parser_MNSLNode.FunctionDecl(name,returnType,params,body,mnsl_parser_MNSLNodeInfo.fromTokenInfos([info,this.getTokenInfo(bodyBlock[bodyBlock.length - 1])])));
 	}
 	,parseArrowChain: function(token) {
@@ -5357,24 +5402,23 @@ mnsl_parser_MNSLParser.prototype = {
 			rightTokens.push(this.tokens[this.currentIndex]);
 			this.currentIndex++;
 		}
-		haxe_Log.trace(rightTokens,{ fileName : "mnsl/parser/MNSLParser.hx", lineNumber : 1040, className : "mnsl.parser.MNSLParser", methodName : "parseArrowChain"});
+		haxe_Log.trace(rightTokens,{ fileName : "mnsl/parser/MNSLParser.hx", lineNumber : 1083, className : "mnsl.parser.MNSLParser", methodName : "parseArrowChain"});
 		if(rightTokens.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(this.tokens[this.currentIndex],null));
 			return;
 		}
-		var right = this.context;
-		var _g = new haxe_ds_StringMap();
-		_g.h["_"] = left;
-		var right1 = new mnsl_parser_MNSLParser(right,rightTokens,_g)._runInternal();
-		if(right1.length == 0) {
+		var newNodeDefs = haxe_ds_StringMap.createCopy(this.localNodeDefs.h);
+		newNodeDefs.h["_"] = left;
+		var right = new mnsl_parser_MNSLParser(this.context,rightTokens,newNodeDefs)._runInternal();
+		if(right.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(rightTokens[0],null));
 			return;
 		}
-		if(right1.length > 1) {
-			this.context.emitError(mnsl_MNSLError.ParserUnexpectedExpression(right1[1],null));
+		if(right.length > 1) {
+			this.context.emitError(mnsl_MNSLError.ParserUnexpectedExpression(right[1],null));
 			return;
 		}
-		this.append(right1[0]);
+		this.append(right[0]);
 	}
 	,parseOperator: function(token) {
 		var precedence = this.getPrecedence(token);
@@ -5394,7 +5438,7 @@ mnsl_parser_MNSLParser.prototype = {
 			rightTokens.push(this.tokens[this.currentIndex]);
 			this.currentIndex++;
 		}
-		var right = new mnsl_parser_MNSLParser(this.context,rightTokens)._runInternal();
+		var right = new mnsl_parser_MNSLParser(this.context,rightTokens,this.localNodeDefs)._runInternal();
 		if(right.length == 0) {
 			this.context.emitError(mnsl_MNSLError.ParserUnexpectedToken(this.tokens[this.currentIndex],null));
 			return;
@@ -5594,6 +5638,8 @@ mnsl_parser_MNSLParser.prototype = {
 			return 6;
 		case 22:
 			return 3;
+		case 24:
+			return 0;
 		case 26:
 			return 2;
 		case 27:
@@ -5955,6 +6001,12 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				iterNode(iterOn);
 				stack.push({ name : "__mnsl_array_access", type : mnsl_analysis_MNSLAnalyser.getType(node), node : node, arrayIndex : iterIndex});
 				break;
+			case 23:
+				var comp = node.components;
+				var values = node.nodes;
+				var info = node.info;
+				stack.push({ name : "vec" + comp + "(...)", type : new mnsl_analysis_MNSLType("Vec" + comp), node : node, arrayIndex : null});
+				break;
 			default:
 				throw haxe_Exception.thrown("Invalid node for variable access: " + Std.string(node));
 			}
@@ -6095,7 +6147,16 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 				}
 				return;
 			}
-			if(varDef == null) {
+			if(varDef != null) {
+				currRetId = varDef.id;
+				currIsParam = varDef.isParam;
+				lastType = type;
+			} else if(node._hx_index == 23) {
+				var node1 = _gthis.emitNode(node,scope,inBody,at);
+				currRetId = node1;
+				currIsParam = true;
+				lastType = type;
+			} else {
 				var result = new Array(stack.length);
 				var _g = 0;
 				var _g1 = stack.length;
@@ -6104,10 +6165,6 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 					result[i] = stack[i].name;
 				}
 				throw haxe_Exception.thrown("Undefined variable: " + result.join("."));
-			} else {
-				currRetId = varDef.id;
-				currIsParam = varDef.isParam;
-				lastType = type;
 			}
 		};
 		iterNode(on);
@@ -6445,7 +6502,7 @@ mnsl_spirv_MNSLSPIRVPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 			var info = node.info;
 			return this.getConst(value,new mnsl_analysis_MNSLType("Bool"));
 		default:
-			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 752, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
+			haxe_Log.trace("Unhandled node",{ fileName : "mnsl/spirv/MNSLSPIRVPrinter.hx", lineNumber : 759, className : "mnsl.spirv.MNSLSPIRVPrinter", methodName : "emitNode", customParams : [node]});
 			return 0;
 		}
 	}

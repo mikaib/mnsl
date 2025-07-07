@@ -288,6 +288,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 case StructAccess(iterOn, iterField, iterType, iterInfo):
                     iterNode(iterOn);
                     stack.push({ name: iterField, type: iterType, node: node, arrayIndex: null });
+                case VectorCreation(comp, values, info):
+                    stack.push({ name: 'vec$comp(...)', type: MNSLType.fromString('Vec$comp'), node: node, arrayIndex: null });
                 case FunctionCall(iterName, iterArgs, iterRet, iterInfo):
                     stack.push({ name: '__mnsl_eval_tmp', type: iterRet, node: node, arrayIndex: null });
                 case ArrayAccess(iterOn, iterIndex, iterInfo):
@@ -447,12 +449,17 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return;
             }
 
-            if (varDef == null) {
-                throw "Undefined variable: " + stack.map(e -> e.name).join(".");
-            } else {
+            if (varDef != null) {
                 currRetId = varDef.id;
                 currIsParam = varDef.isParam;
                 lastType = type;
+            } else if (node.match(VectorCreation(_, _, _))) {
+                var node = emitNode(node, scope, inBody, at);
+                currRetId = node;
+                currIsParam = true;
+                lastType = type;
+            } else {
+                throw "Undefined variable: " + stack.map(e -> e.name).join(".");
             }
         }
 

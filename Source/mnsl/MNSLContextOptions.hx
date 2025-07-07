@@ -10,7 +10,7 @@ class MNSLContextOptions {
     public var optimizerPlugins: Array<MNSLOptimiserPlugin> = [
         new mnsl.optimiser.impl.MNSLOptimiseScalarVectorInit(),
         new mnsl.optimiser.impl.MNSLOptimiseSwizzleAssign(),
-        new mnsl.optimiser.impl.MNSLOptimiseSwizzleAccess()
+        new mnsl.optimiser.impl.MNSLOptimiseSwizzleAccess(),
     ];
     public var preprocessorDefines: Array<String> = [];
     public var preprocessorIncludeFunc: String->String->Null<String> = (path: String, root: String) -> {

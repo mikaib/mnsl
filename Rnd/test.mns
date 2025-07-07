@@ -1,16 +1,27 @@
-func multiply(x, y) -> x * y;
+// func add<T>(x: T, y: T) -> x + y;
+// func squared<T>(x: T) -> x * x;
+//
+// func main() {
+//     var x = 5 -> squared(_) -> add(_, 5) -> (_, _) -> squared(_) -> add(_, 10);
+// }
+
+// func double<T>(x: T) -> x * x;
+// func getX<T>(vec: T) -> vec.x;
+//
+// func main() {
+//     var v = (5, 5) -> double(_) -> getX(_) -> double(_);
+// }
+
+// func add<T>(x: T, y: T) -> x + y;
+// func squared<T>(x: T) -> x * x;
+//
+// func main() {
+//     var x = (5, 5) -> squared(_) -> add(_, 1);
+// }
+
+func add(x, y) -> x + y;
 func squared(x) -> x * x;
-func halfOf(x) -> x / 2;
 
 func main() {
-	var x = multiply(1, 2)->halfOf(_)->multiply(_, 3)->squared(_);
-	var y = 5 / 2;
-	var a1 = 5 / 2.0;
-	var a2 = 2.0 / 5;
-	var a3 = 2.0 / 5.0;
-	var v1 = (1,2) / 2;
-	var v2 = 2 / (1,2);
-	var v3 = (1,2) / (3,4);
-
-    var v = 5 / 2;
+    var x = (5, 5) -> squared(_) -> add(_, 1);
 }

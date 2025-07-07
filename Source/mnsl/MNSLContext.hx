@@ -401,6 +401,8 @@ class MNSLContext {
                 return "Invalid array access on " + on + " with index " + index + " at " + info;
             case AnalyserInvalidVectorArrayAccess(on, index, info):
                 return "Invalid vector array access on " + on + " with index " + index + " at " + info + " (index must be a constant integer!)";
+            case AnalyserFunctionInsideFunction(name, info):
+                return "Function " + name + " cannot be defined inside another function at " + info;
             case AnalyserMismatchingEitherType(limits, node):
                 var limitStr = "";
                 for (limitIdx in 0...limits.length) {

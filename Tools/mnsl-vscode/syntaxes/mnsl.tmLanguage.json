@@ -51,7 +51,7 @@
       "patterns": [
         {
           "name": "keyword.control.mnsl",
-          "match": "\\b(while|for|return|break|continue|if|else|in|of|as|end|include)\\b"
+          "match": "\\b(while|for|return|break|continue|if|else|in|of|as|end|include|inline)\\b"
         }
       ]
     },

@@ -42,7 +42,8 @@ class MNSLParser {
         "LessEqual",
         "And",
         "Or",
-        "Not"
+        "Not",
+        "Arrow"
     ];
 
     /**
@@ -176,7 +177,7 @@ class MNSLParser {
         }
 
         var accessBlock = getBlock(LeftBracket(null), RightBracket(null), 1);
-        var accessCtx = new MNSLParser(context, accessBlock);
+        var accessCtx = new MNSLParser(context, accessBlock, localNodeDefs);
         var access = accessCtx._runInternal();
 
         if (access.length == 0) {
@@ -346,7 +347,7 @@ class MNSLParser {
         var nodes: MNSLNodeChildren = [];
 
         for (part in parts) {
-            var parser = new MNSLParser(context, part);
+            var parser = new MNSLParser(context, part, localNodeDefs);
             var parsed = parser._runInternal();
 
             if (parsed.length == 0) {
@@ -383,7 +384,7 @@ class MNSLParser {
      */
     public function parseIdentifier(value: String, info: MNSLTokenInfo): Void {
         if (context.getDefine(value) != null) {
-            var parseCtx = new MNSLParser(context, context.getDefine(value));
+            var parseCtx = new MNSLParser(context, context.getDefine(value), localNodeDefs);
             var parsed = parseCtx._runInternal();
             if (parsed.length == 0) {
                 context.emitError(ParserUnexpectedToken(context.getDefine(value)[0], info));
@@ -400,7 +401,7 @@ class MNSLParser {
         }
 
         if (localNodeDefs.exists(value)) {
-            append(localNodeDefs.get(value));
+            append(deepCopy(localNodeDefs.get(value), MNSLNodeInfo.fromTokenInfo(info)));
             return;
         }
 
@@ -432,6 +433,48 @@ class MNSLParser {
         }
 
         append(MNSLNode.Identifier(value, MNSLType.TUnknown, MNSLNodeInfo.fromTokenInfo(info)));
+    }
+
+    /**
+     * Checks if a certain Dynamic value is an MNSLNode.
+     */
+    public static function isNode(value: Dynamic): Bool {
+        return value != null && Std.isOfType(value, MNSLNode) && (Type.getEnumName(Type.getEnum(value)) == "MNSLNode" || Type.getEnumName(Type.getEnum(value)) == "mnsl.parser.MNSLNode"); // should be ok for hx4 and hx5
+    }
+
+    /**
+     * Deep copy a node.
+     */
+    public function deepCopy(node: MNSLNode, newInfo: MNSLNodeInfo): MNSLNode {
+        var name = EnumValueTools.getName(node);
+        var params = EnumValueTools.getParameters(node);
+        var eenum = Type.getEnum(node);
+
+        for (pIdx in 0...params.length) {
+            var p: Dynamic = params[pIdx];
+            if (Std.isOfType(p, MNSLNodeInfo)) {
+                params[pIdx] = newInfo;
+            }
+
+            if (Std.isOfType(p, MNSLType)) {
+                params[pIdx] = p.copy();
+            }
+
+            if (isNode(p)) {
+                params[pIdx] = deepCopy(p, newInfo);
+            }
+
+            if (Std.isOfType(p, MNSLNodeChildren) && isNode(p[0])) {
+                var newChildren: MNSLNodeChildren = [];
+                for (child in ( p : Array<MNSLNode> )) {
+                    newChildren.push(deepCopy(child, newInfo));
+                }
+
+                params[pIdx] = newChildren;
+            }
+        }
+
+        return Type.createEnum(eenum, name, params);
     }
 
     /**
@@ -493,7 +536,7 @@ class MNSLParser {
         var conditions: MNSLNodeChildren = [];
 
         for (conditionTokens in conditionTokens) {
-            var c = new MNSLParser(context, conditionTokens);
+            var c = new MNSLParser(context, conditionTokens, localNodeDefs);
             var cond = c._runInternal();
             if (cond.length == 0) {
                 context.emitError(ParserUnexpectedToken(conditionTokens[0], info));
@@ -519,7 +562,7 @@ class MNSLParser {
         }
 
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(WhileLoop(
             conditions[0],
@@ -542,9 +585,9 @@ class MNSLParser {
             return;
         }
 
-        var initBlock = new MNSLParser(context, forParamTokens[0])._runInternal();
-        var conditionBlock = new MNSLParser(context, forParamTokens[1])._runInternal();
-        var incrementBlock = new MNSLParser(context, forParamTokens[2])._runInternal();
+        var initBlock = new MNSLParser(context, forParamTokens[0], localNodeDefs)._runInternal();
+        var conditionBlock = new MNSLParser(context, forParamTokens[1], localNodeDefs)._runInternal();
+        var incrementBlock = new MNSLParser(context, forParamTokens[2], localNodeDefs)._runInternal();
 
         if (initBlock.length == 0) {
             context.emitError(ParserUnexpectedToken(forParamTokens[0][0], info));
@@ -577,7 +620,7 @@ class MNSLParser {
         }
 
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(ForLoop(
             initBlock[0],
@@ -599,7 +642,7 @@ class MNSLParser {
         var conditions: MNSLNodeChildren = [];
 
         for (conditionTokens in conditionTokens) {
-            var c = new MNSLParser(context, conditionTokens);
+            var c = new MNSLParser(context, conditionTokens, localNodeDefs);
             var cond = c._runInternal();
             if (cond.length == 0) {
                 context.emitError(ParserUnexpectedToken(conditionTokens[0], info));
@@ -625,7 +668,7 @@ class MNSLParser {
         }
 
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(IfStatement(
             conditions[0],
@@ -647,7 +690,7 @@ class MNSLParser {
         }
 
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(ElseStatement(
             body,
@@ -672,7 +715,7 @@ class MNSLParser {
         var conditions: MNSLNodeChildren = [];
 
         for (conditionTokens in conditionTokens) {
-            var c = new MNSLParser(context, conditionTokens);
+            var c = new MNSLParser(context, conditionTokens, localNodeDefs);
             var cond = c._runInternal();
             if (cond.length == 0) {
                 context.emitError(ParserUnexpectedToken(conditionTokens[0], info));
@@ -698,7 +741,7 @@ class MNSLParser {
         }
 
         var bodyBlock = getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(ElseIfStatement(
             conditions[0],
@@ -737,7 +780,7 @@ class MNSLParser {
             currentIndex++;
 
             var valueBlock = getBlock(None, Semicolon(null), 1);
-            var c = new MNSLParser(context, valueBlock);
+            var c = new MNSLParser(context, valueBlock, localNodeDefs);
             var value = c._runInternal();
 
             if (value.length == 0) {
@@ -783,7 +826,7 @@ class MNSLParser {
         currentIndex--;
         var assignBlock = getBlock(None, Semicolon(null), 1);
 
-        var c = new MNSLParser(context, assignBlock);
+        var c = new MNSLParser(context, assignBlock, localNodeDefs);
         var value = c._runInternal();
 
         if (value.length == 0) {
@@ -826,7 +869,7 @@ class MNSLParser {
             return;
         }
 
-        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens)._runInternal();
+        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens, localNodeDefs)._runInternal();
         if (right.length == 0) {
             context.emitError(ParserUnexpectedToken(rightTokens[0], null));
             return;
@@ -869,7 +912,7 @@ class MNSLParser {
 
         var returnBlock = getBlock(None, Semicolon(null), 1);
 
-        var c = new MNSLParser(context, returnBlock);
+        var c = new MNSLParser(context, returnBlock, localNodeDefs);
         var ret = c._runInternal();
         if (ret.length == 0) {
             context.emitError(ParserUnexpectedToken(returnBlock[0], info));
@@ -952,6 +995,28 @@ class MNSLParser {
             return;
         }
 
+        var genericNames: Array<String> = [];
+        if (peekCurrentTokenType(0) == "Less") {
+            var genericsBlock = getBlock(Less(null), Greater(null));
+            var genericsTokens = splitBlock(genericsBlock, Comma(null));
+
+            for (t in genericsTokens) {
+                if (t.length == 0) {
+                    context.emitError(ParserUnexpectedToken(genericsBlock[0], info));
+                    continue;
+                }
+                if (t.length > 1) {
+                    context.emitError(ParserUnexpectedToken(t[1], info));
+                    continue;
+                }
+
+                var token = t[0];
+                var genericName = getTokenValue(token);
+
+                genericNames.push(genericName);
+            }
+        }
+
         var returnType: MNSLType = MNSLType.TUnknown;
 
         var params: MNSLFuncArgs = [];
@@ -959,7 +1024,7 @@ class MNSLParser {
         var paramsTokens = splitBlock(paramBlock, Comma(null));
 
         for (paramTokens in paramsTokens) {
-            var c = new MNSLParser(context, paramTokens);
+            var c = new MNSLParser(context, paramTokens, localNodeDefs);
 
             var name = c.getCurrentTokenValue();
             if (name == null) {
@@ -989,7 +1054,12 @@ class MNSLParser {
                 continue;
             }
 
-            paramType.setTypeStrUnsafe(type);
+            if (genericNames.contains(type)) {
+                paramType.setType(MNSLType.CreateTemplate(type, []));
+            } else {
+                paramType.setTypeStrUnsafe(type);
+            }
+
         }
 
         if (peekCurrentTokenType(0) == "Colon") {
@@ -1001,7 +1071,11 @@ class MNSLParser {
                 return;
             }
 
-            returnType.setTypeStrUnsafe(type);
+            if (genericNames.contains(type)) {
+                returnType.setType(MNSLType.CreateTemplate(type, []));
+            } else {
+                returnType.setTypeStrUnsafe(type);
+            }
         }
 
         if (peekCurrentTokenType(0) == "Arrow") {
@@ -1009,7 +1083,7 @@ class MNSLParser {
         }
 
         var bodyBlock = peekCurrentTokenType(0) != 'LeftBrace' ? [Identifier("return", getTokenInfo(peekCurrentToken(0)))].concat(getBlock(None, Semicolon(null), 1)): getBlock(LeftBrace(null), RightBrace(null));
-        var body = new MNSLParser(context, bodyBlock)._runInternal();
+        var body = new MNSLParser(context, bodyBlock, localNodeDefs)._runInternal();
 
         append(FunctionDecl(
             name,
@@ -1037,16 +1111,15 @@ class MNSLParser {
             currentIndex++;
         }
 
-        trace(rightTokens);
-
         if (rightTokens.length == 0) {
             context.emitError(ParserUnexpectedToken(tokens[currentIndex], null));
             return;
         }
 
-        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens, [
-            "_" => left
-        ])._runInternal();
+        var newNodeDefs = localNodeDefs.copy();
+        newNodeDefs.set("_", left);
+
+        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens, newNodeDefs)._runInternal();
 
         if (right.length == 0) {
             context.emitError(ParserUnexpectedToken(rightTokens[0], null));
@@ -1089,7 +1162,7 @@ class MNSLParser {
             currentIndex++;
         }
 
-        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens)._runInternal();
+        var right: MNSLNodeChildren = new MNSLParser(context, rightTokens, localNodeDefs)._runInternal();
         if (right.length == 0) {
             context.emitError(ParserUnexpectedToken(tokens[currentIndex], null));
             return;
@@ -1350,6 +1423,8 @@ class MNSLParser {
      */
     private function getPrecedence(op: MNSLToken): Int {
         switch (op) {
+            case MNSLToken.Arrow(_):
+                return 0;
             case MNSLToken.Or(_):
                 return 1;
             case MNSLToken.And(_):

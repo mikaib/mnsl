@@ -41,5 +41,6 @@ enum MNSLError {
     AnalyserInvalidReturnType(func: MNSLAnalyserFunction, expected: MNSLType, actual: MNSLType);
     AnalyserInvalidArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
     AnalyserInvalidVectorArrayAccess(on: MNSLNode, index: MNSLNode, info: MNSLNodeInfo);
+    AnalyserFunctionInsideFunction(name: String, info: MNSLNodeInfo);
     AnalyserMissingMainFunction;
 }
