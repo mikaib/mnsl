@@ -168,16 +168,6 @@ class MNSLSolver {
             return true;
         }
 
-        if (c.type.isBool() && c.type.isNumerical() && c._isBinaryOp) return true;
-        if (c.type.isNumerical() && c.mustBe.isBool()) {
-            addReplacement({
-                node: c.ofNode,
-                to: BinaryOp(c.ofNode, NotEqual(null), IntegerLiteralNode("0", null), MNSLType.TBool, null)
-            });
-
-            return true;
-        }
-
         if (c.type.isNumerical() && c.mustBe.isNumerical()) {
             if (c._isBinaryOp && c.type.isFloat()) {
                 return true;

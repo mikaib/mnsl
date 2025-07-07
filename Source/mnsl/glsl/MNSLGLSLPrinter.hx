@@ -178,7 +178,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 println(";");
 
             case BooleanLiteralNode(value, info):
-                print(value ? "1" : "0");
+                print(value ? "true" : "false");
 
             case Return(node, type, info):
                 var nodeIsVoid = (node == null || node.match(VoidNode(_)));

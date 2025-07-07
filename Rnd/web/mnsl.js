@@ -3589,21 +3589,6 @@ mnsl_analysis_MNSLSolver.prototype = {
 			return true;
 		}
 		var tmp;
-		if(c.type._type == "Bool") {
-			var _this = c.type;
-			tmp = _this._type == "Float" || _this._type == "Int";
-		} else {
-			tmp = false;
-		}
-		if(tmp && c._isBinaryOp) {
-			return true;
-		}
-		var _this = c.type;
-		if((_this._type == "Float" || _this._type == "Int") && c.mustBe._type == "Bool") {
-			this.addReplacement(new mnsl_analysis_MNSLReplaceCmd(c.ofNode,mnsl_parser_MNSLNode.BinaryOp(c.ofNode,mnsl_tokenizer_MNSLToken.NotEqual(null),mnsl_parser_MNSLNode.IntegerLiteralNode("0",null),new mnsl_analysis_MNSLType("Bool"),null)));
-			return true;
-		}
-		var tmp;
 		var _this = c.type;
 		if(_this._type == "Float" || _this._type == "Int") {
 			var _this = c.mustBe;
@@ -4563,7 +4548,7 @@ mnsl_glsl_MNSLGLSLPrinter.prototype = $extend(mnsl_MNSLPrinter.prototype,{
 		case 29:
 			var value = node.value;
 			var info = node.info;
-			this.print(value ? "1" : "0");
+			this.print(value ? "true" : "false");
 			break;
 		default:
 			throw haxe_Exception.thrown("Unknown node type: " + Std.string(node));
