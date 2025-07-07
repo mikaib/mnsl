@@ -2317,10 +2317,8 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			var res = this.execAtBody([modifiedNode],newScope);
 			this._solver.solve();
 			var finalNode = mnsl_parser_MNSLNode.FunctionCall(tName,args,usedReturnType,info);
-			var genericFunc = { name : name, ret : tReturnType, args : tArgs, declNode : res[0], callNode : finalNode, replaceCmdDecl : new mnsl_analysis_MNSLReplaceCmd(res[0],null), replaceCmdCall : new mnsl_analysis_MNSLReplaceCmd(finalNode,null)};
+			var genericFunc = { name : name, ret : tReturnType, args : tArgs, declNode : res[0], callNode : finalNode};
 			this._genericFuncs.push(genericFunc);
-			this._solver.addReplacement(genericFunc.replaceCmdDecl);
-			this._solver.addReplacement(genericFunc.replaceCmdCall);
 			if(f.isInlined) {
 				return this.createInlined(f,finalNode);
 			}
@@ -2756,26 +2754,44 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			return;
 		}
 	}
-	,applyReplacementsToNode: function(node,replacements,exceptions) {
-		exceptions = exceptions.slice();
-		var checkReplacement = true;
-		var _g = 0;
-		while(_g < exceptions.length) {
-			var e = exceptions[_g];
-			++_g;
-			if(Type.enumEq(e,node)) {
-				checkReplacement = false;
-			}
+	,deepCopyExceptions: function(exceptions) {
+		var newExceptions = exceptions.copy();
+		var key = newExceptions.keys();
+		while(key.hasNext()) {
+			var key1 = key.next();
+			var value = newExceptions.h[key1].slice();
+			newExceptions.h[key1] = value;
 		}
-		if(checkReplacement) {
-			var _g = 0;
-			while(_g < replacements.length) {
-				var r = replacements[_g];
-				++_g;
-				if(r.node == node) {
-					exceptions.push(node);
-					node = r.to;
+		return newExceptions;
+	}
+	,applyReplacementsToNode: function(node,replacements,exceptions) {
+		exceptions = this.deepCopyExceptions(exceptions);
+		var _g = 0;
+		var _g1 = replacements.length;
+		while(_g < _g1) {
+			var rIdx = _g++;
+			var r = replacements[rIdx];
+			if(!exceptions.h.hasOwnProperty(rIdx)) {
+				exceptions.h[rIdx] = [];
+			}
+			if(Std.string(r.node) == Std.string(node)) {
+				var shouldSkip = false;
+				var _g2 = 0;
+				var _g3 = exceptions.h[rIdx];
+				while(_g2 < _g3.length) {
+					var exception = _g3[_g2];
+					++_g2;
+					if(Std.string(exception) == Std.string(node)) {
+						shouldSkip = true;
+						break;
+					}
 				}
+				if(shouldSkip) {
+					continue;
+				}
+				exceptions.h[rIdx].push(node);
+				node = r.to;
+				break;
 			}
 		}
 		if(node == null) {
@@ -3074,19 +3090,22 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			}
 			var _g7 = f.callNode;
 			if(_g7._hx_index == 1) {
-				var args = _g7.args;
-				var ret = _g7.returnType;
-				var info = _g7.info;
-				f.replaceCmdCall.to = mnsl_parser_MNSLNode.FunctionCall(name1,args,ret,info);
+				var fName = _g7.name;
+				var fArgs = _g7.args;
+				var fRet = _g7.returnType;
+				var fInfo = _g7.info;
+				this._solver.addReplacement(new mnsl_analysis_MNSLReplaceCmd(f.callNode,mnsl_parser_MNSLNode.FunctionCall(name1,fArgs,fRet,fInfo)));
 			}
 			var _g8 = f.declNode;
 			if(_g8._hx_index == 0) {
-				var ret1 = _g8.returnType;
-				var args1 = _g8.$arguments;
-				var body = _g8.body;
-				var inlined = _g8.inlined;
-				var info1 = _g8.info;
-				f.replaceCmdDecl.to = mnsl_parser_MNSLNode.FunctionDecl(name1,ret1,args1,body,inlined,info1);
+				var fName1 = _g8.name;
+				var fRet1 = _g8.returnType;
+				var fArgs1 = _g8.$arguments;
+				var fBody = _g8.body;
+				var fInlined = _g8.inlined;
+				var fInfo1 = _g8.info;
+				var newFunc = mnsl_parser_MNSLNode.FunctionDecl(name1,fRet1,fArgs1,fBody,fInlined,fInfo1);
+				this._solver.addReplacement(new mnsl_analysis_MNSLReplaceCmd(f.declNode,newFunc));
 			}
 			existingFuncs.push(name1);
 		}
@@ -3107,7 +3126,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			}
 		}
 		var replacements = this._solver.getReplacements();
-		res = this.applyReplacements(res,replacements,[]);
+		res = this.applyReplacements(res,replacements,new haxe_ds_IntMap());
 		var _g = 0;
 		var _g1 = this._deferPostType;
 		while(_g < _g1.length) {

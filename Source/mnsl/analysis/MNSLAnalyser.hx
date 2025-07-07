@@ -1412,7 +1412,7 @@ class MNSLAnalyser {
      * @param body The body to apply replacements to.
      * @param replacements The replacements to apply.
      */
-    public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>) {
+    public function applyReplacements(body: MNSLNodeChildren, replacements: Array<MNSLReplaceCmd>, exceptions: Map<Int, Array<MNSLNode>>) {
         body = body.copy();
         for (i in 0...body.length) {
             body[i] = applyReplacementsToNode(body[i], replacements, exceptions);
@@ -1441,27 +1441,50 @@ class MNSLAnalyser {
     }
 
     /**
+     * Deep copy exceptions
+     * @param exceptions The exceptions to deep copy.
+     */
+    private function deepCopyExceptions(exceptions: Map<Int, Array<MNSLNode>>): Map<Int, Array<MNSLNode>> {
+        var newExceptions = exceptions.copy();
+        for (key in newExceptions.keys()) {
+            newExceptions.set(key, newExceptions.get(key).copy());
+        }
+        return newExceptions;
+    }
+
+    /**
      * Applies replacements to a single node.
      * @param node The node to apply replacements to.
      * @param replacements The replacements to apply.
      * @return The new node after applying the replacements.
      */
-    private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>, exceptions: Array<MNSLNode>): MNSLNode {
-        exceptions = exceptions.copy();
+    private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>, exceptions: Map<Int, Array<MNSLNode>>): MNSLNode {
+        exceptions = deepCopyExceptions(exceptions);
 
-        var checkReplacement = true;
-        for (e in exceptions) {
-            if (Type.enumEq(e, node)) checkReplacement = false;
-        }
-
-        if (checkReplacement) {
-             for (r in replacements) {
-                if (r.node == node) {
-                    exceptions.push(node);
-                    node = r.to;
-                }
+         for (rIdx in 0...replacements.length) {
+             var r = replacements[rIdx];
+             if (!exceptions.exists(rIdx)) {
+                    exceptions.set(rIdx, []);
              }
-        }
+
+             if (Std.string(r.node) == Std.string(node)) {
+                 var shouldSkip = false;
+                 for (exception in exceptions[rIdx]) {
+                     if (Std.string(exception) == Std.string(node)) {
+                         shouldSkip = true;
+                         break;
+                     }
+                 }
+
+                 if (shouldSkip) {
+                     continue;
+                 }
+
+                 exceptions[rIdx].push(node);
+                 node = r.to;
+                 break;
+            }
+         }
 
         if (node == null) {
             return null;
@@ -1724,6 +1747,27 @@ class MNSLAnalyser {
             var name = '${f.name}${f.args.length > 0 ? '_T' : ''}${f.args.map(a -> a.type).join('_T')}_RTT${f.ret}';
             if (existingFuncs.contains(name)) {
                 _toInsert = _toInsert.filter(ins -> ins.node != f.declNode);
+            }
+
+            switch (f.callNode) {
+                case FunctionCall(fName, fArgs, fRet, fInfo):
+                    _solver.addReplacement({
+                        node: f.callNode,
+                        to: FunctionCall(name, fArgs, fRet, fInfo)
+                    });
+                default:
+                    null;
+            }
+
+            switch (f.declNode) {
+                case FunctionDecl(fName, fRet, fArgs, fBody, fInlined, fInfo):
+                    var newFunc = FunctionDecl(name, fRet, fArgs, fBody, fInlined, fInfo);
+                    _solver.addReplacement({
+                        node: f.declNode,
+                        to: newFunc
+                    });
+                default:
+                    null;
             }
 
             existingFuncs.push(name);
