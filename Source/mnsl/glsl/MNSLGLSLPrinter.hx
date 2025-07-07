@@ -93,7 +93,7 @@ class MNSLGLSLPrinter extends MNSLPrinter {
         }
 
         switch (node) {
-            case FunctionDecl(name, returnType, arguments, body, info):
+            case FunctionDecl(name, returnType, arguments, body, inlined, info):
                 printlnIndented(
                     "{0} {1}({2}) {",
                    returnType.isArray() ? '${getTypeStr(returnType)}[${returnType.getArraySize()}]' : getTypeStr(returnType),

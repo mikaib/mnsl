@@ -6,7 +6,7 @@ import mnsl.tokenizer.MNSLToken;
 
 enum MNSLNode {
     // functions
-    FunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo);
+    FunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, inlined: Bool, info: MNSLNodeInfo);
     FunctionCall(name: String, args: MNSLNodeChildren, returnType: MNSLType, info: MNSLNodeInfo);
     Return(value: MNSLNode, type: MNSLType, info: MNSLNodeInfo);
 

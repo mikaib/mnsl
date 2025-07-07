@@ -644,7 +644,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     getConst(Std.parseInt(value), MNSLType.TInt);
                 case BooleanLiteralNode(value, info):
                     getConst(value, MNSLType.TBool);
-                case FunctionDecl(name, returnType, arguments, body, info):
+                case FunctionDecl(name, returnType, arguments, body, inlined, info):
                     getFunctionType(returnType, [for (arg in arguments) arg.type]);
                 case VariableDecl(name, type, value, info):
                     getPtr(getType(type), MNSLSPIRVStorageClass.Function);
@@ -714,8 +714,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return emitVariableAssign(name, value, info, scope, inBody, at);
             case Identifier(name, type, info):
                 return emitIdentifier(name, type, info, scope, inBody, at);
-            case FunctionDecl(name, returnType, arguments, body, info):
-                return emitFunctionDecl(name, returnType, arguments, body, info, scope, inBody, at);
+            case FunctionDecl(name, returnType, arguments, body, inlined, info):
+                return emitFunctionDecl(name, returnType, arguments, body, inlined, info, scope, inBody, at);
             case FunctionCall(name, args, returnType, info):
                 return emitFunctionCall(name, args, returnType, info, scope, inBody, at);
             case BinaryOp(left, op, right, type, info):
@@ -1321,7 +1321,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return resultId;
     }
 
-    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+    public function emitFunctionDecl(name: String, returnType: MNSLType, arguments: MNSLFuncArgs, body: MNSLNodeChildren, inlined: Bool, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
         scope = scope.copy();
 
         var typeId = getFunctionType(returnType, [for (arg in arguments) arg.type]);

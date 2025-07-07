@@ -15,6 +15,7 @@ class MNSLParser {
     private var ast: MNSLNodeChildren;
     private var dataList: Array<MNSLShaderData>;
     private var localNodeDefs: Map<String, MNSLNode>;
+    private var doInline: Int;
 
     private var keywords: Array<String> = [
         "func",
@@ -25,7 +26,8 @@ class MNSLParser {
         "while",
         "for",
         "break",
-        "continue"
+        "continue",
+        "inline"
     ];
 
     private var operators: Array<String> = [
@@ -57,6 +59,7 @@ class MNSLParser {
         this.context = context;
         this.dataList = [];
         this.localNodeDefs = localNodeDefs ?? [];
+        this.doInline = 0;
     }
 
     /**
@@ -135,6 +138,8 @@ class MNSLParser {
 
                     context.emitError(ParserInvalidToken(token));
             }
+
+            doInline--;
         }
 
         return ast;
@@ -484,6 +489,9 @@ class MNSLParser {
      */
     public function parseKeyword(value: String, info: MNSLTokenInfo): Void {
         switch (value) {
+            case "inline":
+                doInline = 2;
+
             case "func":
                 parseFunctionDecl(value, info);
 
@@ -1095,6 +1103,7 @@ class MNSLParser {
             returnType,
             params,
             body,
+            doInline > 0,
             MNSLNodeInfo.fromTokenInfos([info, getTokenInfo(bodyBlock[bodyBlock.length - 1])])
         ));
     }

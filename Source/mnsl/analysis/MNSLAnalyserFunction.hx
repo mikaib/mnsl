@@ -14,6 +14,7 @@ class MNSLAnalyserFunction {
     public var node: MNSLNode = null;
     public var atIdx: Int = -1;
     public var isTemplate: Bool = false;
+    public var isInlined: Bool = false;
 
     @:to
     public function toString(): String {

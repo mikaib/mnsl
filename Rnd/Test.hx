@@ -40,9 +40,9 @@ class Test {
             shaderType: GLSL_SHADER_TYPE_VERTEX
         });
 
-        var spirv = shader.emitSPIRV({
-            shaderType: SPIRV_SHADER_TYPE_FRAGMENT
-        });
+//        var spirv = shader.emitSPIRV({
+//            shaderType: SPIRV_SHADER_TYPE_FRAGMENT
+//        });
 
         Sys.println("\n" + GREEN + BOLD + 'Successfully compiled with ' +
             (shader.getWarnings().length > 0 ? YELLOW : GREEN) +
@@ -51,13 +51,13 @@ class Test {
 //        Sys.println(MAGENTA + BOLD + "SPIR-V Output:" + RESET);
 //        showBin(spirv);
 //
-        File.saveBytes("rnd_spirv.spv", spirv);
+//        File.saveBytes("rnd_spirv.spv", spirv);
         File.saveContent("rnd_glsl.glsl", glsl);
 //
-        Sys.command('spirv-cross rnd_spirv.spv --version 450 --output rnd_spirv.glsl');
-        Sys.command('spirv-cross rnd_spirv.spv --msl --output rnd_spirv.msl');
-        Sys.command('spirv-cross rnd_spirv.spv --hlsl --output rnd_spirv.hlsl');
-        Sys.command('spirv-dis rnd_spirv.spv -o rnd_spirv.spvasm');
+//        Sys.command('spirv-cross rnd_spirv.spv --version 450 --output rnd_spirv.glsl');
+//        Sys.command('spirv-cross rnd_spirv.spv --msl --output rnd_spirv.msl');
+//        Sys.command('spirv-cross rnd_spirv.spv --hlsl --output rnd_spirv.hlsl');
+//        Sys.command('spirv-dis rnd_spirv.spv -o rnd_spirv.spvasm');
 //
 //        Sys.println(MAGENTA + BOLD + "SPIR-V Assembly Output:" + RESET);
 //        var spirvAsm = File.getContent("rnd_spirv.spvasm");
@@ -67,9 +67,9 @@ class Test {
 //        shader.printAST(shader.getAST());
 //        Sys.println("");
 //
-        Sys.println(MAGENTA + BOLD + "SPIR-V GLSL Output:" + RESET);
-        var spirvGlsl = File.getContent("rnd_spirv.glsl");
-        Sys.println(spirvGlsl);
+//        Sys.println(MAGENTA + BOLD + "SPIR-V GLSL Output:" + RESET);
+//        var spirvGlsl = File.getContent("rnd_spirv.glsl");
+//        Sys.println(spirvGlsl);
 
         Sys.println(MAGENTA + BOLD + "GLSL Output:" + RESET);
         Sys.println(glsl);

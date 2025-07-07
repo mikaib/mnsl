@@ -425,8 +425,8 @@ class MNSLAnalyser {
      */
     public function execAtNodePre(node: MNSLNode, ctx: MNSLAnalyserContext): Null<MNSLNode> {
         switch (node) {
-            case FunctionDecl(name, returnType, args, _, info):
-                return analyseFunctionDeclPre(node, name, returnType, args, ctx, info);
+            case FunctionDecl(name, returnType, args, _, inlined, info):
+                return analyseFunctionDeclPre(node, name, returnType, args, inlined, ctx, info);
 
             default:
                 return node;
@@ -523,7 +523,7 @@ class MNSLAnalyser {
      * @param returnType The return type of the function.
      * @param args The arguments of the function.
      */
-    public function analyseFunctionDeclPre(node: MNSLNode, name: String, returnType: MNSLType, args: MNSLFuncArgs, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
+    public function analyseFunctionDeclPre(node: MNSLNode, name: String, returnType: MNSLType, args: MNSLFuncArgs, inlined: Bool, ctx: MNSLAnalyserContext, info: MNSLNodeInfo): MNSLNode {
         if (ctx.currentFunction != null) {
             _context.emitError(AnalyserFunctionInsideFunction(name, info));
         }
@@ -550,6 +550,7 @@ class MNSLAnalyser {
             hasImplementation: true,
             internal: false,
             node: node,
+            isInlined: inlined,
             atIdx: _ast.indexOf(node) + 1,
             scope: ctx.copy(), // used when we re-analyse the function with specific type params. doing this will avoid illegal access to things in the scope that should not be accessible.
             isTemplate: args.filter(a -> a.type.isTemplate()).length > 0 || returnType.isTemplate()
@@ -970,8 +971,8 @@ class MNSLAnalyser {
 
             var copiedNode = deepCopy(f.node, info);
             var modifiedNode = switch(copiedNode) {
-                case FunctionDecl(_, _, _, body, _):
-                    FunctionDecl(tName, tReturnType, tArgs, body, info);
+                case FunctionDecl(_, _, _, body, inlined, _):
+                    FunctionDecl(tName, tReturnType, tArgs, body, inlined, info);
                 default:
                     return copiedNode;
             }
@@ -981,10 +982,6 @@ class MNSLAnalyser {
             ], f.scope);
 
             _solver.solve();
-            _toInsert.push({
-                at: f.atIdx + id,
-                node: res[0]
-            });
 
             var finalNode = FunctionCall(tName, args, usedReturnType, info);
             _genericFuncs.push({
@@ -995,10 +992,27 @@ class MNSLAnalyser {
                 callNode: finalNode,
             });
 
+            if (f.isInlined) {
+                return createInlined(f, finalNode);
+            }
+
+            _toInsert.push({
+                at: f.atIdx + id,
+                node: res[0]
+            });
+
             return finalNode;
         }
 
-        return node;
+        return f.isInlined ? createInlined(f, node) : node;
+    }
+
+    /**
+     * Create an inlined function call.
+     * @param f The function to inline.
+     */
+    public function createInlined(f: MNSLAnalyserFunction, call: MNSLNode): MNSLNode {
+        return call; // TODO: implement inlining
     }
 
     /**
@@ -1497,7 +1511,7 @@ class MNSLAnalyser {
         if (node == null) return;
 
         switch (node) {
-            case FunctionDecl(name, returnType, args, body, info):
+            case FunctionDecl(name, returnType, args, body, inlined, info):
                 var func: MNSLAnalyserFunction = {
                     name: name,
                     returnType: returnType,
@@ -1620,7 +1634,7 @@ class MNSLAnalyser {
                     if (inFunction != null && name == inFunction.name) {
                         _context.emitError(AnalyserRecursiveFunction(name, [name, name], info));
                     }
-                case FunctionDecl(name, returnType, args, body, info):
+                case FunctionDecl(name, returnType, args, body, inlined, info):
                     if (inFunction != null && name == inFunction.name) {
                         _context.emitError(AnalyserRecursiveFunction(name, [name], info));
                     } else {
@@ -1705,10 +1719,10 @@ class MNSLAnalyser {
             }
 
             switch (f.declNode) {
-                case FunctionDecl(_, ret, args, body, info):
+                case FunctionDecl(_, ret, args, body, inlined, info):
                     _solver.addReplacement({
                         node: f.declNode,
-                        to: FunctionDecl(name, ret, args, body, info),
+                        to: FunctionDecl(name, ret, args, body, inlined, info),
                     });
                 default: null;
             }

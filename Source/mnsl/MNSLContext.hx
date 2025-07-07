@@ -90,7 +90,7 @@ class MNSLContext {
             var name = EnumValueTools.getName(node);
 
             switch(node) {
-                case FunctionDecl(funcName, returnType, params, body, info):
+                case FunctionDecl(funcName, returnType, params, body, inlined, info):
                     log(indentStr + name + '[$funcName: $returnType]');
                     printAST(body, indent + 1);
                 case FunctionCall(funcName, args, type, info):
