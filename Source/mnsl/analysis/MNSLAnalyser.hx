@@ -1015,7 +1015,7 @@ class MNSLAnalyser {
             }
 
             _toInsert.push({
-                at: f.atIdx + id,
+                at: f.atIdx,
                 node: res[0]
             });
 
