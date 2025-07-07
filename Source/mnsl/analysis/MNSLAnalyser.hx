@@ -19,7 +19,7 @@ class MNSLAnalyser {
     private var _globalCtx: MNSLAnalyserContext;
     private var _genericCounter: Int;
     private var _toInsert: Array<{ at: Int, node: MNSLNode }>;
-    private var _genericFuncs: Array<{ declNode: MNSLNode, callNode: MNSLNode, name: String, ret: MNSLType, args: MNSLFuncArgs }>;
+    private var _genericFuncs: Array<MNSLGenericFunc>;
     private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop", "IfStatement", "ElseIfStatement", "ElseStatement"];
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
@@ -579,6 +579,17 @@ class MNSLAnalyser {
             return node;
         }
 
+        if (ctx.templates.exists(type.toString())) {
+            var template = ctx.templates.get(type.toString());
+            type.setType(MNSLType.TUnknown);
+
+            _solver.addConstraint({
+                type: type,
+                mustBe: template,
+                ofNode: value
+            });
+        }
+
         _solver.addConstraint({
             type: getType(value),
             mustBe: type,
@@ -977,20 +988,37 @@ class MNSLAnalyser {
                     return copiedNode;
             }
 
+            var newScope = f.scope.copy();
+            for (key in templates.keys()) {
+                newScope.templates.set(key, templates.get(key));
+            }
+
             var res = execAtBody([
                 modifiedNode
-            ], f.scope);
+            ], newScope);
 
             _solver.solve();
 
             var finalNode = FunctionCall(tName, args, usedReturnType, info);
-            _genericFuncs.push({
+            var genericFunc: MNSLGenericFunc = {
                 name: name,
                 ret: tReturnType,
                 args: tArgs,
                 declNode: res[0],
                 callNode: finalNode,
-            });
+                replaceCmdDecl: {
+                    node: res[0],
+                    to: null
+                },
+                replaceCmdCall: {
+                    node: finalNode,
+                    to: null
+                }
+            };
+
+            _genericFuncs.push(genericFunc);
+            _solver.addReplacement(genericFunc.replaceCmdDecl);
+            _solver.addReplacement(genericFunc.replaceCmdCall);
 
             if (f.isInlined) {
                 return createInlined(f, finalNode);
@@ -1446,7 +1474,6 @@ class MNSLAnalyser {
         }
 
         if (node == null) {
-            checkTypeValidity(node);
             return null;
         }
 
@@ -1711,19 +1738,13 @@ class MNSLAnalyser {
 
             switch (f.callNode) {
                 case FunctionCall(_, args, ret, info):
-                    _solver.addReplacement({
-                        node: f.callNode,
-                        to: FunctionCall(name, args, ret, info),
-                    });
+                    f.replaceCmdCall.to = FunctionCall(name, args, ret, info);
                 default: null;
             }
 
             switch (f.declNode) {
                 case FunctionDecl(_, ret, args, body, inlined, info):
-                    _solver.addReplacement({
-                        node: f.declNode,
-                        to: FunctionDecl(name, ret, args, body, inlined, info),
-                    });
+                    f.replaceCmdDecl.to = FunctionDecl(name, ret, args, body, inlined, info);
                 default: null;
             }
 

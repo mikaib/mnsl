@@ -1934,7 +1934,16 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			this._context.emitError(mnsl_MNSLError.AnalyserVariableOutsideFunction(name,node,info));
 			return node;
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,type,null,null,null,null,null,null));
+		var this1 = ctx.templates;
+		var key = type.toString();
+		if(Object.prototype.hasOwnProperty.call(this1.h,key)) {
+			var this1 = ctx.templates;
+			var key = type.toString();
+			var template = this1.h[key];
+			type.setType(new mnsl_analysis_MNSLType("Unknown"));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,value,template,null,null,null,null,null,null,null));
+		}
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,type,null,null,null,null,null,null,null));
 		ctx.variables.push(new mnsl_analysis_MNSLAnalyserVariable(name,type,null,null));
 		return node;
 	}
@@ -2058,7 +2067,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 						this._context.emitError(mnsl_MNSLError.AnalyserInvalidVectorComponent(vecAccess.comp,info));
 						return node;
 					}
-					this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null));
+					this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null,null));
 					return mnsl_parser_MNSLNode.VariableAssign(mnsl_parser_MNSLNode.StructAccess(accessOn,this._vectorAccess.h[field].char,type,structInfo),value,info);
 				} else {
 					this._context.emitError(mnsl_MNSLError.AnalyserUndeclaredVariable("VectorAccess(" + Std.string(t) + "." + field + ")",info));
@@ -2075,7 +2084,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				var tmp = this._solver;
 				var tmp1 = mnsl_analysis_MNSLAnalyser.getType(value);
 				var tmp2 = t._arrayBaseType;
-				tmp.addConstraint(new mnsl_analysis_MNSLConstraint(tmp1,value,tmp2 != null ? tmp2 : t,null,null,null,null,null,null));
+				tmp.addConstraint(new mnsl_analysis_MNSLConstraint(tmp1,value,tmp2 != null ? tmp2 : t,null,null,null,null,null,null,null));
 				return node;
 			}
 			if(t._type == "Mat" + 2 || t._type == "Mat" + 3 || t._type == "Mat" + 4) {
@@ -2095,11 +2104,11 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				default:
 					type = -1;
 				}
-				tmp.addConstraint(new mnsl_analysis_MNSLConstraint(_g,value,new mnsl_analysis_MNSLType("Vec" + type,false,[],false),null,null,null,null,null,null));
+				tmp.addConstraint(new mnsl_analysis_MNSLConstraint(_g,value,new mnsl_analysis_MNSLType("Vec" + type,false,[],false),null,null,null,null,null,null,null));
 				return node;
 			}
 			if(t._type == "Vec" + 2 || t._type == "Vec" + 3 || t._type == "Vec" + 4) {
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null));
+				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null,null));
 				return node;
 			}
 			this._context.emitError(mnsl_MNSLError.AnalyserInvalidAccess(node));
@@ -2107,7 +2116,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		case 23:
 			var comp = on.components;
 			var values = on.nodes;
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Vec" + comp,false,[],false),null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,new mnsl_analysis_MNSLType("Vec" + comp,false,[],false),null,null,null,null,null,null,null));
 			var blockBody = [];
 			var componentOrder = ["x","y","z","w"];
 			var _g = 0;
@@ -2123,7 +2132,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		if(v == null) {
 			return node;
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,v.type,null,null,null,null,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,v.type,null,null,null,null,null,null,null));
 		return node;
 	}
 	,analyseIdentifierPost: function(node,name,type,ctx,info) {
@@ -2162,7 +2171,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 					this._context.emitError(mnsl_MNSLError.AnalyserInvalidVectorComponent(this._vectorAccess.h[parts[0]].comp,info));
 					return node;
 				}
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null));
+				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,new mnsl_analysis_MNSLType("Float"),null,null,null,null,null,null,null));
 				return mnsl_parser_MNSLNode.StructAccess(on,this._vectorAccess.h[parts[0]].char,type,info);
 			}
 			var newComps = [];
@@ -2195,14 +2204,14 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				}
 				newComps.push(mnsl_parser_MNSLNode.StructAccess(on,this._vectorAccess.h[c].char,type,info));
 			}
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,new mnsl_analysis_MNSLType("Vec" + newComps.length,false,[],false),null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,new mnsl_analysis_MNSLType("Vec" + newComps.length,false,[],false),null,null,null,null,null,null,null));
 			return mnsl_parser_MNSLNode.VectorCreation(newComps.length,newComps,info);
 		}
 		var v = this.getVariableOf(node,info,ctx);
 		if(v == null) {
 			return node;
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,v.type,null,null,null,null,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,v.type,null,null,null,null,null,null,null));
 		return node;
 	}
 	,analyseFunctionCallPost: function(node,name,args,returnType,ctx,info) {
@@ -2248,12 +2257,12 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 					isTemplated = true;
 				}
 				var _this3 = f.args[i].type;
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argType,arg,templates_h[!(StringTools.startsWith(_this3._type,"Template<") && StringTools.endsWith(_this3._type,">")) ? null : HxOverrides.substr(_this3._type,9,_this3._type.length - 10)],null,null,null,null,null,null));
+				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argType,arg,templates_h[!(StringTools.startsWith(_this3._type,"Template<") && StringTools.endsWith(_this3._type,">")) ? null : HxOverrides.substr(_this3._type,9,_this3._type.length - 10)],null,null,null,null,null,null,null));
 				var _this4 = f.args[i].type;
 				argTypes.push(templates_h[!(StringTools.startsWith(_this4._type,"Template<") && StringTools.endsWith(_this4._type,">")) ? null : HxOverrides.substr(_this4._type,9,_this4._type.length - 10)]);
 				continue;
 			}
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argType,arg,f.args[i].type,null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argType,arg,f.args[i].type,null,null,null,null,null,null,null));
 			argTypes.push(f.args[i].type);
 		}
 		var usedReturnType = f.returnType;
@@ -2273,7 +2282,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		} else if(isTemplated && !f.returnType._userDefined && !f.internal) {
 			usedReturnType = new mnsl_analysis_MNSLType("Unknown");
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(returnType,node,usedReturnType,null,null,null,null,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(returnType,node,usedReturnType,null,null,null,null,null,null,null));
 		f.usages.push(new mnsl_analysis_MNSLAnalyserFunctionUsage(argTypes,usedReturnType,node));
 		if(isTemplated && !f.internal) {
 			var id = this._genericCounter++;
@@ -2285,10 +2294,10 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			while(_g < _g1) {
 				var idx = _g++;
 				var t = new mnsl_analysis_MNSLType("Unknown");
-				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argTypes[idx],args[idx],t,null,null,null,null,null,null));
+				this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(argTypes[idx],args[idx],t,null,null,null,null,null,null,null));
 				tArgs.push(new mnsl_analysis_MNSLFuncArg(f.args[idx].name,t));
 			}
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(usedReturnType,node,tReturnType,null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(usedReturnType,node,tReturnType,null,null,null,null,null,null,null));
 			var copiedNode = this.deepCopy(f.node,info);
 			var modifiedNode;
 			if(copiedNode._hx_index == 0) {
@@ -2298,42 +2307,38 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			} else {
 				return copiedNode;
 			}
-			var res = this.execAtBody([modifiedNode],f.scope);
+			var newScope = f.scope.copy();
+			var key_current = 0;
+			var key_array = Object.keys(templates_h);
+			while(key_current < key_array.length) {
+				var key = key_array[key_current++];
+				newScope.templates.h[key] = templates_h[key];
+			}
+			var res = this.execAtBody([modifiedNode],newScope);
 			this._solver.solve();
 			var finalNode = mnsl_parser_MNSLNode.FunctionCall(tName,args,usedReturnType,info);
 			this._genericFuncs.push({ name : name, ret : tReturnType, args : tArgs, declNode : res[0], callNode : finalNode});
 			if(f.isInlined) {
-				return this.createInlined(f);
+				return this.createInlined(f,finalNode);
 			}
 			this._toInsert.push({ at : f.atIdx + id, node : res[0]});
 			return finalNode;
 		}
 		if(f.isInlined) {
-			return this.createInlined(f);
+			return this.createInlined(f,node);
 		} else {
 			return node;
 		}
 	}
-	,createInlined: function(f) {
-		var _g = f.node;
-		if(_g._hx_index == 0) {
-			var name = _g.name;
-			var returnType = _g.returnType;
-			var args = _g.$arguments;
-			var body = _g.body;
-			var inlined = _g.inlined;
-			var info = _g.info;
-			return mnsl_parser_MNSLNode.Block(body,null);
-		} else {
-			return mnsl_parser_MNSLNode.Block([],null);
-		}
+	,createInlined: function(f,call) {
+		return call;
 	}
 	,analyseReturnPost: function(node,value,type,ctx,info) {
 		if(ctx.currentFunction == null) {
 			this._context.emitError(mnsl_MNSLError.AnalyserReturnOutsideFunction(info));
 			return node;
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,ctx.currentFunction.returnType,null,null,null,null,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(value),value,ctx.currentFunction.returnType,null,null,null,null,null,null,null));
 		return node;
 	}
 	,analyseVectorCreationPost: function(node,comp,nodes,ctx,info) {
@@ -2482,13 +2487,13 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		default:
 			opName = "<->";
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,leftType,false,true,null,true,opName,null));
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,rightType,false,true,true,null,opName,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,leftType,false,true,null,true,opName,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,rightType,false,true,true,null,opName,null,null));
 		var resType;
 		switch(op._hx_index) {
 		case 17:
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(leftType,left,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(rightType,right,new mnsl_analysis_MNSLType("Float"),true,null,null,null,null,null,null));
 			resType = rightType;
 			break;
 		case 22:
@@ -2518,11 +2523,11 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 		default:
 			resType = rightType;
 		}
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,resType,null,null,null,null,null,right));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(type,node,resType,null,null,null,null,null,right,null));
 		return node;
 	}
 	,analyseConditionalPost: function(node,cond,body,ctx,info) {
-		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(cond),cond,new mnsl_analysis_MNSLType("Bool"),null,null,null,null,null,null));
+		this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(cond),cond,new mnsl_analysis_MNSLType("Bool"),null,null,null,null,null,null,null));
 		return node;
 	}
 	,analyseUnaryOpPost: function(node,op,value,ctx,info) {
@@ -2621,7 +2626,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			}
 		}
 		if(t._type == "Mat" + 2 || t._type == "Mat" + 3 || t._type == "Mat" + 4) {
-			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(index),index,new mnsl_analysis_MNSLType("Int"),null,null,null,null,null,null));
+			this._solver.addConstraint(new mnsl_analysis_MNSLConstraint(mnsl_analysis_MNSLAnalyser.getType(index),index,new mnsl_analysis_MNSLType("Int"),null,null,null,null,null,null,null));
 		}
 		return node;
 	}
@@ -2771,7 +2776,6 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			}
 		}
 		if(node == null) {
-			this.checkTypeValidity(node);
 			return null;
 		}
 		var e = Type.getEnum(node);
@@ -3136,6 +3140,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 var mnsl_analysis_MNSLAnalyserContext = function() {
 	this.functions = [];
 	this.variables = [];
+	this.templates = new haxe_ds_StringMap();
 	this.currentFunction = null;
 	this.currentIsLoop = false;
 };
@@ -3145,6 +3150,7 @@ mnsl_analysis_MNSLAnalyserContext.prototype = {
 		var x = new mnsl_analysis_MNSLAnalyserContext();
 		x.functions = this.functions.slice();
 		x.variables = this.variables.slice();
+		x.templates = haxe_ds_StringMap.createCopy(this.templates.h);
 		x.currentFunction = this.currentFunction;
 		x.currentIsLoop = this.currentIsLoop;
 		return x;
@@ -3266,7 +3272,8 @@ mnsl_analysis_MNSLAnalyserVariable.prototype = {
 	}
 	,__class__: mnsl_analysis_MNSLAnalyserVariable
 };
-var mnsl_analysis_MNSLConstraint = function(type,ofNode,mustBe,_optional,_isBinaryOp,_isLeftSide,_isRightSide,_operationOperator,_mustBeOfNode) {
+var mnsl_analysis_MNSLConstraint = function(type,ofNode,mustBe,_optional,_isBinaryOp,_isLeftSide,_isRightSide,_operationOperator,_mustBeOfNode,_castable) {
+	this._castable = true;
 	this._mustBeOfNode = null;
 	this._operationOperator = "";
 	this._isRightSide = false;
@@ -3293,6 +3300,9 @@ var mnsl_analysis_MNSLConstraint = function(type,ofNode,mustBe,_optional,_isBina
 	}
 	if(_mustBeOfNode != null) {
 		this._mustBeOfNode = _mustBeOfNode;
+	}
+	if(_castable != null) {
+		this._castable = _castable;
 	}
 };
 mnsl_analysis_MNSLConstraint.__name__ = "mnsl.analysis.MNSLConstraint";
@@ -3455,10 +3465,13 @@ mnsl_analysis_MNSLSolver.prototype = {
 		return false;
 	}
 	,tryCastType: function(node,from,to) {
-		var c = new mnsl_analysis_MNSLConstraint(from,node,to,null,null,null,null,null,null);
+		var c = new mnsl_analysis_MNSLConstraint(from,node,to,null,null,null,null,null,null,null);
 		return this.tryCast(c);
 	}
 	,tryCast: function(c) {
+		if(!c._castable) {
+			return false;
+		}
 		if(c.type._arrayBaseType != null || c.mustBe._arrayBaseType != null) {
 			return false;
 		}

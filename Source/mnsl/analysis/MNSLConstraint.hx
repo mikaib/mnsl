@@ -13,6 +13,7 @@ class MNSLConstraint {
     public var _isRightSide: Bool = false;
     public var _operationOperator: String = '';
     public var _mustBeOfNode: MNSLNode = null;
+    public var _castable: Bool = true;
 
     @:to
     public function toString(): String {

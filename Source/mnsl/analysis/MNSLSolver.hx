@@ -126,6 +126,10 @@ class MNSLSolver {
     }
 
     public function tryCast(c: MNSLConstraint): Bool {
+        if (!c._castable) {
+            return false;
+        }
+
         if (c.type.isArray() || c.mustBe.isArray()) {
             // we cannot cast arrays->values or the other way around
             return false;
