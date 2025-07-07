@@ -1,11 +1,11 @@
 #version 300 core
 
-float test_TFloat_TFloat_RTTFloat(float x, float y) {
+float __mnsl_generic_0(float x, float y) {
     float z = x + y;
     return z;
 }
 
 void main() {
-    vec2 res = test_TFloat_TFloat_RTTFloat(float(1), float(2));
+    vec2 res = vec2(__mnsl_generic_0(float(1), float(2)));
 }
 

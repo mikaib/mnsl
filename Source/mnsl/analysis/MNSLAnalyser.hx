@@ -1006,19 +1006,9 @@ class MNSLAnalyser {
                 args: tArgs,
                 declNode: res[0],
                 callNode: finalNode,
-                replaceCmdDecl: {
-                    node: res[0],
-                    to: null
-                },
-                replaceCmdCall: {
-                    node: finalNode,
-                    to: null
-                }
             };
 
             _genericFuncs.push(genericFunc);
-            _solver.addReplacement(genericFunc.replaceCmdDecl);
-            _solver.addReplacement(genericFunc.replaceCmdCall);
 
             if (f.isInlined) {
                 return createInlined(f, finalNode);
@@ -1734,18 +1724,6 @@ class MNSLAnalyser {
             var name = '${f.name}${f.args.length > 0 ? '_T' : ''}${f.args.map(a -> a.type).join('_T')}_RTT${f.ret}';
             if (existingFuncs.contains(name)) {
                 _toInsert = _toInsert.filter(ins -> ins.node != f.declNode);
-            }
-
-            switch (f.callNode) {
-                case FunctionCall(_, args, ret, info):
-                    f.replaceCmdCall.to = FunctionCall(name, args, ret, info);
-                default: null;
-            }
-
-            switch (f.declNode) {
-                case FunctionDecl(_, ret, args, body, inlined, info):
-                    f.replaceCmdDecl.to = FunctionDecl(name, ret, args, body, inlined, info);
-                default: null;
             }
 
             existingFuncs.push(name);

@@ -2317,7 +2317,10 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			var res = this.execAtBody([modifiedNode],newScope);
 			this._solver.solve();
 			var finalNode = mnsl_parser_MNSLNode.FunctionCall(tName,args,usedReturnType,info);
-			this._genericFuncs.push({ name : name, ret : tReturnType, args : tArgs, declNode : res[0], callNode : finalNode});
+			var genericFunc = { name : name, ret : tReturnType, args : tArgs, declNode : res[0], callNode : finalNode, replaceCmdDecl : new mnsl_analysis_MNSLReplaceCmd(res[0],null), replaceCmdCall : new mnsl_analysis_MNSLReplaceCmd(finalNode,null)};
+			this._genericFuncs.push(genericFunc);
+			this._solver.addReplacement(genericFunc.replaceCmdDecl);
+			this._solver.addReplacement(genericFunc.replaceCmdCall);
 			if(f.isInlined) {
 				return this.createInlined(f,finalNode);
 			}
@@ -3074,7 +3077,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				var args = _g7.args;
 				var ret = _g7.returnType;
 				var info = _g7.info;
-				this._solver.addReplacement(new mnsl_analysis_MNSLReplaceCmd(f.callNode,mnsl_parser_MNSLNode.FunctionCall(name1,args,ret,info)));
+				f.replaceCmdCall.to = mnsl_parser_MNSLNode.FunctionCall(name1,args,ret,info);
 			}
 			var _g8 = f.declNode;
 			if(_g8._hx_index == 0) {
@@ -3083,7 +3086,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 				var body = _g8.body;
 				var inlined = _g8.inlined;
 				var info1 = _g8.info;
-				this._solver.addReplacement(new mnsl_analysis_MNSLReplaceCmd(f.declNode,mnsl_parser_MNSLNode.FunctionDecl(name1,ret1,args1,body,inlined,info1)));
+				f.replaceCmdDecl.to = mnsl_parser_MNSLNode.FunctionDecl(name1,ret1,args1,body,inlined,info1);
 			}
 			existingFuncs.push(name1);
 		}
