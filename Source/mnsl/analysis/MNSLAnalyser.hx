@@ -17,6 +17,8 @@ class MNSLAnalyser {
     private var _functions: Array<MNSLAnalyserFunction>;
     private var _ast: MNSLNodeChildren;
     private var _globalCtx: MNSLAnalyserContext;
+    private var _genericCounter: Int;
+    private var _toInsert: Array<{ at: Int, node: MNSLNode }>;
     private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop", "IfStatement", "ElseIfStatement", "ElseStatement"];
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
@@ -328,6 +330,8 @@ class MNSLAnalyser {
         this._globalCtx.functions = this._globalCtx.functions.concat(this._functions);
 
         this._solver = new MNSLSolver(context);
+        this._genericCounter = 0;
+        this._toInsert = [];
     }
 
     /**
@@ -872,6 +876,7 @@ class MNSLAnalyser {
             return node;
         }
 
+        var isTemplated: Bool = false;
         var templates: Map<String, MNSLType> = [];
         var argTypes: Array<MNSLType> = []; // this is here because order is important!
 
@@ -879,13 +884,13 @@ class MNSLAnalyser {
             var arg = args[i];
             var argType = getType(arg);
 
-            trace(name, f.args[i].type.isTemplate(), f.args[i]);
             if (f.args[i].type.isTemplate()) {
                 if (!templates.exists(f.args[i].type.getTemplateName())) {
                     var t = MNSLType.TUnknown;
                     t.setLimits(f.args[i].type.getLimits());
 
                     templates.set(f.args[i].type.getTemplateName(), t);
+                    isTemplated = true;
                 }
 
                 _solver.addConstraint({
@@ -907,31 +912,82 @@ class MNSLAnalyser {
             argTypes.push(f.args[i].type);
         }
 
+        var usedReturnType: MNSLType = f.returnType;
         if (f.returnType.isTemplate()) {
             if (!templates.exists(f.returnType.getTemplateName())) {
-                templates.set(f.returnType.getTemplateName(), MNSLType.TUnknown);
+                var t = MNSLType.TUnknown;
+                t.setLimits(f.returnType.getLimits());
+
+                templates.set(f.returnType.getTemplateName(), t);
+                isTemplated = true;
             }
 
-            _solver.addConstraint({
-                type: returnType,
-                mustBe: templates.get(f.returnType.getTemplateName()),
-                ofNode: node,
-            });
-        } else {
-            _solver.addConstraint({
-                type: returnType,
-                mustBe: f.returnType,
-                ofNode: node,
-            });
+            usedReturnType = templates.get(f.returnType.getTemplateName());
+        } else if (isTemplated && !f.returnType.isUserDefined()) {
+            usedReturnType = MNSLType.TUnknown;
         }
+
+        _solver.addConstraint({
+            type: returnType,
+            mustBe: usedReturnType,
+            ofNode: node,
+        });
 
         f.usages.push({
             varyingArgTypes: argTypes,
-            varyingRetType: f.returnType.isTemplate() ? templates.get(f.returnType.getTemplateName()) : f.returnType,
+            varyingRetType: usedReturnType,
             callNode: node,
         });
 
-        return node;
+        if (isTemplated) {
+            var id = _genericCounter++;
+            var tName = '__mnsl_generic_$id';
+            var tReturnType: MNSLType = MNSLType.TUnknown;
+            var tArgs: MNSLFuncArgs = [];
+
+            for (idx in 0...argTypes.length) {
+                var t = MNSLType.TUnknown;
+
+                _solver.addConstraint({
+                    type: argTypes[idx],
+                    mustBe: t,
+                    ofNode: args[idx],
+                });
+
+                tArgs.push({
+                    name: f.args[idx].name,
+                    type: t
+                });
+            }
+
+            _solver.addConstraint({
+                type: usedReturnType,
+                mustBe: tReturnType,
+                ofNode: node,
+            });
+
+            var copiedNode = deepCopy(f.node, info);
+            var modifiedNode = switch(copiedNode) {
+                case FunctionDecl(_, _, _, body, _):
+                    FunctionDecl(tName, tReturnType, tArgs, body, info);
+                default:
+                    return copiedNode;
+            }
+
+            var res = execAtBody([
+                modifiedNode
+            ], f.scope);
+
+            _solver.solve();
+            _toInsert.push({
+                at: f.atIdx + id,
+                node: res[0]
+            });
+
+            name = tName;
+        }
+
+        return FunctionCall(name, args, usedReturnType, info);
     }
 
     /**
@@ -1616,67 +1672,13 @@ class MNSLAnalyser {
     }
 
     /**
-     * Extracts individual function for generic functions.
-     * @param body The body to insert the generic function into.
-     */
-    public function applyGenerics(res: MNSLNodeChildren): MNSLNodeChildren {
-        var usageOffset = 0;
-        var toRename: Array<{ node: MNSLNode, returnType: MNSLType, argTypes: Array<MNSLType>, originalName: String }> = [];
-
-        for (f in this._globalCtx.functions) {
-            if (f.internal || !f.isTemplate || f.scope == null || f.node == null || f.atIdx < 0) {
-                continue;
-            }
-
-            for (usage in f.usages) {
-                switch (usage.callNode) {
-                    case FunctionCall(fcName, fcArgs, fcRet, fcInfo):
-                        switch (f.node) {
-                            case FunctionDecl(_, _, _, fBody, fInfo):
-                                var tempName: String = '__mnsl_generic_$usageOffset';
-                                var args: MNSLFuncArgs = [for (idx in 0...f.args.length) { name: f.args[idx].name, type: usage.varyingArgTypes[idx] }];
-
-                                var fNode = deepCopy(FunctionDecl(tempName, usage.varyingRetType, args, fBody, fInfo), fcInfo);
-                                var retType = switch(fNode) { // the type has been cloned using deepCopy, we need to extract it.
-                                    case FunctionDecl(_, nRetType, _, _ ,_):
-                                        nRetType;
-                                    default:
-                                        usage.varyingRetType;
-                                }
-
-                                var fRes = execAtBody([
-                                    fNode
-                                ], f.scope);
-
-                                _solver.addReplacement({
-                                    node: usage.callNode,
-                                    to: FunctionCall(tempName, fcArgs, retType, fcInfo),
-                                });
-
-                                _solver.solve();
-
-                                res.insert(f.atIdx + usageOffset, fRes[0]);
-                                usageOffset++;
-                            default:
-                                null;
-                        }
-                    default:
-                        null;
-                }
-            }
-        }
-
-        return res;
-    }
-
-    /**
      * Run the analysis.
      */
     public function run(): MNSLNodeChildren {
         var res = execAtBody(this._ast, this._globalCtx);
-        this._solver.solve();
-
-        res = this.applyGenerics(res);
+        for (ins in this._toInsert) {
+            res.insert(ins.at, ins.node);
+        }
 
         if (!this._solver.solve()) {
             var unresolvedConstraints = this._solver.getUnresolvedConstraints();

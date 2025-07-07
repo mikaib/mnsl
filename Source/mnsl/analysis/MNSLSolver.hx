@@ -38,7 +38,6 @@ class MNSLSolver {
                     if (c._isBinaryOp) {
                         _context.emitError(AnalyserInvalidBinop(c.type, c.mustBe, c._operationOperator, c));
                     } else {
-                        trace(c);
                         _context.emitError(AnalyserMismatchingType(c));
                     }
                 }

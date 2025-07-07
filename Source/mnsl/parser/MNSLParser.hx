@@ -303,7 +303,7 @@ class MNSLParser {
 
         var shData: MNSLShaderData = {
             name: name,
-            type: arraySizeInt == -1 ? MNSLType.fromString(type) : MNSLType.CreateArray(type, arraySizeInt),
+            type: arraySizeInt == -1 ? MNSLType.fromString(type, true) : MNSLType.CreateArray(type, arraySizeInt, true),
             arraySize: arraySizeInt,
             kind: kind
         };
@@ -773,6 +773,7 @@ class MNSLParser {
             }
 
             type.setTypeStrUnsafe(typeStr);
+            type.setUserDefined(true);
         }
 
         var nextToken = peekCurrentTokenType(0);
@@ -1056,8 +1057,10 @@ class MNSLParser {
 
             if (genericNames.contains(type)) {
                 paramType.setType(MNSLType.CreateTemplate(type, []));
+                paramType.setUserDefined(true);
             } else {
                 paramType.setTypeStrUnsafe(type);
+                paramType.setUserDefined(true);
             }
 
         }
@@ -1073,8 +1076,10 @@ class MNSLParser {
 
             if (genericNames.contains(type)) {
                 returnType.setType(MNSLType.CreateTemplate(type, []));
+                returnType.setUserDefined(true);
             } else {
                 returnType.setTypeStrUnsafe(type);
+                returnType.setUserDefined(true);
             }
         }
 

@@ -6,19 +6,19 @@
 using namespace metal;
 
 static inline __attribute__((always_inline))
-float2 squared(float2 x)
+float2 _mnsl_generic_0(float2 x)
 {
     return x * x;
 }
 
 static inline __attribute__((always_inline))
-float2 add(float2 x, int y)
+float2 _mnsl_generic_1(float2 x, float2 y)
 {
-    return x + float2(float(y));
+    return x + y;
 }
 
 fragment void main0()
 {
-    float2 x = add(squared(float2(float(5))), 1);
+    float2 x = _mnsl_generic_1(_mnsl_generic_0(float2(float(5))), float2(float(1)));
 }
 

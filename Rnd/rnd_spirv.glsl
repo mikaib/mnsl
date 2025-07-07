@@ -1,17 +1,17 @@
 #version 450
 
-vec2 squared(vec2 x)
+vec2 _mnsl_generic_0(vec2 x)
 {
     return x * x;
 }
 
-vec2 add(vec2 x, int y)
+vec2 _mnsl_generic_1(vec2 x, vec2 y)
 {
-    return x + vec2(float(y));
+    return x + y;
 }
 
 void main()
 {
-    vec2 x = add(squared(vec2(float(5))), 1);
+    vec2 x = _mnsl_generic_1(_mnsl_generic_0(vec2(float(5))), vec2(float(1)));
 }
 

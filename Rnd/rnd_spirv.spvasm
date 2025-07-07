@@ -13,28 +13,28 @@
                OpName %in_VertexID "in_VertexID"
                OpName %in_FragDepth "in_FragDepth"
                OpName %x "x"
-               OpName %x_0 "x"
                OpName %TFloat "TFloat"
                OpName %TSampler "TSampler"
-               OpName %add "add"
-               OpName %squared "squared"
+               OpName %__mnsl_generic_1 "__mnsl_generic_1"
                OpName %TInt "TInt"
                OpName %TMat4 "TMat4"
                OpName %in_FrontFacing "in_FrontFacing"
-               OpName %x_1 "x"
+               OpName %x_0 "x"
                OpName %TBool "TBool"
                OpName %TMat3 "TMat3"
                OpName %out_PointSize "out_PointSize"
+               OpName %__mnsl_generic_0 "__mnsl_generic_0"
                OpName %TVoid "TVoid"
                OpName %TMat2 "TMat2"
                OpName %in_FragCoord "in_FragCoord"
-               OpName %main "main"
+               OpName %x_1 "x"
                OpName %TVec4 "TVec4"
                OpName %in_InstanceID "in_InstanceID"
                OpName %out_Position "out_Position"
                OpName %TVec3 "TVec3"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
                OpName %y "y"
+               OpName %main "main"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -63,7 +63,7 @@
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
      %TInt_5 = OpConstant %TInt 5
-         %22 = OpTypeFunction %TVec2 %TVec2 %TInt
+         %22 = OpTypeFunction %TVec2 %TVec2 %TVec2
          %23 = OpTypeFunction %TVec2 %TVec2
          %24 = OpTypeFunction %TVoid
 %_ptr_Function_TVec2 = OpTypePointer Function %TVec2
@@ -80,28 +80,28 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-        %add = OpFunction %TVec2 None %22
+%__mnsl_generic_1 = OpFunction %TVec2 None %22
           %x = OpFunctionParameter %TVec2
-          %y = OpFunctionParameter %TInt
+          %y = OpFunctionParameter %TVec2
          %43 = OpLabel
-         %45 = OpConvertSToF %TFloat %y
-         %44 = OpCompositeConstruct %TVec2 %45 %45
-         %46 = OpFAdd %TVec2 %x %44
-               OpReturnValue %46
+         %44 = OpFAdd %TVec2 %x %y
+               OpReturnValue %44
                OpFunctionEnd
-    %squared = OpFunction %TVec2 None %23
+%__mnsl_generic_0 = OpFunction %TVec2 None %23
         %x_0 = OpFunctionParameter %TVec2
-         %49 = OpLabel
-         %50 = OpFMul %TVec2 %x_0 %x_0
-               OpReturnValue %50
+         %47 = OpLabel
+         %48 = OpFMul %TVec2 %x_0 %x_0
+               OpReturnValue %48
                OpFunctionEnd
        %main = OpFunction %TVoid None %24
-         %52 = OpLabel
+         %50 = OpLabel
         %x_1 = OpVariable %_ptr_Function_TVec2 Function
-         %55 = OpConvertSToF %TFloat %TInt_5
-         %54 = OpCompositeConstruct %TVec2 %55 %55
-         %56 = OpFunctionCall %TVec2 %squared %54
-         %57 = OpFunctionCall %TVec2 %add %56 %TInt_1
+         %53 = OpConvertSToF %TFloat %TInt_5
+         %52 = OpCompositeConstruct %TVec2 %53 %53
+         %54 = OpFunctionCall %TVec2 %__mnsl_generic_0 %52
+         %56 = OpConvertSToF %TFloat %TInt_1
+         %55 = OpCompositeConstruct %TVec2 %56 %56
+         %57 = OpFunctionCall %TVec2 %__mnsl_generic_1 %54 %55
                OpStore %x_1 %57
                OpReturn
                OpFunctionEnd

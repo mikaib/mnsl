@@ -18,12 +18,12 @@ class MNSLType {
     public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
 
-    public static function CreateTemplate(T: String, ?limits: Array<MNSLType>): MNSLType {
-        return new MNSLType('Template<$T>', true, limits);
+    public static function CreateTemplate(T: String, ?limits: Array<MNSLType>, userDefined = false): MNSLType {
+        return new MNSLType('Template<$T>', true, limits, userDefined);
     }
 
-    public static function CreateArray(T: String, size: Int): MNSLType {
-        return new MNSLType('Array<$T, $size>', false, []);
+    public static function CreateArray(T: String, size: Int, userDefined: Bool = false): MNSLType {
+        return new MNSLType('Array<$T, $size>', false, [], userDefined);
     }
 
     private var _type: String;
@@ -31,17 +31,35 @@ class MNSLType {
     private var _arrayBaseType: MNSLType;
     private var _arraySize: Int = -1;
     private var _limits: Array<MNSLType>;
+    private var _userDefined: Bool = false;
 
     /**
      * Create a new MNSLType instance.
      * @param type The type name.
      */
-    private function new(t: String, temp: Bool = false, ?limits: Array<MNSLType>): Void {
+    private function new(t: String, temp: Bool = false, ?limits: Array<MNSLType>, ?userDefined: Bool): Void {
         _tempType = temp;
         _limits = limits != null ? limits : [];
         _arrayBaseType = null;
+        _userDefined = userDefined != null ? userDefined : false;
 
         setTypeStrUnsafe(t);
+    }
+
+    /**
+     * Check if the type is user defined.
+     * @return True if the type is user defined, false otherwise.
+     */
+    public inline function isUserDefined(): Bool {
+        return _userDefined;
+    }
+
+    /**
+     * Set if the type is user defined.
+     * @param userDefined True if the type is user defined, false otherwise.
+     */
+    public function setUserDefined(userDefined: Bool): Void {
+        _userDefined = userDefined;
     }
 
     /**
@@ -297,8 +315,8 @@ class MNSLType {
      * Create a type from a String.
      * @param type The type name.
      */
-    public static inline function fromString(type: String):MNSLType {
-        return new MNSLType(type);
+    public static inline function fromString(type: String, userDefined: Bool = false):MNSLType {
+        return new MNSLType(type, false, [], userDefined);
     }
 
     /**
