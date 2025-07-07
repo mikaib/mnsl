@@ -1,7 +1,26 @@
-func add<T>(x: T, y: T) -> x + y;
-func squared<T>(x: T) -> x * x;
+// inputs
+@input(FragCoord: Vec4)
+@input(TexCoord: Vec2)
 
+// outputs
+@output(FragColour: Vec4)
+
+// uniforms
+@uniform(iTime: Float)
+@uniform(iResolution: Vec2)
+@uniform(iChannel0: Sampler)
+@uniform(iChannel1: Sampler)
+@uniform(iChannel2: Sampler)
+@uniform(iChannel3: Sampler)
+
+// helper functions
+inline func getUV() -> input.FragCoord / uniform.iResolution.xy;
+
+// main function
 func main() {
-    var x = add(5, 6);
-    var y = add(3, 4);
+    var uv = getUV();
+    var col = 0.5 + 0.5 * cos(uniform.iTime + uv.xyx + (0,2,4));
+
+    output.FragColour = col.rgb;
+
 }
