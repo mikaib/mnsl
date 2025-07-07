@@ -19,6 +19,7 @@ class MNSLAnalyser {
     private var _globalCtx: MNSLAnalyserContext;
     private var _genericCounter: Int;
     private var _toInsert: Array<{ at: Int, node: MNSLNode }>;
+    private var _genericFuncs: Array<{ declNode: MNSLNode, callNode: MNSLNode, name: String, ret: MNSLType, args: MNSLFuncArgs }>;
     private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop", "IfStatement", "ElseIfStatement", "ElseStatement"];
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
@@ -331,6 +332,7 @@ class MNSLAnalyser {
 
         this._solver = new MNSLSolver(context);
         this._genericCounter = 0;
+        this._genericFuncs = [];
         this._toInsert = [];
     }
 
@@ -923,7 +925,7 @@ class MNSLAnalyser {
             }
 
             usedReturnType = templates.get(f.returnType.getTemplateName());
-        } else if (isTemplated && !f.returnType.isUserDefined()) {
+        } else if (isTemplated && !f.returnType.isUserDefined() && !f.internal) {
             usedReturnType = MNSLType.TUnknown;
         }
 
@@ -939,7 +941,7 @@ class MNSLAnalyser {
             callNode: node,
         });
 
-        if (isTemplated) {
+        if (isTemplated && !f.internal) {
             var id = _genericCounter++;
             var tName = '__mnsl_generic_$id';
             var tReturnType: MNSLType = MNSLType.TUnknown;
@@ -984,10 +986,19 @@ class MNSLAnalyser {
                 node: res[0]
             });
 
-            name = tName;
+            var finalNode = FunctionCall(tName, args, usedReturnType, info);
+            _genericFuncs.push({
+                name: name,
+                ret: tReturnType,
+                args: tArgs,
+                declNode: res[0],
+                callNode: finalNode,
+            });
+
+            return finalNode;
         }
 
-        return FunctionCall(name, args, usedReturnType, info);
+        return node;
     }
 
     /**
@@ -1676,6 +1687,35 @@ class MNSLAnalyser {
      */
     public function run(): MNSLNodeChildren {
         var res = execAtBody(this._ast, this._globalCtx);
+
+        var existingFuncs: Array<String> = [];
+        for (f in _genericFuncs) {
+            var name = '${f.name}${f.args.length > 0 ? '_T' : ''}${f.args.map(a -> a.type).join('_T')}_RTT${f.ret}';
+            if (existingFuncs.contains(name)) {
+                _toInsert = _toInsert.filter(ins -> ins.node != f.declNode);
+            }
+
+            switch (f.callNode) {
+                case FunctionCall(_, args, ret, info):
+                    _solver.addReplacement({
+                        node: f.callNode,
+                        to: FunctionCall(name, args, ret, info),
+                    });
+                default: null;
+            }
+
+            switch (f.declNode) {
+                case FunctionDecl(_, ret, args, body, info):
+                    _solver.addReplacement({
+                        node: f.declNode,
+                        to: FunctionDecl(name, ret, args, body, info),
+                    });
+                default: null;
+            }
+
+            existingFuncs.push(name);
+        }
+
         for (ins in this._toInsert) {
             res.insert(ins.at, ins.node);
         }

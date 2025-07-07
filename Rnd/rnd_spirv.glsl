@@ -1,17 +1,13 @@
 #version 450
 
-vec2 _mnsl_generic_0(vec2 x)
-{
-    return x * x;
-}
-
-vec2 _mnsl_generic_1(vec2 x, vec2 y)
+int add_TInt_TInt_RTTInt(int x, int y)
 {
     return x + y;
 }
 
 void main()
 {
-    vec2 x = _mnsl_generic_1(_mnsl_generic_0(vec2(float(5))), vec2(float(1)));
+    int x = add_TInt_TInt_RTTInt(5, 6);
+    int y = add_TInt_TInt_RTTInt(3, 4);
 }
 

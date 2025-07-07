@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 58
+; Bound: 52
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -10,31 +10,30 @@
                OpExecutionMode %main OriginUpperLeft
                OpName %TVec2 "TVec2"
                OpName %TSamplerImage "TSamplerImage"
-               OpName %in_VertexID "in_VertexID"
-               OpName %in_FragDepth "in_FragDepth"
+               OpName %add_TInt_TInt_RTTInt "add_TInt_TInt_RTTInt"
                OpName %x "x"
                OpName %TFloat "TFloat"
                OpName %TSampler "TSampler"
-               OpName %__mnsl_generic_1 "__mnsl_generic_1"
+               OpName %in_FrontFacing "in_FrontFacing"
                OpName %TInt "TInt"
                OpName %TMat4 "TMat4"
-               OpName %in_FrontFacing "in_FrontFacing"
-               OpName %x_0 "x"
+               OpName %out_PointSize "out_PointSize"
+               OpName %main "main"
                OpName %TBool "TBool"
                OpName %TMat3 "TMat3"
-               OpName %out_PointSize "out_PointSize"
-               OpName %__mnsl_generic_0 "__mnsl_generic_0"
+               OpName %in_FragCoord "in_FragCoord"
                OpName %TVoid "TVoid"
                OpName %TMat2 "TMat2"
-               OpName %in_FragCoord "in_FragCoord"
-               OpName %x_1 "x"
-               OpName %TVec4 "TVec4"
                OpName %in_InstanceID "in_InstanceID"
                OpName %out_Position "out_Position"
+               OpName %TVec4 "TVec4"
+               OpName %y "y"
                OpName %TVec3 "TVec3"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %y "y"
-               OpName %main "main"
+               OpName %in_VertexID "in_VertexID"
+               OpName %in_FragDepth "in_FragDepth"
+               OpName %x_0 "x"
+               OpName %y_0 "y"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -63,10 +62,11 @@
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
      %TInt_5 = OpConstant %TInt 5
-         %22 = OpTypeFunction %TVec2 %TVec2 %TVec2
-         %23 = OpTypeFunction %TVec2 %TVec2
-         %24 = OpTypeFunction %TVoid
-%_ptr_Function_TVec2 = OpTypePointer Function %TVec2
+     %TInt_6 = OpConstant %TInt 6
+     %TInt_4 = OpConstant %TInt 4
+         %22 = OpTypeFunction %TInt %TInt %TInt
+         %23 = OpTypeFunction %TVoid
+%_ptr_Function_TInt = OpTypePointer Function %TInt
 %_ptr_Input_TInt = OpTypePointer Input %TInt
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
 %_ptr_Input_TBool = OpTypePointer Input %TBool
@@ -80,28 +80,20 @@
 %in_FragDepth = OpVariable %_ptr_Input_TFloat Input
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
-%__mnsl_generic_1 = OpFunction %TVec2 None %22
-          %x = OpFunctionParameter %TVec2
-          %y = OpFunctionParameter %TVec2
-         %43 = OpLabel
-         %44 = OpFAdd %TVec2 %x %y
-               OpReturnValue %44
+%add_TInt_TInt_RTTInt = OpFunction %TInt None %22
+        %x_0 = OpFunctionParameter %TInt
+          %y = OpFunctionParameter %TInt
+         %44 = OpLabel
+         %45 = OpIAdd %TInt %x_0 %y
+               OpReturnValue %45
                OpFunctionEnd
-%__mnsl_generic_0 = OpFunction %TVec2 None %23
-        %x_0 = OpFunctionParameter %TVec2
+       %main = OpFunction %TVoid None %23
          %47 = OpLabel
-         %48 = OpFMul %TVec2 %x_0 %x_0
-               OpReturnValue %48
-               OpFunctionEnd
-       %main = OpFunction %TVoid None %24
-         %50 = OpLabel
-        %x_1 = OpVariable %_ptr_Function_TVec2 Function
-         %53 = OpConvertSToF %TFloat %TInt_5
-         %52 = OpCompositeConstruct %TVec2 %53 %53
-         %54 = OpFunctionCall %TVec2 %__mnsl_generic_0 %52
-         %56 = OpConvertSToF %TFloat %TInt_1
-         %55 = OpCompositeConstruct %TVec2 %56 %56
-         %57 = OpFunctionCall %TVec2 %__mnsl_generic_1 %54 %55
-               OpStore %x_1 %57
+          %x = OpVariable %_ptr_Function_TInt Function
+        %y_0 = OpVariable %_ptr_Function_TInt Function
+         %50 = OpFunctionCall %TInt %add_TInt_TInt_RTTInt %TInt_5 %TInt_6
+               OpStore %x %50
+         %51 = OpFunctionCall %TInt %add_TInt_TInt_RTTInt %TInt_3 %TInt_4
+               OpStore %y_0 %51
                OpReturn
                OpFunctionEnd
