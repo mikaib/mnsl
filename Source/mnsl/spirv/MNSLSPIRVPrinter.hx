@@ -269,7 +269,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
     }
 
-    public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, requirePtr: Bool = false): { id: Int, isParam: Bool } {
+    public function getVar(on: MNSLNode, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int, requirePtr: Bool = false): { id: Int, isParam: Bool, type: MNSLType } {
         var stack: Array<{ name: String, type: MNSLType, node: MNSLNode, arrayIndex: MNSLNode }> = [];
         var currScope: MNSLSPIRVScope = scope;
         var currIsParam: Bool = false;
@@ -472,16 +472,16 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         }
 
         if (requirePtr && !currIsParam) {
-            return { id: currRetId, isParam: false };
+            return { id: currRetId, isParam: false, type: lastType };
         }
 
         if (!requirePtr && !currIsParam) {
             var loadId = assignId();
             emitInstruction(MNSLSPIRVOpCode.OpLoad, [getType(lastType), loadId, currRetId]);
-            return { id: loadId, isParam: true };
+            return { id: loadId, isParam: true, type: lastType };
         }
 
-        return { id: currRetId, isParam: currIsParam };
+        return { id: currRetId, isParam: currIsParam, type: lastType };
     }
 
     public function assignId(): Int {
@@ -654,8 +654,19 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                         var ptrId = getPtr(getType(type), MNSLSPIRVStorageClass.Function);
                         emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
                         emitDebugLabel(varId, name);
-                        scope.setVariable(name, varId);
+                        scope.setVariable(name, varId, type);
                     }
+                case VariableAssign(on, value, info):
+                    var baseName = getVarBaseName(on);
+                    var baseInfo = scope?.variables.get(baseName);
+                    if (baseInfo != null && baseInfo.isParam) {
+                        var varId = assignId();
+                        var ptrId = getPtr(getType(baseInfo.type), MNSLSPIRVStorageClass.Function);
+                        emitInstruction(MNSLSPIRVOpCode.OpVariable, [ptrId, varId, MNSLSPIRVStorageClass.Function]);
+                        emitDebugLabel(varId, '__mnsl_tmp_$baseName');
+                        scope.setVariable('__mnsl_tmp_$baseName', varId, baseInfo.type);
+                    }
+
                 default:
             }
 
@@ -1004,6 +1015,14 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     }
 
     public function emitVariableAssign(on: MNSLNode, value: MNSLNode, info: MNSLNodeInfo, scope: MNSLSPIRVScope, inBody: MNSLNodeChildren, at: Int): Int {
+        var baseName = getVarBaseName(on);
+        var baseTmpInfo = scope?.variables.get('__mnsl_tmp_$baseName');
+        var baseInfo = scope?.variables.get(baseName);
+        if (baseTmpInfo != null && baseInfo != null) {
+            emitInstruction(MNSLSPIRVOpCode.OpStore, [baseTmpInfo.id, baseInfo.id]);
+            scope.setVariable(baseName, baseTmpInfo.id, baseTmpInfo.type);
+        }
+
         var varDef = getVar(on, scope, inBody, at, true);
         var valueId = emitNode(value, scope, inBody, at);
 
@@ -1335,7 +1354,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             emitInstruction(MNSLSPIRVOpCode.OpFunctionParameter, [getType(arg.type), paramId]);
             emitDebugLabel(paramId, arg.name);
 
-            scope.setParameter(arg.name, paramId);
+            scope.setParameter(arg.name, paramId, arg.type);
         }
 
         _functions.set(name, id);

@@ -5,23 +5,17 @@
 
 using namespace metal;
 
-struct main0_out
-{
-    float4 out_FragColour [[color(1)]];
-};
-
 static inline __attribute__((always_inline))
-float4 getUV(thread float4& gl_FragCoord, thread const float2& u_iResolution)
+int test(int x)
 {
-    return gl_FragCoord / float4(u_iResolution.xy, 0.0, 1.0);
+    int y = x * 2;
+    int _mnsl_tmp_x = x;
+    _mnsl_tmp_x++;
+    return _mnsl_tmp_x;
 }
 
-fragment main0_out main0(constant float& u_iTime [[buffer(0)]], constant float2& u_iResolution [[buffer(1)]], float4 gl_FragCoord [[position]], float4 gl_FragCoord [[position]])
+fragment void main0()
 {
-    main0_out out = {};
-    float4 uv = getUV(gl_FragCoord, u_iResolution);
-    float3 col = float3(0.5) + (float3(0.5) * cos((float3(u_iTime) + uv.xyx) + float3(float(0), float(2), float(4))));
-    out.out_FragColour = float4(col.xyz, 1.0);
-    return out;
+    int v = test(1);
 }
 

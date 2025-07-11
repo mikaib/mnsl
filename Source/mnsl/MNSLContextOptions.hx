@@ -11,6 +11,7 @@ class MNSLContextOptions {
         new mnsl.optimiser.impl.MNSLOptimiseScalarVectorInit(),
         new mnsl.optimiser.impl.MNSLOptimiseSwizzleAssign(),
         new mnsl.optimiser.impl.MNSLOptimiseSwizzleAccess(),
+        new mnsl.optimiser.impl.MNSLOptimiseNumericalConst()
     ];
     public var preprocessorDefines: Array<String> = [];
     public var preprocessorIncludeFunc: String->String->Null<String> = (path: String, root: String) -> {

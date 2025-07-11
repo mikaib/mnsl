@@ -1,10 +1,10 @@
-func other<T>(x: T): T -> x;
-func squared<T>(x: T): T {
-	return other(x);
+func test(x) {
+    var y = x * 2;
+
+    x += 1;
+    return x;
 }
 
 func main() {
-	var x = squared(1);
-	var y = squared(1.0);
-	var z = squared(vec2(1.0));
+    var v = test(1.0);
 }

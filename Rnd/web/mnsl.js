@@ -2322,7 +2322,7 @@ mnsl_analysis_MNSLAnalyser.prototype = {
 			if(f.isInlined) {
 				return this.createInlined(f,finalNode);
 			}
-			this._toInsert.push({ at : f.atIdx + id, node : res[0]});
+			this._toInsert.push({ at : f.atIdx, node : res[0]});
 			return finalNode;
 		}
 		if(f.isInlined) {

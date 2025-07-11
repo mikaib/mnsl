@@ -1461,30 +1461,30 @@ class MNSLAnalyser {
     private function applyReplacementsToNode(node: MNSLNode, replacements: Array<MNSLReplaceCmd>, exceptions: Map<Int, Array<MNSLNode>>): MNSLNode {
         exceptions = deepCopyExceptions(exceptions);
 
-         for (rIdx in 0...replacements.length) {
-             var r = replacements[rIdx];
-             if (!exceptions.exists(rIdx)) {
-                    exceptions.set(rIdx, []);
-             }
-
-             if (Std.string(r.node) == Std.string(node)) {
-                 var shouldSkip = false;
-                 for (exception in exceptions[rIdx]) {
-                     if (Std.string(exception) == Std.string(node)) {
-                         shouldSkip = true;
-                         break;
-                     }
-                 }
-
-                 if (shouldSkip) {
-                     continue;
-                 }
-
-                 exceptions[rIdx].push(node);
-                 node = r.to;
-                 break;
+        for (rIdx in 0...replacements.length) {
+            var r = replacements[rIdx];
+            if (!exceptions.exists(rIdx)) {
+                exceptions.set(rIdx, []);
             }
-         }
+
+            if (Std.string(r.node) == Std.string(node)) {
+                var shouldSkip = false;
+                for (exception in exceptions[rIdx]) {
+                    if (Std.string(exception) == Std.string(node)) {
+                        shouldSkip = true;
+                        break;
+                    }
+                }
+
+                if (shouldSkip) {
+                    continue;
+                }
+
+                exceptions[rIdx].push(node);
+                node = r.to;
+                break;
+            }
+        }
 
         if (node == null) {
             return null;
