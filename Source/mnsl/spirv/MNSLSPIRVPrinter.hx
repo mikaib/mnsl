@@ -19,7 +19,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
     private var _bin: BytesOutput;
     private var _config: MNSLSPIRVConfig;
-    private var _types: Map<MNSLType, Int>;
+    private var _types: Map<MNSLType, Array<Int>>;
     private var _functions: Map<String, Int>;
     private var _functionTypes: Map<String, Int>;
     private var _ptrTypes: Map<String, Int>;
@@ -46,6 +46,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             { name: "texture", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
             { name: "dot", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
             { name: "mod", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "fwidth", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "dFdx", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "dFdy", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
+            { name: "textureSize", mapping: MNSLSPIRVUnifiedStd.MNSLInternal },
             { name: "sin", mapping: MNSLSPIRVUnifiedStd.Sin },
             { name: "cos", mapping: MNSLSPIRVUnifiedStd.Cos },
             { name: "tan", mapping: MNSLSPIRVUnifiedStd.Tan },
@@ -108,21 +112,24 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         return words;
     }
 
-    public function getType(type: MNSLType): Int {
+    public function getType(type: MNSLType, ?idx = 0): Int {
         if (type.isUnknown()) {
             type.setType(MNSLType.TVoid);
         }
 
         for (t in _types.keys()) {
             if (t.equals(type)) {
-                return _types.get(t);
+                return _types.get(t)[idx];
             }
         }
 
-        var id = assignId();
-        emitDebugLabel(id, '${type.toHumanString()}');
+        var types = [];
+        _types.set(type, types);
 
-        _types.set(type, id);
+        var id = assignId();
+        types.push(id);
+
+        emitDebugLabel(id, '${type.toHumanString()}');
 
         if (type.isArray()) {
             var typeId = getType(type.getArrayBaseType());
@@ -142,6 +149,11 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
         if (type.isVector()) {
             this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeVector, oper: [id, getType(MNSLType.TFloat), type.getVectorComponents()] });
+
+            var integerVer = assignId();
+            this._typeInit.push({ id: integerVer, op: MNSLSPIRVOpCode.OpTypeVector, oper: [integerVer, getType(MNSLType.TInt), type.getVectorComponents()] });
+            types.push(integerVer);
+
             return id;
         }
 
@@ -160,12 +172,13 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 this._typeInit.push({ id: sampledId, op: MNSLSPIRVOpCode.OpTypeImage, oper: [sampledId, getType(MNSLType.TFloat), 1, 0, 0, 0, 1, 0] });
                 this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeSampledImage, oper: [id, sampledId] });
                 emitDebugLabel(sampledId, 'TSamplerImage');
+                types.push(sampledId);
             case "CubeSampler":
-                var sampledId = id;
-                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeImage, oper: [id, getType(MNSLType.TFloat), 3, 0, 0, 0, 1, 0] });
-                id = assignId();
+                var sampledId = assignId();
+                this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeImage, oper: [sampledId, getType(MNSLType.TFloat), 3, 0, 0, 0, 1, 0] });
                 this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeSampledImage, oper: [id, sampledId] });
                 emitDebugLabel(sampledId, 'TCubeSamplerImage');
+                types.push(sampledId);
             default:
                 throw "Invalid type: " + typeStr;
         }
@@ -1403,6 +1416,46 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 }
 
                 emitInstruction(MNSLSPIRVOpCode.OpFRem, [typeId, retId].concat(argIds)); // TODO: review
+                return retId;
+
+            case "fwidth":
+                if (args.length != 1) {
+                    throw "fwidth() requires 1 argument";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpFwidth, [typeId, retId].concat(argIds));
+                return retId;
+
+            case "dFdx":
+                if (args.length != 1) {
+                    throw "dFdx() requires 1 argument";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpDPdx, [typeId, retId].concat(argIds));
+                return retId;
+
+            case "dFdy":
+                if (args.length != 1) {
+                    throw "dFdy() requires 1 argument";
+                }
+
+                emitInstruction(MNSLSPIRVOpCode.OpDPdy, [typeId, retId].concat(argIds));
+                return retId;
+
+            case "textureSize":
+                if (args.length != 1) {
+                    throw "textureSize() requires 1 argument";
+                }
+
+                var samplerId = argIds[0];
+                var imageId = assignId();
+                var texSizeId = assignId();
+
+                var imageType = getType(MNSLAnalyser.getType(args[0]), 1);
+                emitInstruction(MNSLSPIRVOpCode.OpImage, [imageType, imageId, samplerId]);
+                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySize, [getType(returnType, 1), texSizeId, imageId]);
+                emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [typeId, retId, texSizeId]);
+
                 return retId;
 
             default:

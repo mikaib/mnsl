@@ -1,10 +1,22 @@
-func test(x) {
-    var y = x * 2;
+// input
+@input(Colour: Vec4)
+@input(TexCoords: Vec2)
 
-    x += 1;
-    return x;
-}
+// output
+@output(FragColour: Vec4)
 
+// uniforms
+@uniform(Texture: Sampler)
+
+// defines
+@define(SMOOTHNESS, 0.01)
+@define(RADIUS, 1.0)
+
+// main
 func main() {
-    var v = test(1.0);
+    var x = fwidth(input.TexCoords);
+    var y = dFdx(input.TexCoords);
+    var z = dFdy(input.TexCoords);
+    var w = textureSize(uniform.Texture);
+    var q = w * 2;
 }

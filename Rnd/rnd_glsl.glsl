@@ -1,12 +1,15 @@
 #version 300 core
 
-int test(int x) {
-    int y = x * 2;
-    x = x + 1;
-    return x;
-}
+in vec4 in_Colour;
+in vec2 in_TexCoords;
+out vec4 frag_FragColour;
+uniform sampler2D u_Texture;
 
 void main() {
-    int v = test(1);
+    vec2 x = fwidth(in_TexCoords);
+    vec2 y = dFdx(in_TexCoords);
+    vec2 z = dFdy(in_TexCoords);
+    vec2 w = textureSize(u_Texture);
+    vec2 q = w * vec2(2);
 }
 

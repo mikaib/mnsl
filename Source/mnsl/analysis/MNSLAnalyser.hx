@@ -308,6 +308,38 @@ class MNSLAnalyser {
                     { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
                 ],
                 returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "fwidth",
+               remap: "__mnsl_fwidth",
+               args: [
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+               ],
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "dFdx",
+               remap: "__mnsl_dfdx",
+               args: [
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+               ],
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "dFdy",
+               remap: "__mnsl_dfdy",
+               args: [
+                   { name: "x", type: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4]) }
+               ],
+               returnType: MNSLType.CreateTemplate("T", [MNSLType.TFloat, MNSLType.TVec2, MNSLType.TVec3, MNSLType.TVec4])
+           },
+           {
+               name: "textureSize",
+               remap: "__mnsl_textureSize",
+               args: [
+                   { name: "sampler", type: MNSLType.TSampler }
+               ],
+               returnType: MNSLType.TVec2
            }
        ];
 
