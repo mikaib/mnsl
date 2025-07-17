@@ -17,6 +17,6 @@ func main() {
     var x = fwidth(input.TexCoords);
     var y = dFdx(input.TexCoords);
     var z = dFdy(input.TexCoords);
-    var w = textureSize(uniform.Texture);
+    var w = textureSize(uniform.Texture, 0);
     var q = w * 2;
 }

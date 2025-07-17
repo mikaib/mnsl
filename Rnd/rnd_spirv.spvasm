@@ -112,7 +112,7 @@
                OpStore %z %58
          %59 = OpLoad %TSampler %u_Texture
          %61 = OpImage %TSamplerImage %59
-         %62 = OpImageQuerySize %v2TInt %61
+         %62 = OpImageQuerySizeLod %v2TInt %61 %TInt_0
          %60 = OpConvertSToF %TVec2 %62
                OpStore %w %60
          %63 = OpLoad %TVec2 %w

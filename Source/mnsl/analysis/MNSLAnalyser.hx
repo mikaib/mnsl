@@ -337,7 +337,8 @@ class MNSLAnalyser {
                name: "textureSize",
                remap: "__mnsl_textureSize",
                args: [
-                   { name: "sampler", type: MNSLType.TSampler }
+                   { name: "sampler", type: MNSLType.TSampler },
+                   { name: "lod", type: MNSLType.TInt }
                ],
                returnType: MNSLType.TVec2
            }

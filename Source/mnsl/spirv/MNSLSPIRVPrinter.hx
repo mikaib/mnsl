@@ -1443,8 +1443,8 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                 return retId;
 
             case "textureSize":
-                if (args.length != 1) {
-                    throw "textureSize() requires 1 argument";
+                if (args.length != 2) {
+                    throw "textureSize() requires 2 arguments";
                 }
 
                 var samplerId = argIds[0];
@@ -1453,7 +1453,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
                 var imageType = getType(MNSLAnalyser.getType(args[0]), 1);
                 emitInstruction(MNSLSPIRVOpCode.OpImage, [imageType, imageId, samplerId]);
-                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySize, [getType(returnType, 1), texSizeId, imageId]);
+                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySizeLod, [getType(returnType, 1), texSizeId, imageId, argIds[1]]);
                 emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [typeId, retId, texSizeId]);
 
                 return retId;

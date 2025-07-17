@@ -28,7 +28,7 @@ void frag_main()
     float2 y = ddx(in_TexCoords);
     float2 z = ddy(in_TexCoords);
     uint _62_dummy_parameter;
-    float2 w = float2(int2(spvTextureSize(u_Texture, 0u, _62_dummy_parameter)));
+    float2 w = float2(int2(spvTextureSize(u_Texture, uint(0), _62_dummy_parameter)));
     float2 q = w * float(2).xx;
 }
 
