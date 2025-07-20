@@ -14,6 +14,9 @@ class MNSLType {
     public static var TVec2(get, never): MNSLType;
     public static var TVec3(get, never): MNSLType;
     public static var TVec4(get, never): MNSLType;
+    public static var TIVec2(get, never): MNSLType;
+    public static var TIVec3(get, never): MNSLType;
+    public static var TIVec4(get, never): MNSLType;
     public static var TSampler(get, never): MNSLType;
     public static var TCubeSampler(get, never): MNSLType;
     public static var TCTValue(get, never): MNSLType;
@@ -240,7 +243,7 @@ class MNSLType {
      * @param components The number of components.
      */
     public inline function isVectorWithComponents(components: Int): Bool {
-        return _type == "Vec" + components;
+        return _type == "Vec" + components || _type == "IVec" + components;
     }
 
     /**
@@ -252,6 +255,9 @@ class MNSLType {
             case "Vec2": return 2;
             case "Vec3": return 3;
             case "Vec4": return 4;
+            case "IVec2": return 2;
+            case "IVec3": return 3;
+            case "IVec4": return 4;
             default: return -1;
         }
     }
@@ -261,6 +267,22 @@ class MNSLType {
      */
     public inline function isVector(): Bool {
         return isVectorWithComponents(2) || isVectorWithComponents(3) || isVectorWithComponents(4);
+    }
+
+
+
+    /**
+     * Check if the type is a float vector.
+     */
+    public inline function isFloatVector(): Bool {
+        return _type == "Vec2" || _type == "Vec3" || _type == "Vec4";
+    }
+
+    /**
+     * Check if the type is an integer vector.
+     */
+    public inline function isIntVector(): Bool {
+        return _type == "IVec2" || _type == "IVec3" || _type == "IVec4";
     }
 
     /**
@@ -388,6 +410,27 @@ class MNSLType {
      */
     public static inline function get_TVec4():MNSLType {
         return new MNSLType("Vec4");
+    }
+
+    /**
+     * Create a new TIVec2 type.
+     */
+    public static inline function get_TIVec2():MNSLType {
+        return new MNSLType("IVec2");
+    }
+
+    /**
+     * Create a new TIVec3 type.
+     */
+    public static inline function get_TIVec3():MNSLType {
+        return new MNSLType("IVec3");
+    }
+
+    /**
+     * Create a new TIVec4 type.
+     */
+    public static inline function get_TIVec4():MNSLType {
+        return new MNSLType("IVec4");
     }
 
     /**

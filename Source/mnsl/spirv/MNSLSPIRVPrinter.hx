@@ -147,13 +147,13 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             return id;
         }
 
+        if (type.isIntVector()) {
+            this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeVector, oper: [id, getType(MNSLType.TInt), type.getVectorComponents()] });
+            return id;
+        }
+
         if (type.isVector()) {
             this._typeInit.push({ id: id, op: MNSLSPIRVOpCode.OpTypeVector, oper: [id, getType(MNSLType.TFloat), type.getVectorComponents()] });
-
-            var integerVer = assignId();
-            this._typeInit.push({ id: integerVer, op: MNSLSPIRVOpCode.OpTypeVector, oper: [integerVer, getType(MNSLType.TInt), type.getVectorComponents()] });
-            types.push(integerVer);
-
             return id;
         }
 
@@ -1181,6 +1181,16 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
             return resId;
         }
 
+        if (from.isIntVector() && to.isFloatVector()) {
+            emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [targetType, resId, onId]);
+            return resId;
+        }
+
+        if (from.isFloatVector() && to.isIntVector()) {
+            emitInstruction(MNSLSPIRVOpCode.OpConvertFToS, [targetType, resId, onId]);
+            return resId;
+        }
+
         emitInstruction(MNSLSPIRVOpCode.OpBitcast, [targetType, resId, onId]); // TODO: review
         return resId;
     }
@@ -1449,12 +1459,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
                 var samplerId = argIds[0];
                 var imageId = assignId();
-                var texSizeId = assignId();
 
                 var imageType = getType(MNSLAnalyser.getType(args[0]), 1);
                 emitInstruction(MNSLSPIRVOpCode.OpImage, [imageType, imageId, samplerId]);
-                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySizeLod, [getType(returnType, 1), texSizeId, imageId, argIds[1]]);
-                emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [typeId, retId, texSizeId]);
+                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySizeLod, [getType(MNSLType.TIVec2), retId, imageId, argIds[1]]);
 
                 return retId;
 
@@ -1520,6 +1528,9 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
         getType(MNSLType.TVec2);
         getType(MNSLType.TVec3);
         getType(MNSLType.TVec4);
+        getType(MNSLType.TIVec2);
+        getType(MNSLType.TIVec3);
+        getType(MNSLType.TIVec4);
         getType(MNSLType.TMat2);
         getType(MNSLType.TMat3);
         getType(MNSLType.TMat4);

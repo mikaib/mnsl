@@ -18,12 +18,15 @@
                OpName %x "x"
                OpName %TMat3 "TMat3"
                OpName %in_TexCoords "in_TexCoords"
-               OpName %main "main"
                OpName %TMat2 "TMat2"
-               OpName %out_PointSize "out_PointSize"
-               OpName %TVec4 "TVec4"
+               OpName %main "main"
+               OpName %TIVec4 "TIVec4"
+               OpName %TIVec3 "TIVec3"
                OpName %in_Colour "in_Colour"
+               OpName %out_PointSize "out_PointSize"
                OpName %out_Position "out_Position"
+               OpName %TIVec2 "TIVec2"
+               OpName %TVec4 "TVec4"
                OpName %TVec3 "TVec3"
                OpName %in_FragDepth "in_FragDepth"
                OpName %TVec2 "TVec2"
@@ -55,11 +58,11 @@
        %TInt = OpTypeInt 32 1
      %TFloat = OpTypeFloat 32
       %TVec2 = OpTypeVector %TFloat 2
-     %v2TInt = OpTypeVector %TInt 2
       %TVec3 = OpTypeVector %TFloat 3
-     %v3TInt = OpTypeVector %TInt 3
       %TVec4 = OpTypeVector %TFloat 4
-     %v4TInt = OpTypeVector %TInt 4
+     %TIVec2 = OpTypeVector %TInt 2
+     %TIVec3 = OpTypeVector %TInt 3
+     %TIVec4 = OpTypeVector %TInt 4
       %TMat2 = OpTypeMatrix %TVec2 2
       %TMat3 = OpTypeMatrix %TVec3 3
       %TMat4 = OpTypeMatrix %TVec4 4
@@ -112,9 +115,9 @@
                OpStore %z %58
          %59 = OpLoad %TSampler %u_Texture
          %61 = OpImage %TSamplerImage %59
-         %62 = OpImageQuerySizeLod %v2TInt %61 %TInt_0
-         %60 = OpConvertSToF %TVec2 %62
-               OpStore %w %60
+         %60 = OpImageQuerySizeLod %TIVec2 %61 %TInt_0
+         %62 = OpConvertSToF %TVec2 %60
+               OpStore %w %62
          %63 = OpLoad %TVec2 %w
          %65 = OpConvertSToF %TFloat %TInt_2
          %64 = OpCompositeConstruct %TVec2 %65 %65

@@ -23,7 +23,8 @@ class MNSLAnalyser {
     private var _cpyStck: Array<String> = ["FunctionDecl", "WhileLoop", "ForLoop", "IfStatement", "ElseIfStatement", "ElseStatement"];
     private var _types: Array<String> = [
         "Void", "Int", "Float", "Bool",
-        "Vec2", "Vec3", "Vec4", "Mat2", "Mat3", "Mat4",
+        "Vec2", "Vec3", "Vec4", "IVec2", "IVec3", "IVec4",
+        "Mat2", "Mat3", "Mat4",
         "Sampler", "CTValue"
     ];
     private var _deferPostType: Array<Void -> Void> = [];
@@ -340,7 +341,7 @@ class MNSLAnalyser {
                    { name: "sampler", type: MNSLType.TSampler },
                    { name: "lod", type: MNSLType.TInt }
                ],
-               returnType: MNSLType.TVec2
+               returnType: MNSLType.TIVec2
            }
        ];
 

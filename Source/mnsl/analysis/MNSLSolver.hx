@@ -148,9 +148,19 @@ class MNSLSolver {
                 _context.emitWarning(ImplicitVectorTruncation(c.ofNode, componentsOfType, componentsOfMustBe));
             }
 
+            var res = c.ofNode;
+
+            if (c.type.isIntVector() && c.mustBe.isFloatVector()) {
+                res = TypeCast(c.ofNode, c.type, c.mustBe);
+            }
+
+            if (componentsOfType != componentsOfMustBe) {
+                res = VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe);
+            }
+
             addReplacement({
                 node: c.ofNode,
-                to: VectorConversion(c.ofNode, componentsOfType, componentsOfMustBe),
+                to: res
             });
 
             return true;

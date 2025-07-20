@@ -9,7 +9,7 @@ void main() {
     vec2 x = fwidth(in_TexCoords);
     vec2 y = dFdx(in_TexCoords);
     vec2 z = dFdy(in_TexCoords);
-    vec2 w = textureSize(u_Texture, 0);
+    vec2 w = vec2(textureSize(u_Texture, 0));
     vec2 q = w * vec2(2);
 }
 
