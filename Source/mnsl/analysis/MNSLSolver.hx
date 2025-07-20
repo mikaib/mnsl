@@ -74,6 +74,16 @@ class MNSLSolver {
 
             if (c.type.isDefined() && !c.mustBe.isDefined()) {
                 if (c.mustBe.accepts(c.type)) {
+                    if (c.type.isIntVector()) {
+                        c.mustBe.setType(MNSLType.TVec2);
+                        c.mustBe.setTempType(false);
+                        _toRemove.push(c);
+                        addReplacement({
+                            node: c.ofNode,
+                            to: TypeCast(c.ofNode, c.type, c.mustBe)
+                        });
+                    }
+
                     c.mustBe.setType(c.type);
                     c.mustBe.setTempType(false);
                     _toRemove.push(c);
