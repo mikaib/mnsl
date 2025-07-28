@@ -341,7 +341,7 @@ class MNSLAnalyser {
                    { name: "sampler", type: MNSLType.TSampler },
                    { name: "lod", type: MNSLType.TInt }
                ],
-               returnType: MNSLType.TIVec2
+               returnType: MNSLType.TVec2
            }
        ];
 

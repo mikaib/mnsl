@@ -6,6 +6,7 @@ import mnsl.tokenizer.MNSLTokenInfo;
 import mnsl.analysis.MNSLFuncArgs;
 import mnsl.analysis.MNSLType;
 import haxe.PosInfos;
+import mnsl.analysis.MNSLAnalyser;
 
 class MNSLParser {
 
@@ -981,6 +982,16 @@ class MNSLParser {
             var info: MNSLNodeInfo = MNSLNodeInfo.fromTokenInfos([getTokenInfo(argsBlock[0]), getTokenInfo(argsBlock[argsBlock.length - 1])]);
 
             append(MatrixCreation(comp, args, info));
+            return;
+        }
+
+        if (name == "int") {
+            append(TypeCast(args[0], MNSLAnalyser.getType(args[0]), MNSLType.TInt));
+            return;
+        }
+
+        if (name == "float") {
+            append(TypeCast(args[0], MNSLAnalyser.getType(args[0]), MNSLType.TFloat));
             return;
         }
 

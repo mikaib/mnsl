@@ -617,6 +617,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                         emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Location, [locationCount]);
                         locationCount++;
                 }
+
+                if (data.type.isInt() && _config.shaderType == MNSLSPIRVShaderType.SPIRV_SHADER_TYPE_VERTEX) {
+                    emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Flat, []);
+                }
             }
 
             if (data.kind == MNSLShaderDataKind.Input) {
@@ -639,6 +643,10 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
                     default:
                         emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Location, [locationCount]);
                         locationCount++;
+                }
+
+                if (data.type.isInt() && _config.shaderType == MNSLSPIRVShaderType.SPIRV_SHADER_TYPE_FRAGMENT) {
+                    emitDecoration(data.name, data.kind, varId, MNSLSPIRVDecoration.Flat, []);
                 }
             }
 
@@ -1459,10 +1467,12 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
 
                 var samplerId = argIds[0];
                 var imageId = assignId();
+                var texSizeId = assignId();
 
                 var imageType = getType(MNSLAnalyser.getType(args[0]), 1);
                 emitInstruction(MNSLSPIRVOpCode.OpImage, [imageType, imageId, samplerId]);
-                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySizeLod, [getType(MNSLType.TIVec2), retId, imageId, argIds[1]]);
+                emitInstruction(MNSLSPIRVOpCode.OpImageQuerySizeLod, [getType(MNSLType.TIVec2), texSizeId, imageId, argIds[1]]);
+                emitInstruction(MNSLSPIRVOpCode.OpConvertSToF, [typeId, retId, texSizeId]);
 
                 return retId;
 
@@ -1512,6 +1522,7 @@ class MNSLSPIRVPrinter extends MNSLPrinter {
     override public function run(): Void {
         // caps
         emitInstruction(MNSLSPIRVOpCode.OpCapability, [MNSLSPIRVCapability.Shader]);
+        emitInstruction(MNSLSPIRVOpCode.OpCapability, [MNSLSPIRVCapability.ImageQuery]);
 
         // extensions
         getExtGlslStd();

@@ -1,47 +1,46 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Khronos; 0
-; Bound: 67
+; Bound: 62
 ; Schema: 0
                OpCapability Shader
+               OpCapability ImageQuery
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
-               OpEntryPoint Fragment %main "main" %in_Colour %in_TexCoords %out_FragColour %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
+               OpEntryPoint Fragment %main "main" %in_Colour %in_TexCoords %in_texId %in_texId %out_FragColour %in_VertexID %in_InstanceID %in_FragCoord %in_FrontFacing %in_FragDepth %out_Position %out_PointSize
                OpExecutionMode %main OriginUpperLeft
                OpName %TSamplerImage "TSamplerImage"
-               OpName %u_Texture "u_Texture"
-               OpName %z "z"
-               OpName %TSampler "TSampler"
-               OpName %y "y"
-               OpName %TMat4 "TMat4"
                OpName %out_FragColour "out_FragColour"
-               OpName %x "x"
+               OpName %TSampler "TSampler"
+               OpName %main "main"
+               OpName %TMat4 "TMat4"
+               OpName %in_texId "in_texId"
                OpName %TMat3 "TMat3"
+               OpName %out_PointSize "out_PointSize"
                OpName %in_TexCoords "in_TexCoords"
                OpName %TMat2 "TMat2"
-               OpName %main "main"
+               OpName %out_Position "out_Position"
                OpName %TIVec4 "TIVec4"
                OpName %TIVec3 "TIVec3"
                OpName %in_Colour "in_Colour"
-               OpName %out_PointSize "out_PointSize"
-               OpName %out_Position "out_Position"
+               OpName %in_FragDepth "in_FragDepth"
                OpName %TIVec2 "TIVec2"
+               OpName %in_FrontFacing "in_FrontFacing"
                OpName %TVec4 "TVec4"
                OpName %TVec3 "TVec3"
-               OpName %in_FragDepth "in_FragDepth"
-               OpName %TVec2 "TVec2"
-               OpName %in_FrontFacing "in_FrontFacing"
-               OpName %TFloat "TFloat"
                OpName %in_FragCoord "in_FragCoord"
-               OpName %TInt "TInt"
                OpName %in_InstanceID "in_InstanceID"
+               OpName %TVec2 "TVec2"
+               OpName %in_VertexID "in_VertexID"
+               OpName %TFloat "TFloat"
+               OpName %TInt "TInt"
+               OpName %u_Texture "u_Texture"
                OpName %TBool "TBool"
                OpName %TVoid "TVoid"
-               OpName %in_VertexID "in_VertexID"
+               OpName %TArray_Sampler__16_ "TArray<Sampler, 16>"
                OpName %TCubeSamplerImage "TCubeSamplerImage"
-               OpName %q "q"
                OpName %TCubeSampler "TCubeSampler"
-               OpName %w "w"
+               OpName %x "x"
                OpDecorate %out_PointSize BuiltIn PointSize
                OpDecorate %out_Position BuiltIn Position
                OpDecorate %in_FragDepth BuiltIn FragDepth
@@ -50,7 +49,9 @@
                OpDecorate %in_InstanceID BuiltIn InstanceId
                OpDecorate %in_VertexID BuiltIn VertexId
                OpDecorate %u_Texture RelaxedPrecision
-               OpDecorate %out_FragColour Location 2
+               OpDecorate %out_FragColour Location 3
+               OpDecorate %in_texId Flat
+               OpDecorate %in_texId Location 2
                OpDecorate %in_TexCoords Location 1
                OpDecorate %in_Colour Location 0
       %TVoid = OpTypeVoid
@@ -76,20 +77,24 @@
      %TInt_1 = OpConstant %TInt 1
      %TInt_2 = OpConstant %TInt 2
      %TInt_3 = OpConstant %TInt 3
+    %TInt_16 = OpConstant %TInt 16
+%TArray_Sampler__16_ = OpTypeArray %TSampler %TInt_16
          %25 = OpTypeFunction %TVoid
+%_ptr_UniformConstant_TSampler = OpTypePointer UniformConstant %TSampler
 %_ptr_Function_TVec2 = OpTypePointer Function %TVec2
 %_ptr_Input_TVec4 = OpTypePointer Input %TVec4
 %_ptr_Input_TVec2 = OpTypePointer Input %TVec2
-%_ptr_Output_TVec4 = OpTypePointer Output %TVec4
-%_ptr_UniformConstant_TSampler = OpTypePointer UniformConstant %TSampler
 %_ptr_Input_TInt = OpTypePointer Input %TInt
+%_ptr_Output_TVec4 = OpTypePointer Output %TVec4
+%_ptr_UniformConstant_TArray_Sampler__16_ = OpTypePointer UniformConstant %TArray_Sampler__16_
 %_ptr_Input_TBool = OpTypePointer Input %TBool
 %_ptr_Input_TFloat = OpTypePointer Input %TFloat
 %_ptr_Output_TFloat = OpTypePointer Output %TFloat
   %in_Colour = OpVariable %_ptr_Input_TVec4 Input
 %in_TexCoords = OpVariable %_ptr_Input_TVec2 Input
+   %in_texId = OpVariable %_ptr_Input_TInt Input
 %out_FragColour = OpVariable %_ptr_Output_TVec4 Output
-  %u_Texture = OpVariable %_ptr_UniformConstant_TSampler UniformConstant
+  %u_Texture = OpVariable %_ptr_UniformConstant_TArray_Sampler__16_ UniformConstant
 %in_VertexID = OpVariable %_ptr_Input_TInt Input
 %in_InstanceID = OpVariable %_ptr_Input_TInt Input
 %in_FragCoord = OpVariable %_ptr_Input_TVec4 Input
@@ -98,30 +103,17 @@
 %out_Position = OpVariable %_ptr_Output_TVec4 Output
 %out_PointSize = OpVariable %_ptr_Output_TFloat Output
        %main = OpFunction %TVoid None %25
-         %47 = OpLabel
+         %50 = OpLabel
           %x = OpVariable %_ptr_Function_TVec2 Function
-          %y = OpVariable %_ptr_Function_TVec2 Function
-          %z = OpVariable %_ptr_Function_TVec2 Function
-          %w = OpVariable %_ptr_Function_TVec2 Function
-          %q = OpVariable %_ptr_Function_TVec2 Function
-         %53 = OpLoad %TVec2 %in_TexCoords
-         %54 = OpFwidth %TVec2 %53
-               OpStore %x %54
-         %55 = OpLoad %TVec2 %in_TexCoords
-         %56 = OpDPdx %TVec2 %55
-               OpStore %y %56
-         %57 = OpLoad %TVec2 %in_TexCoords
-         %58 = OpDPdy %TVec2 %57
-               OpStore %z %58
-         %59 = OpLoad %TSampler %u_Texture
-         %61 = OpImage %TSamplerImage %59
-         %60 = OpImageQuerySizeLod %TIVec2 %61 %TInt_0
-         %62 = OpConvertSToF %TVec2 %60
-               OpStore %w %62
-         %63 = OpLoad %TVec2 %w
-         %65 = OpConvertSToF %TFloat %TInt_2
-         %64 = OpCompositeConstruct %TVec2 %65 %65
-         %66 = OpFMul %TVec2 %63 %64
-               OpStore %q %66
+         %53 = OpConvertSToF %TFloat %TInt_2
+         %52 = OpCompositeConstruct %TVec2 %53 %53
+         %54 = OpLoad %TInt %in_texId
+         %55 = OpAccessChain %_ptr_UniformConstant_TSampler %u_Texture %54
+         %57 = OpLoad %TSampler %55
+         %59 = OpImage %TSamplerImage %57
+         %60 = OpImageQuerySizeLod %TIVec2 %59 %TInt_0
+         %58 = OpConvertSToF %TVec2 %60
+         %61 = OpFDiv %TVec2 %52 %58
+               OpStore %x %61
                OpReturn
                OpFunctionEnd

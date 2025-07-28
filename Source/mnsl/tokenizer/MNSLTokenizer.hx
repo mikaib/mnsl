@@ -9,6 +9,7 @@ class MNSLTokenizer {
     private var length: Int;
     private var context: MNSLContext;
     private var defines: Map<String, Dynamic>;
+    private var conditionStack: Array<{wasActive: Bool, wasSkipping: Bool, conditionResult: Bool, hasElse: Bool}>;
 
     /**
      * The MNSLTokenizer class is used to tokenize MNSL (Mana Shader Language) source code. (dot mns files)
@@ -23,6 +24,40 @@ class MNSLTokenizer {
         this.length = source.length;
         this.context = context;
         this.defines = defines;
+        this.conditionStack = [];
+    }
+
+    /**
+     * Evaluates a condition string against the defined preprocessor directives.
+     * @param condition The condition string to evaluate.
+     * @return True if the condition is met, false otherwise.
+     */
+    private function evaluateCondition(condition: String): Bool {
+        if (condition.indexOf("||") != -1) {
+            var parts = condition.split("||");
+            for (part in parts) {
+                if (evaluateCondition(part.trim())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (condition.indexOf("&&") != -1) {
+            var parts = condition.split("&&");
+            for (part in parts) {
+                if (!evaluateCondition(part.trim())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        if (condition.startsWith("!")) {
+            return !defines.exists(condition.substr(1).trim());
+        } else {
+            return defines.exists(condition.trim());
+        }
     }
 
     /**
@@ -97,19 +132,52 @@ class MNSLTokenizer {
                             ));
                         } else {
                             var condition = args.join(" ");
-                            if (condition.startsWith("!")) {
-                                condResult = !defines.exists(condition.substr(1));
-                            } else {
-                                condResult = defines.exists(condition);
-                            }
-                            skipActive = !condResult;
+                            var result = evaluateCondition(condition);
+
+                            conditionStack.push({
+                                wasActive: condActive,
+                                wasSkipping: skipActive,
+                                conditionResult: result,
+                                hasElse: false
+                            });
+
                             condActive = true;
+                            skipActive = skipActive || !result;
                         }
                     } else if (cmd == "else" && condActive) {
-                        skipActive = condResult;
+                        if (conditionStack.length > 0) {
+                            var currentState = conditionStack[conditionStack.length - 1];
+                            if (currentState.hasElse) {
+                                context.emitError(TokenizerPreprocessorError(
+                                    "Multiple #else directives for single #if",
+                                    {
+                                        line: line,
+                                        column: column,
+                                        length: position - initialPosition,
+                                        position: initialPosition
+                                    }
+                                ));
+                            } else {
+                                currentState.hasElse = true;
+                                skipActive = currentState.wasSkipping || currentState.conditionResult;
+                            }
+                        }
                     } else if (cmd == "end") {
-                        skipActive = false;
-                        condActive = false;
+                        if (conditionStack.length > 0) {
+                            var state = conditionStack.pop();
+                            skipActive = state.wasSkipping;
+                            condActive = state.wasActive;
+                        } else {
+                            context.emitError(TokenizerPreprocessorError(
+                                "#end without matching #if",
+                                {
+                                    line: line,
+                                    column: column,
+                                    length: position - initialPosition,
+                                    position: initialPosition
+                                }
+                            ));
+                        }
                     } else if (cmd == "include" && !skipActive) {
                         var sourceStr = context.getOptions().preprocessorIncludeFunc(args[0], context.getOptions().rootPath);
                         if (sourceStr == null) {

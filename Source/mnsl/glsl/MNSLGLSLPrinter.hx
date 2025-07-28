@@ -108,7 +108,8 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 printlnIndented("}\n");
 
             case FunctionCall(name, args, type, info):
-                printIndented("{0}(", name);
+                if (name == "textureSize") printIndented("vec2(textureSize(");
+                else printIndented("{0}(", name);
 
                 enableInline();
                 for (arg in args) {
@@ -119,7 +120,8 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                 }
                 disableInline();
 
-                println(")" + (_sameLine ? "" : ";"));
+                if (name == "textureSize") println("))" + (_sameLine ? "" : ";"));
+                else println(")" + (_sameLine ? "" : ";"));
 
             case VariableDecl(name, type, value, info):
                 if (value == null) {
@@ -461,10 +463,12 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                     dataOutputLength++;
+
+                    var prefix = data.type.isInt() && _config.shaderType == MNSLGLSLShaderType.GLSL_SHADER_TYPE_FRAGMENT ? "flat " : "";
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("attribute {0} {1}{2};", getTypeStr(data.type), _prefixes.input, data.name);
+                        println("{0}attribute {1} {2}{3};", prefix, getTypeStr(data.type), _prefixes.input, data.name);
                     } else {
-                        println("in {0} {1}{2};", getTypeStr(data.type), _prefixes.input, data.name);
+                        println("{0}in {1} {2}{3};", prefix, getTypeStr(data.type), _prefixes.input, data.name);
                     }
 
                 case MNSLShaderDataKind.Output:
@@ -473,10 +477,12 @@ class MNSLGLSLPrinter extends MNSLPrinter {
                     }
 
                     dataOutputLength++;
+
+                    var prefix = data.type.isInt() && _config.shaderType == MNSLGLSLShaderType.GLSL_SHADER_TYPE_VERTEX ? "flat " : "";
                     if (_config.useAttributeAndVaryingKeywords) {
-                        println("varying {0} {1}{2};", getTypeStr(data.type), _prefixes.output, data.name);
+                        println("{0}varying {1} {2}{3};", prefix, getTypeStr(data.type), _prefixes.output, data.name);
                     } else {
-                        println("out {0} {1}{2};", getTypeStr(data.type), _prefixes.output, data.name);
+                        println("{0}out {1} {2}{3};", prefix, getTypeStr(data.type), _prefixes.output, data.name);
                     }
 
                 case MNSLShaderDataKind.Uniform:

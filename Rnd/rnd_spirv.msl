@@ -3,17 +3,8 @@
 
 using namespace metal;
 
-struct main0_in
+fragment void main0(texture2d<float> u_Texture [[texture(0)]], sampler u_TextureSmplr [[sampler(0)]])
 {
-    float2 in_TexCoords [[user(locn1)]];
-};
-
-fragment void main0(main0_in in [[stage_in]], texture2d<float> u_Texture [[texture(0)]], sampler u_TextureSmplr [[sampler(0)]])
-{
-    float2 x = fwidth(in.in_TexCoords);
-    float2 y = dfdx(in.in_TexCoords);
-    float2 z = dfdy(in.in_TexCoords);
-    float2 w = float2(int2(u_Texture.get_width(), u_Texture.get_height()));
-    float2 q = w * float2(float(2));
+    float2 x = float2(float(2)) / float2(int2(u_Texture.get_width(), u_Texture.get_height()));
 }
 

@@ -1,12 +1,13 @@
 // input
 @input(Colour: Vec4)
 @input(TexCoords: Vec2)
+@input(texId: Int)
 
 // output
 @output(FragColour: Vec4)
 
 // uniforms
-@uniform(Texture: Sampler)
+@uniform(Texture: Sampler[16])
 
 // defines
 @define(SMOOTHNESS, 0.01)
@@ -14,9 +15,5 @@
 
 // main
 func main() {
-    var x = fwidth(input.TexCoords);
-    var y = dFdx(input.TexCoords);
-    var z = dFdy(input.TexCoords);
-    var w = textureSize(uniform.Texture, 0);
-    var q = w * 2;
+    var x = vec2(2) / textureSize(uniform.Texture[input.texId], 0)
 }
